@@ -10,6 +10,7 @@ PREFIX="$1"/bin
 export PATH="$PREFIX:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
 export LD_LIBRARY_PATH="$PREFIX/lib:/lib64:/usr/lib64:/usr/local/lib64:/lib:/usr/lib:/usr/local/lib"
 export GEOS_DIR="$1"
+export PKG_CONFIG_PATH="$1/lib/pkgconfig"
 # check certificates may comment the next 2 out
 $PREFIX/conda update -n base conda -y
 $PREFIX/conda config --set ssl_verify false
@@ -19,10 +20,11 @@ ccmd="$PREFIX/conda install -y"
 #pcmd="$PREFIX/pip search --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
 # pyopengl and numba in conflict?
 $PREFIX/conda update --all -y
-$ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo
+$ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection
+# does not work yet
+#$PREFIX/conda install -c conda-forge vitables
 $pcmd msgpack argparse urwid
-#$pcmd PyGObject
-$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui pygraphviz avro spyder-memory-profiler veusz python-pptx orderedset PyOpenGL PyOpenGL-Demo PyOpenGL-accelerate objgraph
+$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
 # python 3, pyrasite-gui and pygraphviz do not work, a dependency meliae does not appear to be python 3 compliant
 # upgrading
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"

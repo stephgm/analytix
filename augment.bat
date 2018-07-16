@@ -6,9 +6,9 @@ c:\anaconda2-5.2.0\Scripts\conda.exe update --all -y
 c:\anaconda2-5.2.0\Scripts\pip.exe install --upgrade pip
 :: ccmd="$PREFIX/conda install"
 :: pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
-%ccmd% R cartopy swig pyopengl pyopengl-accelerate pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo
+%ccmd% R cartopy swig pyopengl pyopengl-accelerate pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection
 %pcmd% msgpack argparse urwid
-%pcmd% construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui pygraphviz avro spyder-memory-profiler veusz python-pptx orderedset PyOpenGL PyOpenGL-Demo PyOpenGL-accelerate objgraph
+%pcmd% construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
 %pcmd% pyopencl pycuda
 @pause
 :: done the below at work
