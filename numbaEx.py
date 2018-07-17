@@ -27,6 +27,7 @@ n = 1000000
 N = 1000
 x = numpy.arange(n,dtype='f8')
 y = numpy.arange(n,dtype='f8')+4.
+z = numpy.empty(n)
 #print(x)
 #print(y)
 tic = time.time()
