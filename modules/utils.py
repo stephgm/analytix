@@ -11,5 +11,7 @@ def thisAnalysis(epath,**kwargs):
     print(epath)
     newvar = kwargs.pop('force',True)
     print(newvar)
+    if newvar:
+        a
     time.sleep(1)
     print('waking')

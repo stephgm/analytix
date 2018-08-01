@@ -21,7 +21,8 @@ def moduleRun(iFolder,iPyFile,iFunction,*args,**kwargs):
     #line.append('sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"'+iFolder+'"))')
     line.append('sys.path.append("'+mloc+'")')
     line.append('from '+iPyFile+' import '+iFunction)
-    callstr = iFunction[:]+'('
+    line.append('try:')
+    callstr = '    '+iFunction[:]+'('
     for i,arg in enumerate(args):
         if i:
             callstr += ','
@@ -40,7 +41,10 @@ def moduleRun(iFolder,iPyFile,iFunction,*args,**kwargs):
             callstr += ''+fld+'='+str(kwargs[fld])
     callstr += ')'
     line.append(callstr)
-    print('\n'.join(line))
+    line.append('except:')
+    line.append('    import traceback')
+    line.append('    traceback.print_exc()')
+    #print('\n'.join(line))
     Popen([sys.executable,'-c','\n'.join(line)]).wait()
     
 
