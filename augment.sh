@@ -1,5 +1,9 @@
 #!/bin/bash -e
 
+# git post-clone commands
+# git remote set-url origin git@github.com:hollidayh/analytix.git
+# this will ask for the private key password (not git hub password)
+
 if [ "$1" == "" ];then
 echo "usage: $0 /path/to/anaconda"
 exit
