@@ -1,0 +1,21 @@
+
+install_path="/storage/data"
+
+function untar_sw()
+{
+match=$(grep --text --line-number '^SOFTWARE:$' $0 | cut -d ':' -f 1)
+payload_start=$((match + 1))
+#tail -n +$payload_start $0 | tar -C $1 -zxf -
+tail -n +$payload_start $0 | tar -C $1 -xf -
+}
+
+echo -n "installing ... "
+mkdir -p ${install_path}
+untar_sw ${install_path}
+cd ${install_path}
+#if [ -d local ];then
+#rm local
+#fi
+# ln -s ${version} local
+echo "done"
+exit 0
