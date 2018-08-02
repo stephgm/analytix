@@ -7,7 +7,7 @@ Created on Mon Jun  4 14:37:51 2018
 """
 
 from mpl_toolkits.basemap import Basemap
-import gi
+#import gi
 import pandas
 import shapely
 # need this for reduced

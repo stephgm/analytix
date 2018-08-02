@@ -2,15 +2,18 @@
 set ccmd="c:\anaconda2-5.2.0\Scripts\conda.exe install -y"
 set pcmd="c:\anaconda2-5.2.0\Scripts\pip.exe install"
 set pcmd="c:\anaconda2-5.2.0\Scripts\pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
+set pcmd="c:\anaconda2-5.2.0\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
 c:\anaconda2-5.2.0\Scripts\conda.exe update -n base conda
 c:\anaconda2-5.2.0\Scripts\conda.exe update --all -y
-c:\anaconda2-5.2.0\Scripts\pip.exe install --upgrade pip
+::c:\anaconda2-5.2.0\Scripts\pip.exe install --upgrade pip
+%pcmd% install --upgrade pip
 :: ccmd="$PREFIX/conda install"
 %ccmd% R cartopy swig pyopengl pyopengl-accelerate pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler cython cairo pyopengl pyopengl-accelerate
 :: glib gobject-introspection
-%pcmd% msgpack argparse urwid
-%pcmd% construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
-%pcmd% pyopencl pycuda
+%pcmd% install msgpack argparse urwid
+:: %pcmd% install construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
+%pcmd% install construct hexdump pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
+%pcmd% install pyopencl pycuda
 @pause
 :: done the below at work
 exit
