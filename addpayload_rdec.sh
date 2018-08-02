@@ -1,8 +1,9 @@
 #!/bin/bash
 
-version="5.2.0-b3"
+version="5.2.0-rb2"
 stack="anaconda2-5.1.0"
 stack="anaconda2-5.2.0"
+stack="anaconda2-5.2.0-r"
 
 ofile=$(pwd)"/amrdec_stack.tar"
 cd /storage/data
