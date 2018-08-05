@@ -1,0 +1,18 @@
+Host *
+    ControlMaster auto
+    ControlPath ~/.ssh/%r@%h:%p
+# on servers sshd_config
+# X11UseLocalhost no
+Host rtc-vm
+    HostName XXX.XX.XX.XX
+    User XXX
+    ForwardX11 yes
+Host rtc-blade
+    HostName XXX.XX.XX.XX
+    User XXX
+    ForwardX11 yes
+    ProxyCommand ssh -W %h:%p rtc-vm
+
+# port forwarding
+# ssh -NL 2022:rtc-blade:22 rtc-vm &
+# ssh -X -p 2022 localhost
