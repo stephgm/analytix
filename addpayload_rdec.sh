@@ -8,6 +8,8 @@ stack="anaconda2-5.2.0-r"
 ofile=$(pwd)"/amrdec_stack.tar"
 cd /storage/data
 #tar -cf ${ofile} *
+./${stack}/bin/python -m compileall ${stack}
+chmod -R 755 ${stack}
 tar -cf ${ofile} ${stack}
 #gzip -9f ${ofile}
 #ofile+=".gz"
