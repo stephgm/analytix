@@ -17,5 +17,7 @@ cd ${install_path}
 #rm local
 #fi
 # ln -s ${version} local
+echo -n "perms ... "
+chmod -R 755 ${idir}
 echo "done"
 exit 0

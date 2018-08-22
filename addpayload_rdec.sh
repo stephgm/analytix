@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 version="5.2.0-rb2"
 stack="anaconda2-5.1.0"
@@ -16,6 +16,7 @@ insfile="installAmrdec-${version}.sh"
 cd -
 echo '#!/bin/bash' > ${insfile}
 echo '' >> ${insfile}
+echo 'idir='${stack} >> ${insfile}
 cat install.sh.in >> ${insfile}
 echo "SOFTWARE:" >> ${insfile}
 cat ${ofile} >> ${insfile}
