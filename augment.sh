@@ -25,10 +25,11 @@ ccmd="$PREFIX/conda install -y"
 # pyopengl and numba in conflict?
 $PREFIX/conda update --all -y
 $ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection
+$PREFIX/conda install -c conda-forge plotnine
 # does not work yet
 #$PREFIX/conda install -c conda-forge vitables
 $pcmd msgpack argparse urwid
-$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject ggpy
+$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
 # python 3, pyrasite-gui and pygraphviz do not work, a dependency meliae does not appear to be python 3 compliant
 # upgrading
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"
