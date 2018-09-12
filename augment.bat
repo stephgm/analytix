@@ -12,7 +12,7 @@ c:\anaconda2-5.2.0\Scripts\conda.exe update --all -y
 :: glib gobject-introspection
 %pcmd% install msgpack argparse urwid
 :: %pcmd% install construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
-%pcmd% install construct hexdump pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
+%pcmd% install construct hexdump pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject ggpy
 %pcmd% install pyopencl pycuda
 @pause
 :: done the below at work
