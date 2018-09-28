@@ -4,6 +4,12 @@
 # git config --global http.sslVerify false
 # git post-clone commands
 # git remote set-url origin git@github.com:hollidayh/analytix.git
+# ssh-keygen -t rsa -b 4096 -C "hpholliday@gmail.com"
+# eval $(ssh-agent -s)
+# ssh-add ~/.ssh/id_rsa
+# sudo yum -y install xclip
+# xclip -sel clip < ~/.ssh/id_rsa.pub
+# login to github -> settings -> ssh keys -> import 
 # this will ask for the private key password (not git hub password)
 
 if [ "$1" == "" ];then
