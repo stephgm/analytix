@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+# git pre-clone commands
+# git config --global http.sslVerify false
 # git post-clone commands
 # git remote set-url origin git@github.com:hollidayh/analytix.git
 # this will ask for the private key password (not git hub password)
