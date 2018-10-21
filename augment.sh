@@ -33,7 +33,7 @@ ccmd="$PREFIX/conda install -y"
 # pyopengl and numba in conflict?
 $PREFIX/conda update --all -y
 $ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection
-$PREFIX/conda install -c -y conda-forge plotnine
+$PREFIX/conda install -c conda-forge plotnine -y
 # does not work yet
 #$PREFIX/conda install -c conda-forge vitables
 $pcmd msgpack argparse urwid
