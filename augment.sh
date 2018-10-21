@@ -24,8 +24,8 @@ export LD_LIBRARY_PATH="$PREFIX/lib:/lib64:/usr/lib64:/usr/local/lib64:/lib:/usr
 export GEOS_DIR="$1"
 export PKG_CONFIG_PATH="$1/lib/pkgconfig"
 # check certificates may comment the next 2 out
-$PREFIX/conda update -n base conda -y
 $PREFIX/conda config --set ssl_verify false
+$PREFIX/conda update -n base conda -y
 pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
 $pcmd --upgrade pip
 ccmd="$PREFIX/conda install -y"
