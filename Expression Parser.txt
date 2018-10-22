@@ -1,0 +1,151 @@
+
+Expression Parser
+~~~~~~~~~~~~~~~~~
+Note:  The use of parenthesis is always a good idea when grouping calculations!
+
+The expression parser is intended to help the user create a new column within the dataset
+with customized data.  While a new column will be added to the table widget, this will in no way affect the actual data.
+
+
+Most basic mathematical functions are supported within the parser, and these will be explained in detail below.  One
+of the most useful tools is the support of "if" statements within the parser.  A detailed example will be discussed here.
+
+Example:
+Let's say that we want to alter the "Alt" (altitude) column of the dataset shown below.  We want for any altitude above
+100,000 to be twice as much, while at the same time if the altitude is below 40,000 set it to 0.  We first select the header of the field we wish to alter in the combo box found at the
+top of the window.  So we select "Alt" because it will be our base data to alter.  Now inside the text box we insert
+our formula that we wish to parse.  Note:  The syntax of the functions are strict in many cases and will be detailed below
+with each operation.  So inside the text field we type the following.
+
+if(z>100000):z=2*z;if(z<40,000):z=0;
+
+There are a few things to note here. "z" will always be the variable associated with the new column data.  Notice too
+that it is ALWAYS NECESSARY to separate new commands by a ";".  This tells the parser that a particular command has
+ended.
+
+After we are done altering the formula in the text field we hit "OK" and the new data column will be represented as
+the last column of the table.
+
+Fancy Expressions
+~~~~~~~~~~~~~~~~~
+Above is the example for simple expressions with data.  In this section a more advanced way of editing data will be shown.
+
+If you select columns before hitting the "Add New Column" button, they will be stored and can be used in the formula
+text field.
+  
+Example:
+For example say we want to alter the "Alt" column again.  This time, however, we want to add the value of the "longitude" column to the altitude
+if the "latitude" is greater than 40.  And then we want to set altitude to 0 if the "Pos X" (x position) column is less than 30,000.
+
+In order to do this we must first select the "lat", "lon" and "Pos X" columns in the table before hitting the "Add New Column" button.
+After this is done we select "Alt" in the combo box at the top of the window as we did before because the altitude will be our
+base data column we want to alter.
+We must note that in the table the LEFT to RIGHT order of the selected columns.  In this particular dataset the selected column order
+is "lat" -> "lon" -> "Pos X".  This order is important for the formatting of the user specified formula.
+
+So, the leftmost column selected will always be associated with "$1".  So for this example, $1 = lat; $2 = lon; and $3 = Pos X.  Whenever you want to
+use lon, for instance, in the formula just type "$2".  So continuing with our example we can type in the text box the following expression.
+
+if($1>40):z=z+$2;if($3<30000):z=0;
+
+The result is seen below. 
+
+Functions and Syntax:
+~~~~~~~~~~~~~~~~~~~~~
+For example portions I will declare an array
+
+z = [1, 2, 3, 4]
+
+Power Function:
+Description:
+The power function will raise the number or array by a specified power.  
+Syntax:
+The power function can be represented by a "^" or "**" inside the text field.
+Example:
+2^2 = 2**2 = 4
+z^2 = z**2 = [1, 4, 9, 16]
+
+Trig Functions:
+
+Description:
+All usual trig functions are available within the parser.
+Returns the trig operation of the argument.
+Syntax:
+"cos()", "sin()", "tan()", "arccos()", "arcsin()", "arctan()"
+
+"cosh()", "sinh()", "tanh()", "arccosh()", "arcsinh()", "arctanh()"
+Example:
+cos(0) = 1
+cos(z) = [0.54, -0.42, -0.99, -0.65]
+
+Pi:
+Description:
+Pi is the mathematical constant 3.1415...
+Syntax:
+To use pi, simply type "pi"
+Example:
+2*pi = 6.2832
+z*pi = [3.1415, 6.2832, 9.4248, 12.5664]
+
+Exponential Function:
+Description
+Returns the exponential operation of the argument.
+Syntax:
+"exp()"
+Example:
+exp(2) = 7.3891
+exp(z) = [2.718, 7.3891, 20.0855, 54.5982]
+
+Natural Log Function:
+Description:
+Returns the natural log of the argument.
+Syntax:
+"log()" or "ln()"
+Example:
+log(2) = ln(2) = 0.6931
+log(z) = ln(z) = [0.0, 0.6931, 1.0986, 1.3863]
+
+Log Base 10 Function:
+Description:
+Returns the base 10 Logarithm of the argument.
+Syntax:
+"log10()"
+Example:
+log10(2) = 0.3010
+log10(z) = [0, 0.3010, 0.4771, 0.6021]
+
+Log Base 2 Function:
+Description:
+Returns the base 2 Logarithm of the argument.
+Syntax:
+"log2()"
+Example:
+log2(2) = 1.0
+log2(z) = [0, 1, 1.5850, 2]
+
+Absolute Value Function:
+Description:
+Returns the positive norm of the argument.
+Syntax:
+"abs()"
+Example:
+abs(-2) = 2
+abs(-z) = [1, 2, 3, 4]
+
+All Function:
+Description:
+Applies a non array value to the entire array.  This can only be done on an array (or entire data column).
+Syntax:
+"all()"
+Example:
+z = abs(2) = [2, 2, 2, 2]
+
+Print Function:
+Description:
+Not useful in the way of any modification of data, however, it will print out the argument in the terminal.  Mainly used
+for debugging.
+Syntax:
+"print"
+Example:
+print hello = "hello"
+print z = "[1, 2, 3, 4]"

@@ -11,6 +11,7 @@ echo -n "compile.."
 ./${stack}/bin/python -m compileall ${stack} > /dev/null 2>&1 || echo -n "."
 echo -n "chmod..."
 chmod -R 755 ${stack}
+echo -n "tar..."
 tar -cf ${ofile} ${stack}
 echo -n "payloding..."
 insfile="installAmrdec-${version}.sh"
@@ -26,5 +27,6 @@ rm ${ofile}
 echo -n "md5sum..."
 md5sum ${insfile} > ${insfile}.md5
 echo -n "compressing..."
-7za a -mx=9 ${insfile}.7z ${insfile}
+#7za a -mx=9 ${insfile}.7z ${insfile}
+xz -9 -e ${insfile}
 echo "done"
