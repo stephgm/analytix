@@ -33,7 +33,7 @@ ccmd="$PREFIX/conda install -y"
 # pyopengl and numba in conflict?
 $PREFIX/conda update --all -y
 $ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection
-$PREFIX/conda install -c conda-forge plotnine -y
+#$PREFIX/conda install -c conda-forge plotnine -y
 # does not work yet
 #$PREFIX/conda install -c conda-forge vitables
 $pcmd msgpack argparse urwid
@@ -44,6 +44,11 @@ $pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui 
 #$pcmd msgpack argparse construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui pygraphviz avro spyder-memory-profiler veusz python-pptx orderedset PyOpenGL PyOpenGL-Demo PyOpenGL-accelerate objgraph
 #$pcmd pyopencl pycuda QScintilla
 # done the below at work
+
+tar -zxvf uza.tgz
+cd uza
+make
+cp bin/7za $PREFIX/uza
 #exit
 tar -xf Downloads/ViTables-3.0.0.tar
 cd ViTables-3.0.0
@@ -73,13 +78,15 @@ cd -
 mkdir -p $PREFIX/../lib/python2.7/site-packages/cartopy/data/raster/natural_earth
 cp NE1_HR_LC_SR_W_DR.png $PREFIX/../lib/python2.7/site-packages/cartopy/data/raster/natural_earth/.
 
-cd ~/Downloads
-tar -jxvf p7zip_16.02_src_all.tar.bz2
-cd p7zip_16.02
-make
-cp bin/7za $PREFIX/.
-cd ..
-rm -rf p7zip_16.02
+#cd ~/Downloads
+#tar -jxvf p7zip_16.02_src_all.tar.bz2
+#cd p7zip_16.02
+#make
+#cp bin/7za $PREFIX/.
+#cd ..
+#rm -rf p7zip_16.02
+
+
 
 exit
 # working
