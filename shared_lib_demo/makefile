@@ -1,3 +1,6 @@
+#ANACONDA_INC=/storage/data/local/include/python2.7
+ANACONDA_INC=/storage/data/local/include/python3.6m
+
 test: main.c libfoo.so _foo.so
 	#gcc --version
 	gcc -O3 -g -L. -o test main.c -lfoo
@@ -5,7 +8,8 @@ _foo.so: interface_wrap.o foo.o
 	gcc -O3 -shared interface_wrap.o foo.o -o _foo.so
 interface_wrap.o: interface_wrap.c
 	#gcc -O3 -c -fPIC interface_wrap.c -I/usr/include/python2.7
-	gcc -O3 -c -fPIC interface_wrap.c -I${ANACONDA_LOCAL}/include/python2.7
+	#gcc -O3 -c -fPIC interface_wrap.c -I${ANACONDA_LOCAL}/include/python2.7
+	gcc -O3 -c -fPIC interface_wrap.c -I$(ANACONDA_INC)
 libfoo.so: foo.o
 	gcc -O3 -g -shared -o libfoo.so foo.o -lm
 foo.o: foo.c foo.h
