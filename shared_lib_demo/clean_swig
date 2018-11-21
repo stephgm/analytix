@@ -1,0 +1,9 @@
+#!/bin/bash
+
+files=("_foo.so" "interface_wrap.o" "interface_wrap.c" "foo.o" "foo.py" "foo.pyc")
+for file in ${files[@]}
+do
+if [ -f $file ];then
+rm -v $file
+fi
+done

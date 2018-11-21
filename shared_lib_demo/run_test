@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#bn="$(dirname $0)"
+#bn="$(cd $bn && pwd)"
+bn="$(cd $(dirname $0) && pwd)"
+
+export LD_LIBRARY_PATH="$bn"
+
+$bn/test
