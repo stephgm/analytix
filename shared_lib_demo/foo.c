@@ -61,7 +61,8 @@ void propVector(double px,
 	root->vz = vz;
 	ptr = root;
 	// Add a new vectors
-	for (int i=0;i<15;i++) {
+	int i;
+	for (i=0;i<15;i++) {
 	//printf("Loop %d\n",i);
 	ptr->next = malloc(sizeof(struct pVect));
 	if ( ptr == NULL )
@@ -192,7 +193,8 @@ void editPoly(double *po, double (*p)[18])
 };
 void print1dArray(int nr, double *p)
 {
-	for (int i=0;i<nr;i++)
+        int i;
+	for (i=0;i<nr;i++)
 	{
 		printf("%3.1f ",p[i]);
 	};
