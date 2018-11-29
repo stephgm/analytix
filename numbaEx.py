@@ -13,7 +13,7 @@ import numba
 @numba.njit("f8[:](f8[:],f8[:])")
 def addThenMultiply(a,b):
     c = numpy.empty(a.size)
-    for i in xrange(a.size):
+    for i in range(a.size):
         c[i] = a[i] + b[i]
         c[i] *= 2
     return c
@@ -31,13 +31,13 @@ z = numpy.empty(n)
 #print(x)
 #print(y)
 tic = time.time()
-for i in xrange(N):
+for i in range(N):
     z = addThenMultiply(x,y)
-print('numba : '+str(time.time()-tic))
+print(('numba : '+str(time.time()-tic)))
 tic = time.time()
-for i in xrange(N):
+for i in range(N):
     z = addThenMultiplyNP(x,y)
-print('numpy : '+str(time.time()-tic))
+print(('numpy : '+str(time.time()-tic)))
 sys.exit(0)
 
 

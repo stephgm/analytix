@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jun  4 14:37:51 2018
@@ -7,6 +7,7 @@ Created on Mon Jun  4 14:37:51 2018
 """
 
 from mpl_toolkits.basemap import Basemap
+import cartopy
 #import gi
 import pandas
 import shapely
