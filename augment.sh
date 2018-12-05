@@ -34,6 +34,7 @@ ccmd="$PREFIX/conda install -y"
 $PREFIX/conda update --all -y
 # without R, conda install gxx_linux-64 (for gcc)
 $ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection
+#$PREFIX/conda install -c conda-forge vitables
 #$PREFIX/conda install -c conda-forge plotnine -y
 # does not work yet
 #$PREFIX/conda install -c conda-forge vitables
