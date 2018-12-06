@@ -7,9 +7,15 @@ Created on Mon Jun  4 14:37:51 2018
 """
 
 from mpl_toolkits.basemap import Basemap
+import cartopy
 #import gi
 import pandas
 import shapely
 # need this for reduced
 import pptx
-import plotnine
+import numpy
+import scipy
+print(numpy.__version__)
+print(scipy.__version__)
+print(pandas.__version__)
+#import plotnine

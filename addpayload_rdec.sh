@@ -1,8 +1,9 @@
 #!/bin/bash -e
 
-version="5.2.0-rb4"
+version="5b1"
 stack="anaconda2-5.1.0"
 stack="anaconda2-5.2.0"
+stack="anaconda2-5"
 #stack="anaconda2-5.2.0-r"
 echo -n "tar..."
 ofile=$(pwd)"/amrdec_stack.tar"
