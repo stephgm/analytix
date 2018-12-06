@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#/usr/bin/swig -python interface.i
+#/home/hollidayh/anaconda3/bin/swig -python interface.i
+swig -python interface.i
+#gcc -c -fPIC foo.c interface_wrap.c -I/usr/include/python2.7
+#gcc -shared foo.o interface_wrap.o -o _foo.so
+#ld -shared foo.o interface_wrap.o -o _foo.so

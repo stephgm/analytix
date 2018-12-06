@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # embedding_in_qt5.py --- Simple Qt5 application embedding matplotlib canvases
 #
 # Copyright (C) 2005 Florent Rougon

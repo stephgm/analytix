@@ -32,7 +32,13 @@ $pcmd --upgrade pip
 ccmd="$PREFIX/conda install -y"
 #pcmd="$PREFIX/pip search --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
 # pyopengl and numba in conflict?
+<<<<<<< HEAD
+=======
+$PREFIX/conda update --all -y
+# without R, conda install gxx_linux-64 (for gcc)
+>>>>>>> 0fd9d52b8849d366b69ce098b46f9ae3a6697691
 $ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection
+#$PREFIX/conda install -c conda-forge vitables
 #$PREFIX/conda install -c conda-forge plotnine -y
 # does not work yet
 #$PREFIX/conda install -c conda-forge vitables
