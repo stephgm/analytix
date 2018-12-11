@@ -40,6 +40,7 @@ $ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit py
 $pcmd msgpack argparse urwid
 #$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
 $pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph PyGObject
+$pcmd pandastable
 # python 3, pyrasite-gui and pygraphviz do not work, a dependency meliae does not appear to be python 3 compliant
 # upgrading
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"
