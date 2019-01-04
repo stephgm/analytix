@@ -32,7 +32,7 @@ $pcmd --upgrade pip
 ccmd="$PREFIX/conda install -y"
 #pcmd="$PREFIX/pip search --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
 # pyopengl and numba in conflict?
-$ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection
+$ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection autopep8
 #$PREFIX/conda install -c conda-forge vitables
 #$PREFIX/conda install -c conda-forge plotnine -y
 # does not work yet
