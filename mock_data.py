@@ -17,13 +17,13 @@ sensorarr = numpy.array(['']*nr,dtype='S30')
 idx = protarr == 'F-SERIES'
 sensorarr[idx]  = 'THAAD'
 sensorarr[~idx] = 'TPY-2'
-dt = numpy.dtype([('senosrName','S30'),
+dt = numpy.dtype([('sensorName','S30'),
                   ('protocol','S30'),
                   ('timeRvTrack','f8'),
                   ('timeTankTrack','f8'),
                   ('inSearchPlan','u2')])
 hh.create_dataset(name = 'ota.acquisitionSummary',
-                  data = 
+                  data =
                   numpy.array(
                   zip(sensorarr,
                       protarr,
@@ -31,7 +31,7 @@ hh.create_dataset(name = 'ota.acquisitionSummary',
                       numpy.random.rand(nr) * 1000.,
                       numpy.round(numpy.random.rand(nr)).astype('u2')),
                  dtype=dt))
-dt = numpy.dtype([('senosrName','S30'),
+dt = numpy.dtype([('sensorName','S30'),
                   ('decision','S30'),
                   ('confidence','f8'),
                   ('timeRvCall','f8'),

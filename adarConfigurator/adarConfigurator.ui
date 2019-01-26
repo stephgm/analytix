@@ -46,6 +46,26 @@
      </rect>
     </property>
    </widget>
+   <widget class="QListWidget" name="elementListBox">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>70</y>
+      <width>231</width>
+      <height>471</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="versionComboBox">
+    <property name="geometry">
+     <rect>
+      <x>520</x>
+      <y>80</y>
+      <width>231</width>
+      <height>41</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
