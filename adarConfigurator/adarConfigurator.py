@@ -13,7 +13,7 @@ from PyQt5.Qt import *
 from PyQt5 import uic
 import h5py
 LIBPATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-print("LIBPATH : "+LIBPATH)
+#print("LIBPATH : "+LIBPATH)
 sys.path.extend([_ for _ in glob.glob(os.path.join(LIBPATH,'*'))
                  if os.path.isdir(_)])
 import utils
@@ -27,7 +27,7 @@ import utils
 class AdarConfigurator(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
-        uic.loadUi('adarConfigurator.ui', self)
+        uic.loadUi(os.path.join(os.path.dirname(os.path.realpath(__file__)),'adarConfigurator.ui'), self)
         self.setWindowTitle("AEGIS ADAR Version Configurator")
         self.filebasename = 'aegisVersionConfig.ini'
         self.data = {}
