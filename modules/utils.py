@@ -5,9 +5,13 @@ Created on Wed Aug  1 05:04:40 2018
 
 @author: hollidayh
 """
+import sys
 import os
 import time
-from io import StringIO
+if sys.version_info.major == 2:
+    from cStringIO import StringIO
+else:
+    from io import StringIO
 import numpy
 import csv
 def thisAnalysis(epath,**kwargs):
@@ -15,8 +19,6 @@ def thisAnalysis(epath,**kwargs):
     print(epath)
     newvar = kwargs.pop('force',True)
     print(newvar)
-    if newvar:
-        a
     time.sleep(1)
     print('waking')
 
@@ -45,7 +47,6 @@ def csvReaderLargeAdar(filename,headerList=[]):
     data = {}
     with open(filename, "r") as csvfile:
         datareader = csv.reader(csvfile)
-        count = 0
         # skip the first empty line
         next(datareader)
         # and the header line
@@ -103,9 +104,9 @@ def read_ini(infile):
 
 def write_ini(x,ofile):
     out = StringIO()
-    for topic in x:
+    for topic in sorted(x):
         out.write('['+str(topic)+']\n')
-        for fld in x[topic]:
+        for fld in sorted(x[topic]):
             out.write(str(fld)+'='+','.join(map(str,x[topic][fld]))+'\n')
     out.flush()
     with open(ofile,'w') as fid:
