@@ -150,9 +150,9 @@ class Plotter(object):
                     print('Invalid HDF5 file for plotting.')
                     return
                 else:
-                    exec "self.fig="+fid.attrs['fig']
-                    r = fid['ax'].keys()[0]
-                    c = fid['ax'][r].keys()[0]
+                    exec("self.fig="+fid.attrs['fig'])
+                    r = list(fid['ax'].keys())[0]
+                    c = list(fid['ax'][r].keys())[0]
                     self.deeper = isinstance(fid['ax'][r][c],h5py.Group)
                     self.ax = []
                     if self.deeper:
@@ -160,13 +160,13 @@ class Plotter(object):
                             self.ax.append([])
                             for col in fid['ax'][row]:
                                 self.ax[-1].append({})
-                                exec "self.ax[-1][-1]="+fid['ax'][row][col].attrs['setup']
+                                exec("self.ax[-1][-1]="+fid['ax'][row][col].attrs['setup'])
                                 self.ax[-1][-1]['x'] = fid['ax'][row][col]['xdata'][...]
                                 self.ax[-1][-1]['y'] = fid['ax'][row][col]['ydata'][...]
                     else:
                         for row in fid['ax']:
                             self.ax.append({})
-                            exec "self.ax[-1]="+fid['ax'][row].attrs['setup']
+                            exec("self.ax[-1]="+fid['ax'][row].attrs['setup'])
                             self.ax[-1]['x'] = fid['ax'][row]['xdata'][...]
                             self.ax[-1]['y'] = fid['ax'][row]['ydata'][...]
         else:
