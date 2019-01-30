@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<title>OTA Scorecard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" 
+href="w3.css">
+<head>
+<style>
+.button{
+  background-color:#FFFFFF;/*White*/
+  border:none
+  color:black;
+  padding:15px 32px;
+  test-align:center;
+  text-decoration:none;
+  display:inline-block;
+  font-size:16px;
+  margin:4px 2px;
+  cursor:pointer;
+}
+
+.button2{background-color:#008000;}/*Green*/
+.button3{background-color:#ff0000;}/*Red*/
+.button4{background-color:#e7e7e7;color:black;}/*Gray*/
+.button5{background-color:#555555;}/*Black*/
+.button6{background-color:#ffff00;}/*Yellow*/
+</style>
+
+<style>
+a{
+  color:Blue;
+}
+/*mouse over link*/
+a:hover{
+color:hotpink;
+}
+
+c{
+  color:DodgerBlue;
+}
+
+</style>
+
+</head>
+<body>
+<img src="amrdeclogo.png" style="float: right;" />
+<img src="otalogo.png" style="float: left;" />
+<div class="w3-container w3-blue">
+  <h1>OTA HTML Scorecard Browser</h1>
+</div>
+
+
+<p><b>Select blue text to explore data:<b></p>
+<div class="w3-container w3-blue-grey">
+  <h2>Test Case Summary</h2>
+</div>
+<b><a href="default.asp" target="_blank">Detect Heatmap</a></b>
+<b><a href="default.asp" target="_blank">Track Heatmap</a></b>
+<b><a href="default.asp" target="_blank">Discrimination Heatmap</a></b>
+<b><a href="default.asp" target="_blank">Engagement Heatmap</a></b>
+<b><a href="default.asp" target="_blank">Theater Summary</a></b>
+<b><a href="default.asp" target="_blank">Strategic Summary</a></b>
+
+ <div class="w3-panel w3-topbar w3-border-blue">
+
+<div class="w3-container w3-light-blue">
+<h2>Choose Test Case for Launch Event Details</h2>
+</div>
+
+<div class="w3-bar w3-black">
+  <button class="w3-bar-item w3-button" 
+onclick="openCity('TestCaseAA')">TestCaseAA</button>
+  <button class="w3-bar-item w3-button" 
+onclick="openCity('TestCaseBB')">TestCaseBB</button>
+  <button class="w3-bar-item w3-button" 
+onclick="openCity('TestCaseCC')">TestCaseCC</button>
+</div>
+
+
+<div id="TestCaseAA" class="w3-container city">
+  <h2>TestCaseAA</h2>
+
+<b>LS1<b>
+
+<button class="button button2">Detect</button>
+<button class="button button3">Track</button>
+<button class="button button4">Discriminate</button>
+<button class="button button5">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+
+<p>
+<b>LS2<b>
+
+<button class="button button5">Detect</button>
+<button class="button button4">Track</button>
+<button class="button button3">Discriminate</button>
+<button class="button button2">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+
+<p>
+<b>LS3<b>
+
+<button class="button button4">Detect</button>
+<button class="button button2">Track</button>
+<button class="button button3">Discriminate</button>
+<button class="button button2">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+</div>
+
+
+<div id="TestCaseBB" class="w3-container city"
+style="display:none">
+  <h2>TestCaseBB</h2>
+<b>LS1<b>
+
+<button class="button button2">Detect</button>
+<button class="button button3">Track</button>
+<button class="button button4">Discriminate</button>
+<button class="button button5">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+
+<p>
+<b>LS2<b>
+
+<button class="button button5">Detect</button>
+<button class="button button4">Track</button>
+<button class="button button3">Discriminate</button>
+<button class="button button2">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+
+<p>
+<b>LS3<b>
+
+<button class="button button4">Detect</button>
+<button class="button button2">Track</button>
+<button class="button button3">Discriminate</button>
+<button class="button button2">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+
+<p>
+<b>LS4<b>
+
+<button class="button button3">Detect</button>
+<button class="button button5">Track</button>
+<button class="button button4">Discriminate</button>
+<button class="button button2">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+</div>
+
+<div id="TestCaseCC" class="w3-container city"
+style="display:none">
+  <h2>TestCaseCC</h2>
+<b>LS1<b>
+
+<button class="button button2">Detect</button>
+<button class="button button3">Track</button>
+<button class="button button4">Discriminate</button>
+<button class="button button5">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+
+<p>
+<b>LS2<b>
+
+<button class="button button5">Detect</button>
+<button class="button button4">Track</button>
+<button class="button button3">Discriminate</button>
+<button class="button button2">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+
+<p>
+<b>LS3<b>
+
+<button class="button button4">Detect</button>
+<button class="button button2">Track</button>
+<button class="button button3">Discriminate</button>
+<button class="button button2">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+
+
+<p>
+<b>LS4<b>
+
+<button class="button button3">Detect</button>
+<button class="button button2">Track</button>
+<button class="button button5">Discriminate</button>
+<button class="button button4">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+
+
+<p>
+<b>LS5<b>
+
+<button class="button button5">Detect</button>
+<button class="button button3">Track</button>
+<button class="button button2">Discriminate</button>
+<button class="button button4">Engage</button>
+
+<b><a href="default.asp" target="_blank">Timeline</a></b>
+<b><a href="default.asp" target="_blank">Show in SIMDIS</a></b>
+
+
+</div>
+
+
+<script>
+function openCity(cityName) {
+    var i;
+    var x = document.getElementsByClassName("city");
+    for (i = 0; i < x.length; i++) {
+       x[i].style.display = "none";  
+    }
+    document.getElementById(cityName).style.display = 
+"block";  
+}
+</script>
+
+</body>
+</html>
