@@ -7,8 +7,9 @@ Created on Mon Jan 28 20:03:00 2019
 """
 import os
 import cPickle
-import matplotlib.pyplot as plt
 from copy import deepcopy
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
 STYLE_SHEET = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'gobat','ota_presentation.mplstyle')
 ESI_STYLE_SHEET = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'gobat','esi_presentation.mplstyle')
@@ -69,17 +70,19 @@ class Plotter(object):
         self.fig['facecolor'] = kwargs.pop('facecolor',plt.rcParams['figure.facecolor'])
         self.fig['defaultXLabel'] = kwargs.pop('xlabel','Time (s)')
         self.fig['defaultYLabel'] = kwargs.pop('ylabel','')
-        self.fig['nrows'] = kwargs.pop('nrows',1)
-        self.fig['ncols'] = kwargs.pop('ncols',1)
-        for row in range(self.fig['nrows']):
-            for col in range(self.fig['ncols']):
-                self.initAxes((row,col))
+#        self.fig['nrows'] = kwargs.pop('nrows',1)
+#        self.fig['ncols'] = kwargs.pop('ncols',1)
+#        for row in range(self.fig['nrows']):
+#            for col in range(self.fig['ncols']):
+#                self.initAxes((row,col))
                 
-    def initAxes(self,axid):
+    def initAxes(self,axid,rowspan,colspan):
         self.sub[axid] = {'attr':{'xLabel':self.fig['defaultXLabel'],
                                   'yLabel':self.fig['defaultYLabel']},
                           'commands':[],
-                          'lines':[]}
+                          'lines':[],
+                          'rowspan':rowspan,
+                          'colspan':colspan}
     
     def buildExecString(self,command):
         execString = command['cmd']+"("
@@ -105,34 +108,34 @@ class Plotter(object):
         SHOW = kwargs.pop('SHOW',False)
         GENPLOTTER = kwargs.pop('GENPLOTTER',False)
         plt.style.use(self.fig['stylesheet'])
-        fig, ax = plt.subplots(self.fig['nrows'],self.fig['ncols'],
-                               facecolor=self.fig['facecolor'],
+        fig = plt.figure(facecolor=self.fig['facecolor'],
                                figsize=self.fig['figsize'])
-        if self.fig['nrows'] > 1 and self.fig['ncols'] > 1:
-            reftype = 2
-        elif max([self.fig['nrows'],self.fig['ncols']]) == 1:
-            reftype = 0
-        else:
-            reftype == 1
+        numrows = 1
+        numcols = 1
+        for rowcol in self.sub:
+            if len(rowcol) == 2:
+                if rowcol[0]+self.sub[rowcol]['rowspan'] > numrows:
+                    numrows = rowcol[0]+self.sub[rowcol]['rowspan']
+                if rowcol[1]+self.sub[rowcol]['rowspan'] > numcols:
+                    numcols = rowcol[1]+self.sub[rowcol]['rowspan']
+        gs = gridspec.GridSpec(numrows,numcols,figure=fig)
         setformat = False
-        for row in range(self.fig['nrows']):
-            for col in range(self.fig['ncols']):
-                if reftype == 2:
-                    thisax = ax[row][col]
-                elif reftype == 1:
-                    thisax = ax[row+col]
-                else:
-                    thisax = ax
-                for line in self.sub[(row,col)]['lines']:
+        rowcols = self.sub.keys()
+        rowcols.sort()
+        for rowcol in rowcols:
+            if len(rowcol) == 2:
+                thisax = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'], 
+                                            rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']])
+                for line in self.sub[rowcol]['lines']:
                     self.plotCall(thisax,line)
                     if line['plottype'] == 'plot':
                         setformat = True
-                if self.sub[(row,col)]['commands']:
-                    for command in self.sub[(row,col)]['commands']:
+                if self.sub[rowcol]['commands']:
+                    for command in self.sub[rowcol]['commands']:
                         execString = "thisax."+self.buildExecString(command)
                         exec(execString,{},{"thisax":thisax})
                 for t in self.sub:
-                    if len(t) == 3 and t[:2] == (row,col):
+                    if len(t) == 3 and t[:2] == rowcol:
                         for command in self.sub[t]['commands']:
                             if command['cmd'].startswith('twin'):
                                 execString = "thisax."+self.buildExecString(command)
@@ -156,19 +159,22 @@ class Plotter(object):
                 exec(execString,{},{"fig":fig})
         fig.suptitle(self.fig['title'])
         fig.text(.03,.97,self.fig['classification'],ha='left',color='r')
-        fig.text(.97,.03,self.fig['classification'],ha='left',color='r')
+        fig.text(.97,.03,self.fig['classification'],ha='right',color='r')
         if GENPLOTTER:
             plt.show()
         else:
             if SAVEPNG:
                 fig.savefig(os.path.splitext(fname)[0]+'.png',facecolor=self.fig['facecolor'],format='png')
             if SAVEPKL:
-                cPickle.dump({'fig':self.fig,'sub':self.sub},file(os.path.splitext(fname)[0]+'pklplt','wb'),
-                             cPickle.HIGHEST_PROTOCOL)
+                self.savePkl(fname)
             if SHOW:
                 plt.show()
             plt.close(fig)
 
+    def savePkl(self,fname):
+        cPickle.dump({'fig':self.fig,'sub':self.sub},file(os.path.splitext(fname)[0]+'pklplt','wb'),
+                     cPickle.HIGHEST_PROTOCOL)
+        
     def plotCall(self,ax,line):
         if line['plottype'] == 'plot':
             ax.plot(line['x'],line['y'],line['fmt'],
@@ -182,6 +188,13 @@ class Plotter(object):
             ax.pie(line['x'],
                         **{k:line[k] for k in line
                            if k not in exclude_list})
+
+    def add_subplot(self,axid=(0,0),rowspan=1,colspan=1):
+        if axid not in self.sub:
+            self.initAxes(axid,rowspan,colspan)
+        else:
+            print('Axes location already initiated')
+            return
             
     def plot(self,x,y,fmt='',axid=(0,0),**kwargs):
         # Attempt to set the reference to the correct axis,
@@ -245,7 +258,7 @@ class Plotter(object):
     def retrievePlot(self,fname):
         if os.path.isfile(fname):
             tempDict = cPickle.load(file(fname,'rb'))
-            if 'fig' in tempDict and sub in 'tempDict':
+            if 'fig' in tempDict and 'sub' in tempDict:
                 self.fig = deepcopy(tempDict['fig'])
                 self.sub = deepcopy(tempDict['sub'])
             else:
@@ -318,7 +331,8 @@ if __name__ == '__main__':
         # Marker size in units of points^2
         volume = (15 * price_data.volume[:-2] / price_data.volume[0])**2
         close = 0.003 * price_data.close[:-2] / 0.003 * price_data.open[:-2]
-        pltr = Plotter()
+        pltr = Plotter(ncols=2)
+        pltr.add_subplot((0,0))
     #    fig, ax = plt.subplots()
         pltr.scatter(delta1[:-1], delta1[1:], c=close, s=volume, alpha=0.5)
     #    ax.scatter(delta1[:-1], delta1[1:], c=close, s=volume, alpha=0.5)
@@ -333,8 +347,7 @@ if __name__ == '__main__':
     #    fig.tight_layout()
         pltr.parseCommand('fig','tight_layout',[])
     #    plt.show()        
-        pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
-    if True:
+#        pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
         """
         ===============
         Basic pie chart
@@ -363,13 +376,79 @@ if __name__ == '__main__':
         labels = 'Frogs', 'Hogs', 'Dogs', 'Logs'
         sizes = [15, 30, 45, 10]
         explode = (0, 0.1, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
-        pltr = Plotter()
+#        pltr = Plotter()
 #        fig1, ax1 = plt.subplots()
-        pltr.pie(sizes,explode=explode,labels=labels,autopct='%1.1f%%',
+        pltr.add_subplot((0,1))
+        pltr.pie(sizes,(0,1),explode=explode,labels=labels,autopct='%1.1f%%',
                  shadow=True,startangle=90)
 #        ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
 #                shadow=True, startangle=90)
-        pltr.parseCommand((0,0),'axis',[['equal']])
+        pltr.parseCommand((0,1),'axis',[['equal']])
 #        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
+#        plt.show()
+    if True:
+        """
+        ===========
+        Grid Spec Example
+        ===========
+        """
+        import numpy as np
+        pltr = Plotter()
+        pltr.parseCommand('fig','tight_layout',[])
+#        fig = plt.figure(tight_layout=True)
+#        gs = gridspec.GridSpec(2, 2)
+        
+        pltr.add_subplot((0,0),1,2)
+#        ax = fig.add_subplot(gs[0, :])
+        pltr.plot(np.arange(0, 1e6, 1000),np.arange(0, 1e6, 1000),'',(0,0))
+#        ax.plot(np.arange(0, 1e6, 1000))
+        pltr.parseCommand((0,0),'set_ylabel',[['YLabel0']])
+        pltr.parseCommand((0,0),'set_xlabel',[['XLabel0']])
+#        ax.set_ylabel('YLabel0')
+#        ax.set_xlabel('XLabel0')
+        
+        for i in range(2):
+            pltr.add_subplot((1,i))
+#            ax = fig.add_subplot(gs[1, i]
+            pltr.plot(np.arange(1., 0., -0.1) * 2000., np.arange(1., 0., -0.1),'',(1,i))
+            pltr.parseCommand((1,i),'set_ylabel',[['YLabel1 %d' % i]])
+            pltr.parseCommand((1,i),'set_xlabel',[['XLabel1 %d' % i]])
+
+#            ax.plot(np.arange(1., 0., -0.1) * 2000., np.arange(1., 0., -0.1))
+#            ax.set_ylabel('YLabel1 %d' % i)
+#            ax.set_xlabel('XLabel1 %d' % i)
+#            if i == 0:
+#                for tick in ax.get_xticklabels():
+#                    tick.set_rotation(55)
+#        fig.align_labels()  # same as fig.align_xlabels(); fig.align_ylabels()
+        pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
+        
+#        plt.show()
+        
+    if False:
+        
+#        def format_axes(fig):
+#            for i, ax in enumerate(fig.axes):
+#                ax.text(0.5, 0.5, "ax%d" % (i+1), va="center", ha="center")
+#                ax.tick_params(labelbottom=False, labelleft=False)
+        
+#        fig = plt.figure(constrained_layout=True)
+        pltr = Plotter()
+#        gs = GridSpec(3, 3, figure=fig)
+        pltr.add_subplot((0,0),1,3)
+#        ax1 = fig.add_subplot(gs[0, :])
+        # identical to ax1 = plt.subplot(gs.new_subplotspec((0, 0), colspan=3))
+        pltr.add_subplot((1,0),1,2)
+#        ax2 = fig.add_subplot(gs[1, 0:0+2])
+        pltr.add_subplot((1,2),2,1)
+#        ax3 = fig.add_subplot(gs[1:1+2, 2:2+1])
+        pltr.add_subplot((2,0))
+#        ax4 = fig.add_subplot(gs[2:2+1, 0:0+1])
+        pltr.add_subplot((2,1))
+#        ax5 = fig.add_subplot(gs[-1, -2])
+        pltr.parseCommand('fig','suptitle',[['GridSpec']])
+#        fig.suptitle("GridSpec")
+#        format_axes(fig)
         pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
 #        plt.show()
