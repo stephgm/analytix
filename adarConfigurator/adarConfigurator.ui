@@ -27,7 +27,7 @@
      <item>
       <widget class="QPushButton" name="selectExecutionPath">
        <property name="text">
-        <string>Select Exectuion</string>
+        <string>Select Execution</string>
        </property>
       </widget>
      </item>
