@@ -5,26 +5,43 @@ Created on Mon Jan 28 20:03:00 2019
 
 @author: jacob
 """
-import sys
 import os
-import numpy
-import h5py
+import cPickle
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
+STYLE_SHEET = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'gobat','ota_presentation.mplstyle')
+ESI_STYLE_SHEET = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'gobat','esi_presentation.mplstyle')
+plt.style.use(STYLE_SHEET)
+exclude_list = ['x','y','fmt']
+special_cmds = ['twinx','twiny']
 
-ESI_STYLE_SHEET = 'matplotlibrc'
-STYLE_SHEET = 'matplotlibrc'
-exclude_list = ['fmt','x','y']
+def general_format_coord(current,other=None,llabel='',rlabel=''):
+    def format_coord(x,y):
+        display_coord = current.transData.transform((x,y))
+        if not rlabel:
+            rlabel = current.get_ylabel()
+        if other:
+            if not llabel:
+                llabel = other.get_ylabel()
+            inv = other.transData.inverted()
+            ax_coord = inv.transform(display_coord)
+            coords = [tuple(ax_coord)+(llabel,),(x,y,rlabel)]
+            return ('{:<40}          {:<}'.format(*['{}: ({:.3f}, {:.3f})'.format(l,tx,ty) for tx,ty,l in coords]))
+        else:
+            return ('{:<40}'.format('{}: ({:.3f}, {:.3f})'.format(l,tx,ty)))
+    return format_coord
 
 class Plotter(object):
-    def __init__(self, **kwargs):
-        self.fig = {}
-        self.ax = []
+    def __init__(self,**kwargs):
+        self.fig = {'commands':[]}
+        self.sub = {}
         esistyle = kwargs.pop('esistyle',False)
         if esistyle:
             self.fig['stylesheet'] = ESI_STYLE_SHEET
         else:
             self.fig['stylesheet'] = STYLE_SHEET
+        plt.style.use(self.fig['stylesheet'])
         self.fig['title'] = kwargs.pop('title','')
         self.fig['figsize'] = kwargs.pop('figsize',plt.rcParams['figure.figsize'])
         self.fig['classification'] = kwargs.pop('classy','SECRET//NOFORN')
@@ -33,169 +50,177 @@ class Plotter(object):
         self.fig['defaultYLabel'] = kwargs.pop('ylabel','')
         self.fig['nrows'] = kwargs.pop('nrows',1)
         self.fig['ncols'] = kwargs.pop('ncols',1)
-        # if there's mutiple rows and cols, make nest lists of dictionarys
-        # ax[row][col] = {}
-        # else make a single list (even for only one subplot)
-        # ax[row or col] = {}
-        # roughly approximates the way matplotlib works
-        if self.fig['nrows'] > 1 and self.fig['ncols'] > 1:
-            self.deeper = True
-            for row in range(self.fig['nrows']):
-                self.ax.append([])
-                for col in range(self.fig['ncols']):
-                    self.ax[-1].append({'x':[0],'y':[0],'fmt':'.-',
-                                        'xLabel':self.fig['defaultXLabel'],
-                                        'yLabel':self.fig['defaultYLabel']})
-        else:
-            self.deeper = False
-            for row in range(max([self.fig['nrows'],self.fig['ncols']])):
-                self.ax.append({'x':[0],'y':[0],'fmt':'.-',
-                                'xLabel':self.fig['defaultXLabel'],
-                                'yLabel':self.fig['defaultYLabel']})
-           
+        for row in range(self.fig['nrows']):
+            for col in range(self.fig['ncols']):
+                self.initAxes((row,col))
+                
+    def initAxes(self,axid):
+        self.sub[axid] = {'attr':{'xLabel':self.fig['defaultXLabel'],
+                                  'yLabel':self.fig['defaultYLabel']},
+                          'commands':[],
+                          'lines':[]}
+    
+    def buildExecString(self,command):
+        execString = command['cmd']+"("
+        if command['args']:
+            execString += ",".join(map(str,command['args']))
+        if command['kwargs']:
+            if command['args']:
+                execString += ","
+            for key in command['kwargs']:
+                if isinstance(command['kwargs'][key],dict):
+                    execString += key+"=dict("+".".join([k+"="+str(command['kwargs'][key][k])
+                                                             for k in command['kwargs'][key]])
+                else:
+                    execString += key+"="+str(command['kwargs'][key])
+                execString += ","
+            execString = execString[:-1]
+        execString += ")"
+        return execString
+    
     def createPlot(self,fname,**kwargs):
-        SAVE = kwargs.pop('SAVE',True)
+        SAVEPNG = kwargs.pop('SAVEPNG',True)
+        SAVEPKL = kwargs.pop('SAVEPKL',True)        
         SHOW = kwargs.pop('SHOW',False)
+        GENPLOTTER = kwargs.pop('GENPLOTTER',False)
         plt.style.use(self.fig['stylesheet'])
         fig, ax = plt.subplots(self.fig['nrows'],self.fig['ncols'],
                                facecolor=self.fig['facecolor'],
                                figsize=self.fig['figsize'])
-        
-        if self.deeper:
-            axProps = list(ax[0][0].properties().keys())
-            for row in range(self.fig['nrows']):
-                for col in range(self.fig['ncols']):
-                    ax[row][col].plot(self.ax[row][col]['x'],
-                                      self.ax[row][col]['y'],
-                                      self.ax[row][col]['fmt'],
-                                      **{k:self.ax[row][col][k]
-                                          for k in self.ax[row][col]
-                                          if k in axProps}) 
+        if self.fig['nrows'] > 1 and self.fig['ncols'] > 1:
+            reftype = 2
+        elif max([self.fig['nrows'],self.fig['ncols']]) == 1:
+            reftype = 0
         else:
-            if max([self.fig['nrows'],self.fig['ncols']]) == 1:
-                axProps = list(ax.properties().keys())
-                ax.plot(self.ax[0]['x'],
-                          self.ax[0]['y'],
-                          self.ax[0]['fmt'],
-                          **{k:self.ax[0][k]
-                              for k in self.ax[0]
-                              if k in axProps}) 
-            else:
-                axProps = list(ax[0].properties().keys())
-                for row in range(max([self.fig['nrows'],self.fig['ncols']])):
-                    ax[row].plot(self.ax[row]['x'],
-                                      self.ax[row]['y'],
-                                      self.ax[row]['fmt'],
-                                      **{k:self.ax[row][k]
-                                          for k in self.ax[row]
-                                          if k in axProps}) 
+            reftype == 1
+        for row in range(self.fig['nrows']):
+            for col in range(self.fig['ncols']):
+                if reftype == 2:
+                    thisax = ax[row][col]
+                elif reftype == 1:
+                    thisax = ax[row+col]
+                else:
+                    thisax = ax
+                for line in self.sub[(row,col)]['lines']:
+                    thisax.plot(line['x'],line['y'],line['fmt'],
+                                **{k:line[k] for k in line
+                                   if k not in exclude_list})
+                if self.sub[(row,col)]['commands']:
+                    for command in self.sub[(row,col)]['commands']:
+                        execString = "thisax."+self.buildExecString(command)
+                        exec(execString,{},{"thisax":thisax})
+                for t in self.sub:
+                    if len(t) == 3 and t[:2] == (row,col):
+                        for command in self.sub[t]['commands']:
+                            if command['cmd'].startswith('twin'):
+                                execString = "thisax."+self.buildExecString(command)
+                                ax2 = eval(execString,{},{"thisax":thisax})
+                        for line in self.sub[t]['lines']:
+                            ax2.plot(line['x'],line['y'],line['fmt'],
+                                        **{k:line[k] for k in line
+                                           if k not in exclude_list})
+                        if self.sub[t]['commands']:
+                            for command in self.sub[t]['commands']:
+                                if command['cmd'] not in special_cmds:
+                                    execString = "ax2."+self.buildExecString(command)
+                                    exec(execString,{},{"ax2":ax2})
+                        ax2.format_coord = general_format_coord(ax2,thisax)
+                thisax.format_coord = general_format_coord(thisax)
+        if self.fig['commands']:
+            for command in self.fig['commands']:
+                execString = "fig."+self.buildExecString(command)
+                exec(execString,{},{"fig":fig})
         fig.suptitle(self.fig['title'])
-        fig.text(.03, .97, self.fig['classification'], ha='left', color='r')
-        fig.text(.97, .03, self.fig['classification'], ha='right', color='r')
-        if SAVE:
-            fig.savefig(os.path.splitext(fname)[0]+'.png',facecolor=self.fig['facecolor'],format='png')
-            self.savePlot(os.path.splitext(fname)[0]+'.h5')
-        if SHOW:
+        fig.text(.03,.97,self.fig['classification'],ha='left',color='r')
+        fig.text(.97,.03,self.fig['classification'],ha='left',color='r')
+        if GENPLOTTER:
             plt.show()
-        plt.close(fig)
-        
-    def plot(self,x,y,axid=0,fmt='.-',**kwargs):
-        # attempt to set the reference to the correct axis object,
+        else:
+            if SAVEPNG:
+                fig.savefig(os.path.splitext(fname)[0]+'.png',facecolor=self.fig['facecolor'],format='png')
+            if SAVEPKL:
+                cPickle.dump({'fig':self.fig,'sub':self.sub},file(os.path.splitext(fname)[0]+'pklplt','wb'),
+                             cPickle.HIGHEST_PROTOCOL)
+            if SHOW:
+                plt.show()
+            plt.close(fig)
+            
+    def plot(self,x,y,fmt='',axid=(0,0),**kwargs):
+        # Attempt to set the reference to the correct axis,
         # return with message if invalid
         # axid not required, will default to single subplot
-        if (isinstance(axid, tuple) or isinstance(axid, list))\
-                and len(axid) == 2 and self.deeper == True\
-                and axid[0] < len(self.ax) and axid[0] >= 0\
-                and axid[1] < len(self.ax[axid[0]]) and axid[1] >=0:
-            ax = self.ax[axid[0]][axid[1]]
-        elif isinstance(axid, int) and self.deeper == False\
-                and axid < len(self.ax) and axid >= 0:
-            ax = self.ax[axid]
+        if axid in self.sub:
+            self.sub[axid]['lines'].append({})
         else:
             print('Invalid axis reference.')
             return
-        # ax will now point to a dictionary that can received the params
-        ax['x'] = x
-        ax['y'] = y
-        ax['fmt'] = fmt
-        ax.update(kwargs)
+        # last entry in axis lines if a blank dictionary
+        self.sub[axid]['lines'][-1]['x'] = x
+        self.sub[axid]['lines'][-1]['y'] = y
+        self.sub[axid]['lines'][-1]['fmt'] = fmt
+        self.sub[axid]['lines'][-1].update(kwargs)
         
-    def savePlot(self,fname):
-        with h5py.File(fname,'w') as fid:
-            fid.attrs.create('fig',data=str(self.fig))
-            agrp = fid.create_group('ax')
-            if self.deeper:
-                for row in range(self.fig['nrows']):
-                    rgrp = agrp.create_group(str(row))
-                    for col in range(self.fig['ncols']):
-                        cgrp = rgrp.create_group(str(col))
-                        cgrp.create_dataset('xdata',data=self.ax[row][col]['x'])
-                        cgrp.create_dataset('ydata',data=self.ax[row][col]['y'])
-                        cgrp.attrs.create('setup',data=str({k:self.ax[row][col][k]
-                                                            for k in self.ax[row][col]
-                                                            if k not in ['x','y']}))
-            else:
-                for row in range(max([self.fig['nrows'],self.fig['ncols']])):
-                    rgrp = agrp.create_group(str(row))
-                    rgrp.create_dataset('xdata',data=self.ax[row]['x'])
-                    rgrp.create_dataset('ydata',data=self.ax[row]['y'])
-                    rgrp.attrs.create('setup',data=str({k:self.ax[row][k]
-                                                        for k in self.ax[row]
-                                                        if k not in ['x','y']}))
-    
+    def twin(self,axid=(0,0),axis='x',**kwargs):
+        if axid in self.sub:
+            cnt = 0
+            for t in self.sub:
+                if len(t) == 3 and t[:2] == axid:
+                    cnt+=1
+            newref = axid+(cnt,)
+            self.initAxes(newref)
+            self.parseCommand(newref,'twin{}'.format(axis),[kwargs])
+            return newref
+        else:
+            print('Invalid axis reference.')
+            return []
+        
     def retrievePlot(self,fname):
         if os.path.isfile(fname):
-            with h5py.File(fname,'r') as fid:
-                if 'fig' not in fid.attrs or 'ax' not in fid:
-                    print('Invalid HDF5 file for plotting.')
-                    return
-                else:
-                    exec "self.fig="+fid.attrs['fig']
-                    r = fid['ax'].keys()[0]
-                    c = fid['ax'][r].keys()[0]
-                    self.deeper = isinstance(fid['ax'][r][c],h5py.Group)
-                    self.ax = []
-                    if self.deeper:
-                        for row in fid['ax']:
-                            self.ax.append([])
-                            for col in fid['ax'][row]:
-                                self.ax[-1].append({})
-                                exec "self.ax[-1][-1]="+fid['ax'][row][col].attrs['setup']
-                                self.ax[-1][-1]['x'] = fid['ax'][row][col]['xdata'][...]
-                                self.ax[-1][-1]['y'] = fid['ax'][row][col]['ydata'][...]
-                    else:
-                        for row in fid['ax']:
-                            self.ax.append({})
-                            exec "self.ax[-1]="+fid['ax'][row].attrs['setup']
-                            self.ax[-1]['x'] = fid['ax'][row]['xdata'][...]
-                            self.ax[-1]['y'] = fid['ax'][row]['ydata'][...]
+            tempDict = cPickle.load(file(fname,'rb'))
+            if 'fig' in tempDict and sub in 'tempDict':
+                self.fig = deepcopy(tempDict['fig'])
+                self.sub = deepcopy(tempDict['sub'])
+            else:
+                print('Invalid file.')
         else:
             print('Invalid file.')
             
-if __name__ == '__main__':
-    # Single Subplot
-    newPlotter = Plotter()
-    newPlotter.plot(numpy.arange(100.),numpy.arange(100.),axid=1,fmt='--',lw=3,ms=20)
-    newPlotter.createPlot('',SHOW=True,SAVE=False)
-    # Multiple Columns
-    newPlotter = Plotter(nrows=1,ncols=2)
-    newPlotter.plot(numpy.arange(100.),numpy.arange(100.),axid=0,fmt='--',lw=3,ms=20)
-    newPlotter.plot(numpy.arange(200.),numpy.arange(200.),axid=1,fmt='.-',lw=3,ms=20)
-    newPlotter.createPlot('',SHOW=True,SAVE=False)
-    # Multiple Rows, and a title
-    newPlotter = Plotter(nrows=2,ncols=1,title='Call it something')
-    newPlotter.plot(numpy.arange(100.),numpy.arange(100.),axid=0,fmt='--',lw=3,ms=20)
-    newPlotter.plot(numpy.arange(200.),numpy.arange(200.),axid=1,fmt='.-',lw=3,ms=20)
-    newPlotter.createPlot('',SHOW=True,SAVE=False)
-    # Multiple Columns and rows
-    newPlotter = Plotter(nrows=3,ncols=2)
-    for r in range(3):
-        for c in range(2):
-            newPlotter.plot(numpy.arange(100.*(r-c)),numpy.arange(100.*(r-c)),axid=(r,c),lw=r,ms=c)
-    newPlotter.createPlot('testout.png',SHOW=True,SAVE=True)
-    # Reopen and replot
-    newPlotter = Plotter()
-    newPlotter.retrievePlot('testout.h5')
-    newPlotter.createPlot('testout.png',SHOW=True,SAVE=False)
+    def parseCommand(self,obj,cmd,cargs):
+        if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
+            print('Unrecognized reference object.')
+            return
+        if not isinstance(cmd,str) or not isinstance(cargs,list):
+            print(obj,cmd,cargs)
+            print('Invalid input to parseCommand.')
+            return
+        # OK now do stuff
+        if obj == 'fig':
+            thisthing = self.fig
+        else:
+            thisthing = self.sub[obj]
+        thisthing['commands'].append({'cmd':'','args':[],'kwargs':{}})
+        for carg in cargs:
+            if isinstance(carg,list):
+                for car in carg:
+                    if isinstance(car,str):
+                        thisthing['commands'][-1]['args'].append("'''"+car+"'''")
+                    else:
+                        thisthing['commands'][-1]['args'].append(car)
+            elif isinstance(carg,dict):
+                for car in carg:
+                    if isinstance(carg[car],dict):
+                        thisthing['commands'][-1]['kwargs'][car] = {}
+                        for k in carg[car]:
+                            if isinstance(carg[car][k],str):
+                                thisthing['commands'][-1]['kwargs'][car][k] = "'''"+carg[car][k]+"'''"
+                            else:
+                                thisthing['commands'][-1]['kwargs'][car][k] = carg[car][k]
+                    else:
+                        if isinstance(carg[car],str):
+                            thisthing['commands'][-1]['kwargs'][car] = "'''"+carg[car]+"'''"
+                        else:
+                            thisthing['commands'][-1]['kwargs'][car] = carg[car]
 
-    
+if __name__ == '__main__':
+    pass
+        
