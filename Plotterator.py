@@ -193,6 +193,7 @@ class Plotter(object):
             for command in self.fig['commands']:
                 execString = "fig."+self.buildExecString(command)
                 exec(execString,{},{"fig":fig})
+        
         fig.suptitle(self.fig['title'])
         fig.text(.03,.97,self.fig['classification'],ha='left',color='r')
         fig.text(.97,.03,self.fig['classification'],ha='right',color='r')
