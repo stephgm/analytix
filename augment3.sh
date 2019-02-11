@@ -31,7 +31,7 @@ pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org
 $pcmd --upgrade pip
 ccmd="$PREFIX/conda install -y"
 # no R, no cuda stuff cuz it regresses python
-$ccmd install gcc_impl_linux-64 gcc_linux-64 gfortran_impl_linux-64 gfortran_linux-64 binutils_linux-64 binutils_impl_linux-64 gsl gxx_impl_linux-64 gxx_linux-64 make cartopy swig line_profiler vispy boost cmake autopep8 hdf4 glib pyqtgraph pyopengl pyopengl-accelerate gobject-introspection pymssql
+$ccmd gcc_impl_linux-64 gcc_linux-64 gfortran_impl_linux-64 gfortran_linux-64 binutils_linux-64 binutils_impl_linux-64 gsl gxx_impl_linux-64 gxx_linux-64 make cartopy swig line_profiler vispy boost cmake autopep8 hdf4 glib pyqtgraph pyopengl pyopengl-accelerate gobject-introspection pymssql
 $pcmd msgpack argparse urwid
 # PyGObject DNW
 $pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro spyder-memory-profiler veusz python-pptx orderedset objgraph pandastable
