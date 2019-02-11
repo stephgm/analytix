@@ -5,8 +5,10 @@ Created on Mon Jun  4 14:37:51 2018
 
 @author: localadmin
 """
-
-from mpl_toolkits.basemap import Basemap
+try:
+    from mpl_toolkits.basemap import Basemap
+except:
+    print('No Basemap')
 import cartopy
 #import gi
 import pandas
@@ -15,7 +17,7 @@ import shapely
 import pptx
 import numpy
 import scipy
-print(numpy.__version__)
-print(scipy.__version__)
-print(pandas.__version__)
+print('numpy  : '+numpy.__version__)
+print('scipy  : '+scipy.__version__)
+print('pandas : '+pandas.__version__)
 #import plotnine
