@@ -1,9 +1,11 @@
 #!/bin/bash -e
 
 version="5b1"
+version="py3-5b0"
 stack="anaconda2-5.1.0"
 stack="anaconda2-5.2.0"
 stack="anaconda2-5"
+stack="anaconda3-5"
 #stack="anaconda2-5.2.0-r"
 echo -n "tar..."
 ofile=$(pwd)"/amrdec_stack.tar"

@@ -33,8 +33,8 @@ ccmd="$PREFIX/conda install -y"
 # no R, no cuda stuff cuz it regresses python
 $ccmd gcc_impl_linux-64 gcc_linux-64 gfortran_impl_linux-64 gfortran_linux-64 binutils_linux-64 binutils_impl_linux-64 gsl gxx_impl_linux-64 gxx_linux-64 make cartopy swig line_profiler vispy boost cmake autopep8 hdf4 glib pyqtgraph pyopengl pyopengl-accelerate gobject-introspection pymssql
 $pcmd msgpack argparse urwid
-# PyGObject DNW
-$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro spyder-memory-profiler veusz python-pptx orderedset objgraph pandastable
+# PyGObject, veusz DNW, spyder-memory-profiler?
+$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx orderedset objgraph pandastable
 # upgrading
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"
 $PREFIX/conda update --all -y
@@ -47,11 +47,13 @@ fi
 #cd -
 ##########################################
 #exit
+if [ 1 == 1 ];then
 tar -zxf ~/Downloads/ViTables-3.0.0.tar.gz
 cd ViTables-3.0.0
 $PREFIX/python setup.py install
 cd ..
 rm -rf ViTables-3.0.0
+fi
 
 # cartopy handled by conda
 #unzip ~/Downloads/cartopy-master.zip
@@ -60,22 +62,23 @@ rm -rf ViTables-3.0.0
 #cd ..
 #rm -rf cartopy-master
 
-tar -zxf ~/Downloads/basemap-1.0.7.tar.gz
-cd basemap-1.0.7
-$PREFIX/python setup.py install
-cd ..
-rm -rf basemap-1.0.7
+# DNW
+#tar -zxf ~/Downloads/basemap-1.0.7.tar.gz
+#cd basemap-1.0.7
+#$PREFIX/python setup.py install
+#cd ..
+#rm -rf basemap-1.0.7
 
 # version=$($PREFIX/python -V | awk '{print $1}'
 
-mkdir -p $PREFIX/../lib/python2.7/site-packages/cartopy/data/shapefiles
-cd $PREFIX/../lib/python2.7/site-packages/cartopy/data/shapefiles
+mkdir -p $PREFIX/../lib/python3.7/site-packages/cartopy/data/shapefiles
+cd $PREFIX/../lib/python3.7/site-packages/cartopy/data/shapefiles
 #tar -zxvf ~/natural_earth.tgz
 cp -rv ~/natural_earth . 
 cd -
 
-mkdir -p $PREFIX/../lib/python2.7/site-packages/cartopy/data/raster/natural_earth
-cp NE1_HR_LC_SR_W_DR.png $PREFIX/../lib/python2.7/site-packages/cartopy/data/raster/natural_earth/.
+mkdir -p $PREFIX/../lib/python3.7/site-packages/cartopy/data/raster/natural_earth
+cp ~/Downloads/NE1_HR_LC_SR_W_DR.png $PREFIX/../lib/python3.7/site-packages/cartopy/data/raster/natural_earth/.
 
 cd $PREFIX/..
 

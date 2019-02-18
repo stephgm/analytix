@@ -55,7 +55,33 @@ def on_release(event):
     event.canvas.draw()
     
 class Plotter(object):
+    """
+    Plotter class allows for storing data, specifications and commands
+    for matplotlib to generate plots.  Current plot types supported:
+        line plot
+        scatter plot
+        pie chart
+    The figure is built using a GridSpec.  add_subplot calls initiate each
+    subplot using the starting row, col as a reference and allowing for a
+    rowspan, colspan to span multiple grid squares.  Plot, scatter, pie 
+    calls add data to the plot
+    
+    Data is stored as follows:
+        fig - a dictionary of figure params, as well as any commands to be
+              executed against the figure at generation.
+        sub - a dictionary containing subplots information indexed by a
+              2-tuple of row, col; if an axis is twinned, it will be a 3-tuple
+              starting with reference row,col then an index
+        sub[key]['attr'] contains attributes to be set for the subplot
+        sub[key]['lines'] contains each set of data to be added to the subplot
+                 lines have a type to indicate which call to make to 
+                 matplotlib subplot
+    """
     def __init__(self,**kwargs):
+        """
+        Initiates figure with some commonly used defaults. Use kwargs
+        to override.
+        """
         self.fig = {'commands':[]}
         self.sub = {}
         esistyle = kwargs.pop('esistyle',False)
@@ -70,13 +96,13 @@ class Plotter(object):
         self.fig['facecolor'] = kwargs.pop('facecolor',plt.rcParams['figure.facecolor'])
         self.fig['defaultXLabel'] = kwargs.pop('xlabel','Time (s)')
         self.fig['defaultYLabel'] = kwargs.pop('ylabel','')
-#        self.fig['nrows'] = kwargs.pop('nrows',1)
-#        self.fig['ncols'] = kwargs.pop('ncols',1)
-#        for row in range(self.fig['nrows']):
-#            for col in range(self.fig['ncols']):
-#                self.initAxes((row,col))
+        self.fig['picker'] = kwargs.pop('picker',False)
                 
     def initAxes(self,axid,rowspan,colspan):
+        """
+        Initiates each axes in the sub dictionary, requires reference starting
+        ax id, and a row and column span
+        """
         self.sub[axid] = {'attr':{'xLabel':self.fig['defaultXLabel'],
                                   'yLabel':self.fig['defaultYLabel']},
                           'commands':[],
@@ -85,6 +111,16 @@ class Plotter(object):
                           'colspan':colspan}
     
     def buildExecString(self,command):
+        """
+        Given a command dictionary as follows:
+            'cmd' - the matplotlib function as a string
+            'args' - list of arguments to be fed into the function
+            'kwargs' - dictionary of kwargs to be fed into function
+                       can be two levels deep, which should support
+                       most matplotlib function calls
+        Returns the function built to be executing using exec() or eval(),
+        calling object is added separately to provide flexibility
+        """
         execString = command['cmd']+"("
         if command['args']:
             execString += ",".join(map(str,command['args']))
@@ -157,9 +193,13 @@ class Plotter(object):
             for command in self.fig['commands']:
                 execString = "fig."+self.buildExecString(command)
                 exec(execString,{},{"fig":fig})
+        
         fig.suptitle(self.fig['title'])
         fig.text(.03,.97,self.fig['classification'],ha='left',color='r')
         fig.text(.97,.03,self.fig['classification'],ha='right',color='r')
+        if self.fig['picker']:
+            fig.canvas.mpl_connect('pick_event',on_pick)
+            fig.canvas.mpl_connect('button_release_event',on_release)
         if GENPLOTTER:
             plt.show()
         else:
