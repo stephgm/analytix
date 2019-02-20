@@ -2,10 +2,17 @@
 
 version="5b1"
 version="py3-5b0"
-stack="anaconda2-5.1.0"
-stack="anaconda2-5.2.0"
-stack="anaconda2-5"
-stack="anaconda3-5"
+
+stack=$(basename $(readlink /storage/data/local))
+while (( $# ));do
+if [ "$1" == "-v" ];then
+    shift
+    version="$1"
+fi
+shift
+done
+echo $version
+
 #stack="anaconda2-5.2.0-r"
 echo -n "tar..."
 ofile=$(pwd)"/amrdec_stack.tar"
@@ -16,6 +23,7 @@ echo -n "chmod..."
 chmod -R 755 ${stack}
 echo -n "tar..."
 tar -cf ${ofile} ${stack}
+#touch ${ofile}
 echo -n "payloding..."
 insfile="installAmrdec-${version}.sh"
 cd -

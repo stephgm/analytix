@@ -1,5 +1,9 @@
 
+if [ "$1" == "" ];then
 install_path="/storage/data"
+else
+install_path="$1"
+fi
 
 function untar_sw()
 {
