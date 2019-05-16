@@ -48,6 +48,7 @@ $pcmd pandastable
 #$pcmd pyopencl pycuda QScintilla
 # done the below at work
 $PREFIX/conda update --all -y
+$PREFIX/conda clean -a
 fi
 # scrubbed 7zip
 #tar -zxvf uza.tgz
