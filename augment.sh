@@ -32,15 +32,17 @@ $pcmd --upgrade pip
 ccmd="$PREFIX/conda install -y"
 #pcmd="$PREFIX/pip search --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
 # pyopengl and numba in conflict?
-$ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection autopep8
+$ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit pyculib cmake line_profiler glib cython cairo pyopengl pyopengl-accelerate gobject-introspection autopep8 geopandas selenium
 #$PREFIX/conda install -c conda-forge vitables
 #$PREFIX/conda install -c conda-forge plotnine -y
 # does not work yet
 #$PREFIX/conda install -c conda-forge vitables
 $pcmd msgpack argparse urwid
 #$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
-$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph PyGObject
+$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph PyGObject cx-Freeze
 $pcmd pandastable
+$pcmd altair altair-widgets seaborn-altair altair-recipes yerkes gencharts
+$pcmd actdiag blockdiag nwdiag seqdiag arrow colorcet dill pathlib
 # python 3, pyrasite-gui and pygraphviz do not work, a dependency meliae does not appear to be python 3 compliant
 # upgrading
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"
@@ -48,7 +50,7 @@ $pcmd pandastable
 #$pcmd pyopencl pycuda QScintilla
 # done the below at work
 $PREFIX/conda update --all -y
-$PREFIX/conda clean -a
+$PREFIX/conda clean -a -y
 fi
 # scrubbed 7zip
 #tar -zxvf uza.tgz

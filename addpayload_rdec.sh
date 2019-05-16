@@ -5,6 +5,13 @@ version="py3-5b0"
 
 stack=$(basename $(readlink /storage/data/local))
 while (( $# ));do
+if [ "$1" == "-h" ];then
+echo "usage $0 -v <version>"
+echo " some past version:"
+echo "    5b1"
+echo "    py3-5b0"
+exit
+fi
 if [ "$1" == "-v" ];then
     shift
     version="$1"
