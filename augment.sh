@@ -43,6 +43,8 @@ $pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui 
 $pcmd pandastable
 $pcmd altair altair-widgets seaborn-altair altair-recipes yerkes gencharts
 $pcmd actdiag blockdiag nwdiag seqdiag arrow colorcet dill pathlib
+$pcmd -U ray
+$pcmd modin vega_datasets pdvega
 # python 3, pyrasite-gui and pygraphviz do not work, a dependency meliae does not appear to be python 3 compliant
 # upgrading
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"
