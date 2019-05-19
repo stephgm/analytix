@@ -9,6 +9,34 @@ from shapely.geometry import Point, LineString, Polygon
 from shapely.ops import split
 from matplotlib import pyplot as plt
 
+def latlonCircleRadiusKM(lat, lon, radiusKM):
+    '''
+    lat, lon are the center of the circle, radiusKM is the radius in Km of the circle
+    This will return a list of lat lon points that define a circle, for speed sake the number of points is 180 1 every 2 degrees
+    This also takes into account projection effects with the Earth, so the closer to the north pole, the more oval
+    shape the circle will become.
+    '''
+    #earth radius in km
+    R = 6378.1
+    distanceKM = radiusKM/R
+    latArray = []
+    lonArray = []
+    lat = np.deg2rad(lat)
+    lon = np.deg2rad(lon)
+    brng = np.linspace(0,2*np.pi,180)
+    lat2 = np.arcsin(np.sin(lat) * np.cos(distanceKM) 
+            + np.cos(lat) * np.sin(distanceKM) * np.cos(brng))
+
+    lon2 = lon + np.arctan2(np.sin(brng)*np.sin(distanceKM)
+            * np.cos(lat),np.cos(distanceKM)-np.sin(lat)*np.sin(lat))
+
+    lon2 = np.rad2deg(lon2)
+    lat2 = np.rad2deg(lat2)
+    latArray = list(lat2)
+    lonArray = list(lon2)
+
+    return latArray,lonArray
+
 
 def handle_InternationalDateline(iLat,iLon):
     '''
@@ -64,13 +92,16 @@ if __name__ == '__main__':
     #Circle that doesn't cross the ID
 #    lons,lats = Point(130,0).buffer(30).exterior.xy
     #Circle that crosses the ID
-    lons,lats = Point(130,0).buffer(55).exterior.xy
+#    lons,lats = Point(130,0).buffer(55).exterior.xy
     #Rectangle that spans the ID
 #    lats = [-40,40,-40,40]
 #    lons = [160,-150,-160,150]
+    #Circle made with stuff
+    lats,lons = createCircleAroundWithRadius(80,-180,200)
     plt.scatter(lons,lats)
     plt.show()
     y,x = handle_InternationalDateline(lats,lons)
     for x,y in zip(x,y):
         plt.plot(x,y)
+    plt.gca().set_aspect('equal')
     plt.show()
