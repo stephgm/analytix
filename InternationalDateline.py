@@ -14,15 +14,15 @@ from pyproj import Geod
 geod = Geod(ellps='WGS84')
 
 
-def orderPolygons(xs,ys):
+
+
+def orderPolygon(xs,ys):
     xs = np.array(xs)
     ys = np.array(ys)
-    
-    center = np.average(xs),np.average(ys)
-    points = zip(xs,ys)
-    points.sort(key=lambda p: np.arctan2(p[1]-center[1],p[0]-center[0]))
-    array = np.array(points)
-    return array[:,0],array[:,1]
+    angles = np.arctan2(ys-np.average(ys),xs-np.average(xs))
+    array = np.array([xs,ys,angles])
+    array = array[:,array[2].argsort()]
+    return array[0],array[1]
 
 def circleLatLons(lat, lon, radiuskm,n_samples=180):
     """
@@ -43,8 +43,10 @@ def circleLatLons(lat, lon, radiuskm,n_samples=180):
 
 def ellipseLatLons(lat,lon,major,minor,orientation,n_samples=180,units='km'):
     """
-    Return the coordinates of a geodetic circle of a given
-    radius about a lon/lat point.
+    Return the coordinates of a geodetic ellipse of a given
+    radius about a lon/lat point.  Radius is calculated using
+    the polar coordinate equation for an ellipse, utilizing major
+    and minor axis.
 
     Radius is in meters in the geodetic's coordinate system.
 
@@ -53,7 +55,7 @@ def ellipseLatLons(lat,lon,major,minor,orientation,n_samples=180,units='km'):
         major = major*1000.
         minor = minor*1000.
     orientation = np.deg2rad(orientation)
-    bearing = np.linspace(2*np.pi,0,n_samples)
+    bearing = np.linspace(0,2*np.pi,n_samples)
     radius = np.true_divide(np.multiply(major,minor),np.sqrt(np.square(np.multiply(major,np.sin(bearing+orientation))) + np.square(np.multiply(minor,np.cos(bearing+orientation)))))
 
     lons, lats, back_azim = geod.fwd(np.repeat(lon, n_samples),
@@ -63,35 +65,6 @@ def ellipseLatLons(lat,lon,major,minor,orientation,n_samples=180,units='km'):
                                      radians=False,
                                      )
     return lats,lons
-
-def latlonCircleRadiusKM(lat, lon, radiusKM):
-    '''
-    lat, lon are the center of the circle, radiusKM is the radius in Km of the circle
-    This will return a list of lat lon points that define a circle, for speed sake the number of points is 180 1 every 2 degrees
-    This also takes into account projection effects with the Earth, so the closer to the north pole, the more oval
-    shape the circle will become.
-    '''
-    #earth radius in km
-    R = 6378.1
-    distanceKM = radiusKM/R
-    latArray = []
-    lonArray = []
-    lat = np.deg2rad(lat)
-#    lat = np.deg2rad(90.)
-    lon = np.deg2rad(lon)
-    brng = np.linspace(0,2*np.pi,180)
-    lat2 = np.arcsin(np.sin(lat) * np.cos(distanceKM) 
-            + np.cos(lat) * np.sin(distanceKM) * np.cos(brng))
-
-    lon2 = lon + np.arctan2(np.sin(brng)*np.sin(distanceKM)
-            * np.cos(lat),np.cos(distanceKM)-np.sin(lat)*np.sin(lat))
-
-    lon2 = np.rad2deg(lon2)
-    lat2 = np.rad2deg(lat2)
-    latArray = list(lat2)
-    lonArray = list(lon2)
-
-    return latArray,lonArray
 
 
 def handle_InternationalDateline(iLat,iLon):
@@ -168,7 +141,7 @@ if __name__ == '__main__':
 #    lats,lons = circleLatLons(80,-180,50)
     
 #    lats, lons = circleLatLons(87,0,500,50000)
-#    lats,lons = ellipseLatLons(0,12,31,20,3.0368)
+    lats,lons = ellipseLatLons(0,12,3200,2000,3.0368)
 
     y,x = handle_InternationalDateline(lats,lons)
     for x,y in zip(x,y):
