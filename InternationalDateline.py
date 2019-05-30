@@ -11,7 +11,20 @@ from matplotlib import pyplot as plt
 import cartopy.crs as ccrs
 from pyproj import Geod
 
-def circleLatLons(lat, lon, radiuskm):
+geod = Geod(ellps='WGS84')
+
+
+def orderPolygons(xs,ys):
+    xs = np.array(xs)
+    ys = np.array(ys)
+    
+    center = np.average(xs),np.average(ys)
+    points = zip(xs,ys)
+    points.sort(key=lambda p: np.arctan2(p[1]-center[1],p[0]-center[0]))
+    array = np.array(points)
+    return array[:,0],array[:,1]
+
+def circleLatLons(lat, lon, radiuskm,n_samples=180):
     """
     Return the coordinates of a geodetic circle of a given
     radius about a lon/lat point.
@@ -19,8 +32,6 @@ def circleLatLons(lat, lon, radiuskm):
     Radius is in meters in the geodetic's coordinate system.
 
     """
-    geod = Geod(ellps='WGS84')
-    n_samples=180
     radius = radiuskm * 1000.
     lons, lats, back_azim = geod.fwd(np.repeat(lon, n_samples),
                                      np.repeat(lat, n_samples),
@@ -30,6 +41,28 @@ def circleLatLons(lat, lon, radiuskm):
                                      )
     return lats, lons
 
+def ellipseLatLons(lat,lon,major,minor,orientation,n_samples=180,units='km'):
+    """
+    Return the coordinates of a geodetic circle of a given
+    radius about a lon/lat point.
+
+    Radius is in meters in the geodetic's coordinate system.
+
+    """
+    if units == 'km':
+        major = major*1000.
+        minor = minor*1000.
+    orientation = np.deg2rad(orientation)
+    bearing = np.linspace(2*np.pi,0,n_samples)
+    radius = np.true_divide(np.multiply(major,minor),np.sqrt(np.square(np.multiply(major,np.sin(bearing+orientation))) + np.square(np.multiply(minor,np.cos(bearing+orientation)))))
+
+    lons, lats, back_azim = geod.fwd(np.repeat(lon, n_samples),
+                                     np.repeat(lat, n_samples),
+                                     np.linspace(360, 0, n_samples),
+                                     radius,
+                                     radians=False,
+                                     )
+    return lats,lons
 
 def latlonCircleRadiusKM(lat, lon, radiusKM):
     '''
@@ -43,8 +76,8 @@ def latlonCircleRadiusKM(lat, lon, radiusKM):
     distanceKM = radiusKM/R
     latArray = []
     lonArray = []
-#    lat = np.deg2rad(lat)
-    lat = np.deg2rad(90.)
+    lat = np.deg2rad(lat)
+#    lat = np.deg2rad(90.)
     lon = np.deg2rad(lon)
     brng = np.linspace(0,2*np.pi,180)
     lat2 = np.arcsin(np.sin(lat) * np.cos(distanceKM) 
@@ -79,7 +112,7 @@ def handle_InternationalDateline(iLat,iLon):
     #Return the points
     nlons = np.where(nlons <= 180,nlons,nlons-360)
     rlats,rlons = [],[]
-    if max(nlons)-min(nlons) > 350:
+    if max(nlons)-min(nlons) > 300:
         posidx = nlons > 0
         negidx = nlons < 0
         poslons = nlons[posidx]
@@ -92,8 +125,9 @@ def handle_InternationalDateline(iLat,iLon):
             neglons += 180
         alllons = np.append(poslons,neglons)
         alllats = np.append(poslats,neglats)
+        alllons,alllats = orderPolygon(alllons,alllats)
+        plt.scatter(alllons,alllats)
         poly = Polygon(zip(alllons,alllats))
-#        plt.plot(poly.exterior.xy[0],poly.exterior.xy[1])
         line = LineString([(0,-5000),(0,5000)])
         spoly = split(poly,line)
         for polygon in spoly:
@@ -108,6 +142,7 @@ def handle_InternationalDateline(iLat,iLon):
             rlons.append(xx)
         return rlats,rlons
     else:
+        nlons,nlats = orderPolygon(nlons,nlats)
         polygon = Polygon(zip(nlons,nlats))
         xx,yy = np.array(polygon.exterior.xy[0]),np.array(polygon.exterior.xy[1])
         rlats.append(yy)
@@ -126,18 +161,17 @@ if __name__ == '__main__':
     #Rectangle that spans the ID
 #    lats = [-40,40,-40,40]
 #    lons = [-160,150,160,-150]
+    
     #Circle made with stuff
     ax = plt.axes(projection=ccrs.PlateCarree())
     ax.stock_img()
 #    lats,lons = circleLatLons(80,-180,50)
     
-    lats, lons = circleLatLons(87,0,500)
-    plt.scatter(lons,lats)
-    plt.show()
-    rlats,rlons = lats,lons
+#    lats, lons = circleLatLons(87,0,500,50000)
+#    lats,lons = ellipseLatLons(0,12,31,20,3.0368)
+
     y,x = handle_InternationalDateline(lats,lons)
-#    y,x = handle_InternationalDateline(lats,lons)
     for x,y in zip(x,y):
         plt.plot(x,y)
-#    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect('equal')
     plt.show()
