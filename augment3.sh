@@ -31,13 +31,19 @@ pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org
 $pcmd --upgrade pip
 ccmd="$PREFIX/conda install -y"
 # no R, no cuda stuff cuz it regresses python
-$ccmd gcc_impl_linux-64 gcc_linux-64 gfortran_impl_linux-64 gfortran_linux-64 binutils_linux-64 binutils_impl_linux-64 gsl gxx_impl_linux-64 gxx_linux-64 make cartopy swig line_profiler vispy boost cmake autopep8 hdf4 glib pyqtgraph pyopengl pyopengl-accelerate gobject-introspection pymssql
+$ccmd gcc_impl_linux-64 gcc_linux-64 gfortran_impl_linux-64 gfortran_linux-64 binutils_linux-64 binutils_impl_linux-64 gsl gxx_impl_linux-64 gxx_linux-64 make cartopy swig line_profiler vispy boost cmake autopep8 hdf4 glib pyqtgraph pyopengl pyopengl-accelerate gobject-introspection pymssql autopep8 geopandas selenium mock nodejs holoviews datashader hvplot graphviz panel param
 $pcmd msgpack argparse urwid
 # PyGObject, veusz DNW, spyder-memory-profiler?
-$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx orderedset objgraph pandastable
+$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx orderedset objgraph pandastable # cx-Freeze
 # upgrading
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"
+$pcmd altair altair-widgets seaborn-altair altair-recipes yerkes gencharts
+$pcmd actdiag blockdiag nwdiag seqdiag arrow dill pathlib
+$pcmd -U ray
+$pcmd modin vega_datasets pdvega
+$pcmd ggplot pyggplot
 $PREFIX/conda update --all -y
+$PREFIX/conda clean -a -y
 fi
 # scrubbed 7zip
 #tar -zxvf uza.tgz
