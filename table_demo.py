@@ -5,6 +5,10 @@ Table Demo
 
 Demo of table function to display a table within a plot.
 """
+OPTION = 3
+# 1 - origninal
+# 2 - stack overflow fix
+# 3 - hammy's cell stuff that is more kitti
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -42,17 +46,29 @@ colors = colors[::-1]
 cell_text.reverse()
 
 # Add a table at the bottom of the axes
-the_table = plt.table(cellText=cell_text,
-                      rowLabels=rows,
-                      rowColours=colors,
-                      colLabels=columns,
-                      loc='bottom',
-                      colLoc='center',
-                      rowLoc='center',)
-                      #bbox=[0, -0.3, 1, 0.275])
+if OPTION == 1 or OPTION == 3:
+    the_table = plt.table(cellText=cell_text,
+                          rowLabels=rows,
+                          rowColours=colors,
+                          colLabels=columns,
+                          loc='bottom',
+                          colLoc='center',
+                          rowLoc='center')
+elif OPTION == 2:
+    the_table = plt.table(cellText=cell_text,
+                          rowLabels=rows,
+                          rowColours=colors,
+                          colLabels=columns,
+                          loc='bottom',
+                          colLoc='center',
+                          rowLoc='center',
+                          bbox=[0, -0.3, 1, 0.275])
+
 prop=the_table.properties()
 cells = prop['child_artists']
 for cell in cells:
+    if OPTION <> 3:
+        continue
     cell.set_fontsize(10)
     #cell.set_facecolor('red')
     # this works if you leave off the bbox from the original call
@@ -63,7 +79,12 @@ for cell in cells:
     #cell.set_visible(False)
 
 # Adjust layout to make room for the table:
-plt.subplots_adjust(left=0.2, bottom=0.25, right=0.95)
+if OPTION == 1:
+    plt.subplots_adjust(left=0.2, bottom=0.2)
+elif OPTION == 2:
+    plt.subplots_adjust(left=0.2, bottom=0.2)
+elif OPTION == 3:
+    plt.subplots_adjust(left=0.2, bottom=0.25, right=0.95)
 
 plt.ylabel("Loss in ${0}'s".format(value_increment))
 plt.yticks(values * value_increment, ['%d' % val for val in values])
