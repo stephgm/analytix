@@ -9,7 +9,9 @@ import pandas as pd
 import numpy as np
 import re
 import time
-num = 10000000
+start = time.time()
+num = 50000000
+print num*8
 trash = {'Time':np.random.randint(0,100,num),'Trash_0_This':np.random.randint(0,4,num),'Trash_1_This':np.random.randint(0,4,num),\
          'Trash_0_This_Data_1':np.random.randint(0,4,num),'Trash_1_This_Data_1':np.random.randint(0,4,num),'Trash_Covariance_1':np.random.randint(0,4,num),\
          'Bunsen_0_This':np.random.randint(0,4,num),'Bunsen_1_This':np.random.randint(0,4,num)}
@@ -25,7 +27,17 @@ def contains2Num(string):
         return True
     else:
         return False
-
+    
+def getNewHeader(string):
+    if contains2Num(string):
+        result = re.search('\d+_(.*)_\d+',string)
+    else:
+        result = re.search('\d+_(.*)',string)
+    if result:
+        return result.group(1)
+    else:
+        return string
+    
 def findNum(lis):
     for i,name in enumerate(lis):
         try:
@@ -58,6 +70,7 @@ for thing in sheaders:
     index = findNum(thing)
     if index >= 0:
         key = '_'.join(buildJList(thing,index+1))
+        key = key+'_'
         tlkey = '_'.join(buildJList(thing,index))
         if tlkey not in dictofdf:
             dictofdf[tlkey] = {}
@@ -67,14 +80,10 @@ for thing in sheaders:
                     newheads.append(header)
             newheads.extend(commonheaders)
             dictofdf[tlkey][key] = y[newheads]
+            newnames = []
             for head in newheads:
-                p = head.rsplit('_',1)[-1]
-                try:
-                    float(p)
-                    nindex = -2
-                except:
-                    nindex = -1
-                dictofdf[tlkey][key].rename(columns={head:head.rsplit('_',1)[nindex]},inplace=True)
+                newnames.append(getNewHeader(head))
+            dictofdf[tlkey][key].columns = newnames
 
 for tkey in dictofdf:
     if tkey not in concatpd:
@@ -95,7 +104,8 @@ for tkey in dictofdf:
         else:
             newidx = idx
     concatpd[tkey] = concatpd[tkey][newidx]
-                    
+                   
+print time.time() - start
 
 
         
