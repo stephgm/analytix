@@ -1,0 +1,9 @@
+#!/bin/bash
+
+CONDA_PREFIX="/storage/data/local"
+
+#python feature_download.py -output ${CONDA_PREFIX}/lib/python2.7/site-packages/cartopy/data physical gshhs cultural cultural-extra
+python feature_download.py --output ${CONDA_PREFIX}/lib/python3.7/site-packages/cartopy/data physical
+python feature_download.py --output ${CONDA_PREFIX}/lib/python3.7/site-packages/cartopy/data gshhs
+python feature_download.py --output ${CONDA_PREFIX}/lib/python3.7/site-packages/cartopy/data cultural
+python feature_download.py --output ${CONDA_PREFIX}/lib/python3.7/site-packages/cartopy/data cultural-extra

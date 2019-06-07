@@ -67,7 +67,7 @@ elif OPTION == 2:
 prop=the_table.properties()
 cells = prop['child_artists']
 for cell in cells:
-    if OPTION <> 3:
+    if OPTION != 3:
         continue
     cell.set_fontsize(10)
     #cell.set_facecolor('red')
