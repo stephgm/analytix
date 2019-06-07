@@ -1,13 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Created on Thu Jun  6 21:36:06 2019
 
 @author: hollidayh
 """
-
+import sys
 import cartopy
-cartopy.config['data_dir'] = '/storage/data/local/lib/python3.7/site-packages/cartopy'
+cartopy.config['data_dir'] = '/storage/data/local/lib/python'+str(sys.version_info.major)+'.7/site-packages/cartopy'
 print(cartopy.config['data_dir'])
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -17,9 +17,13 @@ import matplotlib.pyplot as plt
 def main():
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-    ax.set_extent([-20, 60, -40, 45], crs=ccrs.PlateCarree())
+    # focused
+    #ax.set_extent([-20, 60, -40, 45], crs=ccrs.PlateCarree())
+    ax.set_global()
+    ax.set_aspect('equal')
+    ax.set_adjustable('datalim')
     # this adds nice rendering of the water
-    ax.stock_img()
+    #ax.stock_img()
 
     ax.add_feature(cfeature.LAND)
     ax.add_feature(cfeature.OCEAN)

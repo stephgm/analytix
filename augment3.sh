@@ -23,6 +23,7 @@ export PATH="$PREFIX:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbi
 export LD_LIBRARY_PATH="$PREFIX/lib:/lib64:/usr/lib64:/usr/local/lib64:/lib:/usr/lib:/usr/local/lib"
 export GEOS_DIR="$1"
 export PKG_CONFIG_PATH="$1/lib/pkgconfig"
+export PYTHONHTTPSVERIFY=0
 # check certificates may comment the next 2 out
 if [ 1 == 1 ];then
 $PREFIX/conda config --set ssl_verify false

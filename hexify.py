@@ -94,10 +94,10 @@ if __name__ == '__main__':
             if os.path.isdir(cp):
                 dirz['DUN'].append(cp)
             elif os.path.isfile(cp):
-                dirz['NUN'].append(cp)
+                filez['DUN'].append(cp)
         elif NUN:
             if os.path.isdir(cp):
-                filez['DUN'].append(cp)
+                dirz['NUN'].append(cp)
             elif os.path.isfile(cp):
                 filez['NUN'].append(cp)
     for xfile in filez['DUN']:
