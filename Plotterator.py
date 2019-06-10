@@ -209,7 +209,7 @@ class Plotter(object):
         self.fig['facecolor'] = kwargs.pop('facecolor',plt.rcParams['figure.facecolor'])
         self.fig['picker'] = kwargs.pop('picker',False)
         
-    def initAxes(self,axid,rowspan,colspan,threeD=False,colorbar={},combinelegend=False,mapplot=False,mapproj='ccrs.PlateCarree()',table=None):
+    def initAxes(self,axid,rowspan,colspan,threeD=False,colorbar={},combinelegend=False,mapplot=False,mapproj='PlateCarree()',table=None):
         """
         Initiates each axes in the sub dictionary, requires reference starting
         ax id, and a row and column span
@@ -248,7 +248,7 @@ class Plotter(object):
             execString += self.buildKwargs(command['kwargs'])
             execString = execString[:-1]
         execString += ")"
-        return execString
+        return execString.replace('transform=','transform=ccrs.')
     
     def buildKwargs(self,kwargs):
         execString = ''
@@ -313,7 +313,7 @@ class Plotter(object):
                 elif 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['mapplot']:
                     thisax = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
                                                 rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']],
-                                             projection=eval(self.sub[rowcol]['mapproj'],{"ccrs":ccrs}))
+                                             projection=eval('ccrs.{}'.format(self.sub[rowcol]['mapproj']),{"ccrs":ccrs}))
                     lonScale = None
                     if 'central_longitude' in self.sub[rowcol]['mapproj']:
                         cloc = self.sub[rowcol]['mapproj'].find('central_longitude')+len('central_longitude')+1
@@ -341,7 +341,7 @@ class Plotter(object):
                     if 'cmap' in line:
                         line['cmap'] = cm[line['cmap']]
                     if 'transform' in line:
-                        line['transform'] = eval(line['transform'],{"ccrs":ccrs})
+                        line['transform'] = eval('ccrs.{}'.format(line['transform']),{"ccrs":ccrs})
                     sc = self.plotCall(thisax,line)
                     if line['plottype'] == 'plot':
                         setformat = True
@@ -414,13 +414,13 @@ class Plotter(object):
                         thisax.set_extend([180,-180,90,-90])
                         EARTH_IMG = np.roll(EARTH_IMG,int(lonScale*np.size(EARTH_IMG,1)),axis=1)
                     j = thisax.imshow([[0 for x in range(2)] for y in range(2)],
-                                        transform=eval(self.sub[rowcol]['mapproj'],{"ccrs":ccrs}),
+                                        transform=eval('ccrs.{}'.format(self.sub[rowcol]['mapproj']),{"ccrs":ccrs}),
                                         extent=[-180,180,-90,90])
                     j.set_data(EARTH_IMG)
                 if 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['features']:
                     for feature in self.sub[rowcol]['features']:
                         featOfStrength = cfeature.ShapelyFeature(Reader(os.path.join(CfgDir,feature['fname'])).geometries(),
-                                                                 eval(feature['transform'],{"ccrs":ccrs}),
+                                                                 eval('ccrs.{}'.format(feature['transform']),{"ccrs":ccrs}),
                                                                  **feature['kwargs'])
                         thisax.add_feature(featOfStrength)
                 if 'table' in self.sub[rowcol] and self.sub[rowcol]['table']:
@@ -519,7 +519,7 @@ class Plotter(object):
                             if k not in exclude_list})
         return sc
     
-    def add_subplot(self,axid=(0,0),rowspan=1,colspan=1,threeD=False,combinelegend=False,mapplot=False,mapproj='ccrs.PlateCarree()'):
+    def add_subplot(self,axid=(0,0),rowspan=1,colspan=1,threeD=False,combinelegend=False,mapplot=False,mapproj='PlateCarree()'):
         if axid not in self.sub:
             self.initAxes(axid,rowspan,colspan,threeD,{},combinelegend,mapplot,mapproj)
             return axid
@@ -971,3 +971,24 @@ if __name__ == '__main__':
         pltr.parseCommand((0,0),'set_xlabel',[['GridSpec']])
         pltr.parseCommand('fig','tight_layout',[])
         pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
+    if False:
+        ny_lon, ny_lat = -75., 43.
+        delhi_lon, delhi_lat = 77.23, 28.61
+        mapimg = 'bluemarble_8192x4096.png'
+        pltr = Plotter()
+        ax = pltr.add_subplot(mapplot=True)
+        pltr.add_map(mapimg)
+        pltr.add_feature(ADMIN0_COUNTRIES_NAME, 'PlateCarree()', facecolor='none', color='grey', alpha=0.7)
+        pltr.add_patch(ax, 'Ellipse', [dict(xy=[-70,40],height = 10., width = 10., color='red', alpha = 0.3, \
+                                            transform = 'PlateCarree()')])
+        pltr.plot([ny_lon,dehli_lon],[ny_lat,delhi_lat],axid=ax,
+                  color='blue',lw=2,marker='o',
+                  transform='Geodetic()')
+        pltr.plot([ny_lon,dehli_lon],[ny_lat,delhi_lat],axid=ax,
+                  color='gray',ls='--',
+                  transform='PlateCarree()')
+        pltr.parseCommand(ax,'text',[[ny_lon-3,ny_lat-12,'New York'],
+                                     dict(ha='right',transform='Geodetic()')])
+        pltr.parseCommand(ax,'text',[[delhi_lon+3,delhi_lat-12,'New York'],
+                                     dict(ha='left',transform='Geodetic()')])
+        pltr.createPlot('',PERSIST=True)        
