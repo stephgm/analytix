@@ -43,18 +43,18 @@ from matplotlib import table
 from mpl_toolkits.mplot3d import Axes3D
 from multiprocessing import cpu_count, Pool
 
-import cartopy.crs as ccrs
-from cartopy import config
-from cartopy.io.shapereader import Reader
-import cartopy.feature as cfeature
-CfgDir = config['repo_data_dir']
-lenCfgDir = len(CfgDir)+1
-resolution ='10m'
-shapefiles_cultural_path = os.path.join(config['repo_data_dir'],
-                                        'shapefiles',
-                                        'natural_earth',
-                                        resolution+'_cultural')
-ADMIN0_COUNTRIES_NAME    = glob.glob(os.path.join(shapefiles_cultural_path, 'ne_'+resolution+'_admin_0_countries*.shp'))[0]
+#import cartopy.crs as ccrs
+#from cartopy import config
+#from cartopy.io.shapereader import Reader
+#import cartopy.feature as cfeature
+#CfgDir = config['repo_data_dir']
+#lenCfgDir = len(CfgDir)+1
+#resolution ='10m'
+#shapefiles_cultural_path = os.path.join(config['repo_data_dir'],
+#                                        'shapefiles',
+#                                        'natural_earth',
+#                                        resolution+'_cultural')
+#ADMIN0_COUNTRIES_NAME    = glob.glob(os.path.join(shapefiles_cultural_path, 'ne_'+resolution+'_admin_0_countries*.shp'))[0]
 
 if not hasattr(sys,'frozen'):
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -62,8 +62,12 @@ if not hasattr(sys,'frozen'):
 else:
     RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
     
-STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
-ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presenation.mplstyle')
+if True:
+    STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
+    ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presenation.mplstyle')
+else:
+    STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
+    ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presenation.mplstyle')
 plt.style.use(STYLE_SHEET)
 exclude_list = ['x','y','z','fmt','plottype','bins','height','width','left','bottom','align']
 special_cmds = ['twinx','twiny','get_legend']
@@ -857,7 +861,7 @@ class Plotter(object):
 #        return axinfo
         
 if __name__ == '__main__':
-    if True:
+    if False:
         pltr = Plotter(combinelegend=True)
         pltr.add_subplot()
         x = np.random.randint(0,100,20)
@@ -875,7 +879,7 @@ if __name__ == '__main__':
 #        pltr.add_colorbar(colorbarname='bone',label='FML')
         pltr.parseCommand(ax2,'legend',[[]])
         pltr.parseCommand('fig','legend',[dict(prop=dict(size=6),loc='best',ncol=4)])
-        pltr.createPlot('',PERSIST=True)
+        pltr.createPlot('test.png',PERSIST=True)
     if False:
         jobs = []
         add = jobs.append
@@ -906,7 +910,7 @@ if __name__ == '__main__':
             PNGerator(jobs,nthreads=nthreads)
         else:
             print(NOTES)
-    if True:
+    if False:
         """
         Demo of scatter plot with varying marker colors and sizes.
         """
@@ -945,7 +949,7 @@ if __name__ == '__main__':
                  shadow=True,startangle=90)
         pltr.parseCommand((0,1),'axis',[['equal']])
         pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
-    if True:
+    if False:
         """
         Grid Spec Example
         """
@@ -961,7 +965,7 @@ if __name__ == '__main__':
             pltr.parseCommand((1,i),'set_ylabel',[['YLabel1 %d'%i]])
             pltr.parseCommand((1,i),'set_xlabel',[['XLabel1 %d'%i]])
         pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
-    if True:
+    if False:
         pltr = Plotter()
         pltr.add_subplot((0,0),1,3)
         pltr.add_subplot((1,0),1,2)
@@ -991,4 +995,115 @@ if __name__ == '__main__':
                                      dict(ha='right',transform='Geodetic()')])
         pltr.parseCommand(ax,'text',[[delhi_lon+3,delhi_lat-12,'New York'],
                                      dict(ha='left',transform='Geodetic()')])
-        pltr.createPlot('',PERSIST=True)        
+        pltr.createPlot('test.png',SAVEONLY=True)
+    if True:
+        """
+        ==========
+        Table Demo
+        ==========
+        
+        Demo of table function to display a table within a plot.
+        """
+        OPTION = 3
+        # 1 - origninal
+        # 2 - stack overflow fix
+        # 3 - hammy's cell stuff that is more kitti
+        import numpy as np
+        import matplotlib.pyplot as plt
+        
+        
+        data = [[ 66386, 174296,  75131, 577908,  32015],
+                [ 58230, 381139,  78045,  99308, 160454],
+                [ 89135,  80552, 152558, 497981, 603535],
+                [ 78415,  81858, 150656, 193263,  69638],
+                [139361, 331509, 343164, 781380,  52269]]
+        
+        columns = ('Freeze', 'Wind', 'Flood', 'Quake', 'Hail')
+        rows = ['%d year' % x for x in (100, 50, 20, 10, 5)]
+        
+        values = np.arange(0, 2500, 500)
+        value_increment = 1000
+        
+        # Get some pastel shades for the colors
+        colors = plt.cm.BuPu(np.linspace(0, 0.5, len(rows)))
+        n_rows = len(data)
+        
+        index = np.arange(len(columns)) + 0.3
+        bar_width = 0.4
+        
+        # Initialize the vertical-offset for the stacked bar chart.
+        y_offset = np.zeros(len(columns))
+        
+        pltr = Plotter()
+        ax = pltr.add_subplot()
+        # Plot bars and create text labels for the table
+        cell_text = []
+        for row in range(n_rows):
+            pltr.bar(index, data[row], ax, bar_width, bottom=y_offset, color=colors[row])
+#            plt.bar(index, data[row], bar_width, bottom=y_offset, color=colors[row])
+            y_offset = y_offset + data[row]
+            cell_text.append(['%1.1f' % (x / 1000.0) for x in y_offset])
+        # Reverse colors and text labels to display the last value at the top.
+        colors = colors[::-1]
+        cell_text.reverse()
+        
+        # Add a table at the bottom of the axes
+        if OPTION == 1 or OPTION == 3:
+            pltr.add_table(ax,cellText=cell_text,
+                                  rowLabels=rows,
+                                  rowColours=colors,
+                                  colLabels=columns,
+                                  loc='bottom',
+                                  colLoc='center',
+                                  rowLoc='center')
+#            the_table = plt.table(cellText=cell_text,
+#                                  rowLabels=rows,
+#                                  rowColours=colors,
+#                                  colLabels=columns,
+#                                  loc='bottom',
+#                                  colLoc='center',
+#                                  rowLoc='center')
+        elif OPTION == 2:
+            the_table = plt.table(cellText=cell_text,
+                                  rowLabels=rows,
+                                  rowColours=colors,
+                                  colLabels=columns,
+                                  loc='bottom',
+                                  colLoc='center',
+                                  rowLoc='center',
+                                  bbox=[0, -0.3, 1, 0.275])
+        
+        if False:
+            prop=the_table.properties()
+            cells = prop['child_artists']
+            for cell in cells:
+                if OPTION != 3:
+                    continue
+                cell.set_fontsize(10)
+                #cell.set_facecolor('red')
+                # this works if you leave off the bbox from the original call
+                cell.set_height(cell.get_height() * 1.4)
+                # don't seem to work
+                #cell['height'] =1
+                #cell.set_height(1)
+                #cell.set_visible(False)
+        
+        # Adjust layout to make room for the table:
+        if OPTION == 1:
+            plt.subplots_adjust(left=0.2, bottom=0.2)
+        elif OPTION == 2:
+            plt.subplots_adjust(left=0.2, bottom=0.2)
+        elif OPTION == 3:
+            plt.subplots_adjust(left=0.2, bottom=0.25, right=0.95)
+        
+        pltr.parseCommand(ax,'ylabel',[["Loss in ${0}'s".format(value_increment)]])
+#        plt.ylabel("Loss in ${0}'s".format(value_increment))
+        pltr.parseCommand(ax,'yticks',[[values * value_increment, ['%d' % val for val in values]]])
+#        plt.yticks(values * value_increment, ['%d' % val for val in values])
+        pltr.parseCommand(ax,'xticks',[[]])
+#        plt.xticks([])
+        pltr.parseCommand(ax,'title',[['Loss by Disaster']])
+#        plt.title('Loss by Disaster')
+        pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
+        
+#        plt.show()        
