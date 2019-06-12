@@ -64,10 +64,10 @@ else:
     
 if True:
     STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
-    ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presenation.mplstyle')
+    ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presentation.mplstyle')
 else:
     STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
-    ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presenation.mplstyle')
+    ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presentation.mplstyle')
 plt.style.use(STYLE_SHEET)
 exclude_list = ['x','y','z','fmt','plottype','bins','height','width','left','bottom','align']
 special_cmds = ['twinx','twiny','get_legend']
