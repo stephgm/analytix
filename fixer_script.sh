@@ -1,10 +1,10 @@
 #!/bin/bash
 
-for i in $(cat passwd)
+for i in $(cat iplist)
 do
-login=$(echo $i | awk -F ":" '{print $1}')
-first=$(echo $i | awk -F ":" '{print $2}')
-last=$(echo $i | awk -F ":" '{print $3}')
+ip=$(echo $i | awk -F "," '{print $1}')
+first=$(echo $i | awk -F "," '{print $2}')
+last=$(echo $i | awk -F "," '{print $3}')
 done
 
 # OR
