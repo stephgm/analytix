@@ -342,7 +342,7 @@ class Plotter(object):
                 for rc,cb in cbs:
                     cm[cb] = plt.cm.get_cmap(cb)
                 for line in deepcopy(self.sub[rowcol]['lines']):
-                    if 'cmap' in line:
+                    if 'cmap' in line and line['cmap']:
                         line['cmap'] = cm[line['cmap']]
                     if 'transform' in line:
                         line['transform'] = eval('ccrs.{}'.format(line['transform']),{"ccrs":ccrs})
