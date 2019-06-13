@@ -413,14 +413,14 @@ class Plotter(object):
                     thiscb.set_label(self.sub[rc]['colorbar']['label'])
                 if 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['mapplot'] and self.sub[rowcol]['mapimg']:
                     EARTH_IMG = plt.imread(os.path.join(RELATIVE_LIB_PATH,'data',self.sub[rowcol]['mapimg']))
-                    EARTH_IMG = EARTH_IMG[::-1]
+                    #EARTH_IMG = EARTH_IMG[::-1]
                     if lonScale:
-                        thisax.set_extend([180,-180,90,-90])
-                        EARTH_IMG = np.roll(EARTH_IMG,int(lonScale*np.size(EARTH_IMG,1)),axis=1)
-                    j = thisax.imshow([[0 for x in range(2)] for y in range(2)],
-                                        transform=eval('ccrs.{}'.format(self.sub[rowcol]['mapproj']),{"ccrs":ccrs}),
+                        thisax.set_global()
+                        #EARTH_IMG = np.roll(EARTH_IMG,int(lonScale*np.size(EARTH_IMG,1)),axis=1)
+                    thisax.imshow(EARTH_IMG,
+                                        transform=ccrs.PlateCarree(),
                                         extent=[-180,180,-90,90])
-                    j.set_data(EARTH_IMG)
+                    #j.set_data(EARTH_IMG)
                 if 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['features']:
                     for feature in self.sub[rowcol]['features']:
                         featOfStrength = cfeature.ShapelyFeature(Reader(os.path.join(CfgDir,feature['fname'])).geometries(),
