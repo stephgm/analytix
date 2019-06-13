@@ -262,8 +262,10 @@ class Plotter(object):
             elif isinstance(kwargs[key],dict):
                 execString += key+"=dict("+",".join([k+"="+str(kwargs[key][k])
                                                         for k in kwargs[key]])+")"
-            else:
+            elif isinstance(kwargs[key],str) or isinstance(kwargs[key],unicode):
                 execString += key+"="+str(kwargs[key])
+            else:
+                execString += key+"="+str(kwargs[key]).replace('\n',',')
             execString += ","
         return execString
     
