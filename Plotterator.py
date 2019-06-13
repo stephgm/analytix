@@ -361,7 +361,7 @@ class Plotter(object):
                     cm[cb] = plt.cm.get_cmap(cb)
                 for line in deepcopy(self.sub[rowcol]['lines']):
                     if 'cmap' in line and line['cmap']:
-                        line['cmap'] = cm[line['cmap']]
+                        line['cmap'] = plt.cm.get_cmap(line['cmap'])
                     if 'transform' in line:
                         line['transform'] = eval('ccrs.{}'.format(line['transform']),{"ccrs":ccrs})
                     sc = self.plotCall(thisax,line)
@@ -379,6 +379,10 @@ class Plotter(object):
                 for t in self.sub:
                     if len(t) == 3 and t[:2] == rowcol and not self.sub[t]['colorbar']:
                         for line in deepcopy(self.sub[t]['lines']):
+                            if 'cmap' in line and line['cmap']:
+                                line['cmap'] = plt.cm.get_cmap(line['cmap'])
+                            if 'transform' in line:
+                                line['transform'] = eval('ccrs.{}'.format(line['transform']),{"ccrs":ccrs})
                             sc = self.plotCall(othAx[t],line)
                             if line['plottype'] == 'plot':
                                 setformat ==True
