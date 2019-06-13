@@ -439,6 +439,7 @@ class Plotter(object):
                         thisax.set_global()
                         #EARTH_IMG = np.roll(EARTH_IMG,int(lonScale*np.size(EARTH_IMG,1)),axis=1)
                     thisax.imshow(EARTH_IMG,
+                                        origin='upper',
                                         transform=ccrs.PlateCarree(),
                                         extent=[-180,180,-90,90])
                     #j.set_data(EARTH_IMG)
