@@ -43,10 +43,7 @@ from matplotlib import table
 from mpl_toolkits.mplot3d import Axes3D
 from multiprocessing import cpu_count, Pool
 
-NOKITTY = True
-if NOKITTY:
-    ccrs = None
-else:
+try:
     import cartopy.crs as ccrs
     from cartopy import config
     from cartopy.io.shapereader import Reader
@@ -59,6 +56,8 @@ else:
                                             'natural_earth',
                                             resolution+'_cultural')
     ADMIN0_COUNTRIES_NAME    = glob.glob(os.path.join(shapefiles_cultural_path, 'ne_'+resolution+'_admin_0_countries*.shp'))[0]
+except:
+    ccrs = None
 
 if not hasattr(sys,'frozen'):
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
