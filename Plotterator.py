@@ -43,18 +43,22 @@ from matplotlib import table
 from mpl_toolkits.mplot3d import Axes3D
 from multiprocessing import cpu_count, Pool
 
-#import cartopy.crs as ccrs
-#from cartopy import config
-#from cartopy.io.shapereader import Reader
-#import cartopy.feature as cfeature
-#CfgDir = config['repo_data_dir']
-#lenCfgDir = len(CfgDir)+1
-#resolution ='10m'
-#shapefiles_cultural_path = os.path.join(config['repo_data_dir'],
-#                                        'shapefiles',
-#                                        'natural_earth',
-#                                        resolution+'_cultural')
-#ADMIN0_COUNTRIES_NAME    = glob.glob(os.path.join(shapefiles_cultural_path, 'ne_'+resolution+'_admin_0_countries*.shp'))[0]
+NOKITTY = True
+if NOKITTY:
+    ccrs = None
+else:
+    import cartopy.crs as ccrs
+    from cartopy import config
+    from cartopy.io.shapereader import Reader
+    import cartopy.feature as cfeature
+    CfgDir = config['repo_data_dir']
+    lenCfgDir = len(CfgDir)+1
+    resolution ='10m'
+    shapefiles_cultural_path = os.path.join(config['repo_data_dir'],
+                                            'shapefiles',
+                                            'natural_earth',
+                                            resolution+'_cultural')
+    ADMIN0_COUNTRIES_NAME    = glob.glob(os.path.join(shapefiles_cultural_path, 'ne_'+resolution+'_admin_0_countries*.shp'))[0]
 
 if not hasattr(sys,'frozen'):
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -62,12 +66,8 @@ if not hasattr(sys,'frozen'):
 else:
     RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
     
-if True:
-    STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
-    ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presentation.mplstyle')
-else:
-    STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
-    ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presentation.mplstyle')
+STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
+ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presentation.mplstyle')
 plt.style.use(STYLE_SHEET)
 exclude_list = ['x','y','z','fmt','plottype','bins','height','width','left','bottom','align']
 special_cmds = ['twinx','twiny','get_legend']
@@ -75,7 +75,7 @@ figTitleFD = {
             'family':'sans',
             'color':'black',
             'fontweight':'bold',
-            'fontsize}':'24',
+            'fontsize':'24',
             'size':'24',
             'weight':'bold'
             }
@@ -93,7 +93,7 @@ figTitleFDSmall = {
             }
 figClassFD = {
             'family':'sans',
-            'color':'black',
+            'color':'red',
             'weight':'bold',
             'size':'18'
             }
@@ -108,7 +108,7 @@ def general_format_coord(current,other=None,llabel='',rlabel=''):
             ax_coord = inv.transform(display_coord)
             coords = [tuple(ax_coord)+(llabel,),(x,y,rlabel)]
             fcoords = ['{}: ({:.3f}, {:.3f})'.format(l,tx,ty) for tx,ty,l in coords]
-            return('{:<40}{}{:>}'.format(fcoords[0],space,fcoords[1]))
+            return ('{:<40}{}{:>}'.format(fcoords[0],space,fcoords[1]))
         else:
             return ('{:<40}'.format('{}: ({:.3f}, {:.3f})'.format(rlabel,x,y)))
     return format_coord
@@ -132,12 +132,12 @@ def on_release(event):
     for ann in ann_list:
         ann.remove()
         ann_list.remove(ann)
-    event.canvas_draw()
+    event.canvas.draw()
     
 def PNGerator(flist,**kwargs):
     nthreads = kwargs.pop('nthreads',1)
     if (nthreads > 1 and nthreads > cpu_count()) or nthreads < 1:
-        nthreads = cpu_count
+        nthreads = cpu_count()
     if isinstance(flist,str):
         flist = [flist]
     if isinstance(flist,list):
@@ -245,7 +245,8 @@ class Plotter(object):
         """
         execString = command['cmd']+"("
         if command['args']:
-            execString += ",".join(map(str,command['args']))
+            execString += ",".join(map(str,[self.multiDims(arg,[])
+                                            for arg in command['args']]))
         if command['kwargs']:
             if command['args']:
                 execString += ","
@@ -260,15 +261,30 @@ class Plotter(object):
             if key == 'transform':
                 execString += key+"="+kwargs[key].strip('\'')
             elif isinstance(kwargs[key],dict):
-                execString += key+"=dict("+",".join([k+"="+str(kwargs[key][k])
+                execString += key+"=dict("+",".join([k+"="+str(self.multiDims(kwargs[key][k],[]))
                                                         for k in kwargs[key]])+")"
             elif isinstance(kwargs[key],str) or isinstance(kwargs[key],unicode):
                 execString += key+"="+str(kwargs[key])
             else:
-                execString += key+"="+str(kwargs[key]).replace('\n',',')
+                execString += key+"="+str(self.multiDims(kwargs[key],[]))
             execString += ","
         return execString
     
+    def multiDims(self,arr,newlist):
+        if isinstance(arr,np.ndarray):
+            if arr.ndim > 2:
+                for nextarr in arr:
+                    newlist.append([])
+                    self.multiDims(nextarr,newlist[-1])
+            elif arr.ndim == 2:
+                for nextarr in arr:
+                    newlist.append(list(nextarr))
+            else:
+                newlist = list(arr)
+            return newlist
+        else:
+            return arr
+        
     def createPlot(self,fname,**kwargs):
         try:
             if self.lines:
@@ -371,9 +387,9 @@ class Plotter(object):
                                 if command['cmd'] not in special_cmds and not([scmd for scmd in special_cmds if command['cmd'].startswith(scmd)]):
                                     execString = "othAx[t]."+self.buildExecString(command)
                                     exec(execString,{"ccrs":ccrs},{"othAx":othAx,"t":t})
-                        if 'patches' in self.sub[rowcol] and self.sub[rowcol]['patches']:
-                            for patch in self.sub[rowcol]['patches']:
-                                execString ="othAx[t].add_patch(mpathes.{})".format(self.buildExecString(patch))
+                        if 'patches' in self.sub[t] and self.sub[t]['patches']:
+                            for patch in self.sub[t]['patches']:
+                                execString ="othAx[t].add_patch(mpatches.{})".format(self.buildExecString(patch))
                                 exec(execString,{"ccrs":ccrs,"mpatches":mpatches},{"othAx":othAx,"t":t})
                         if setformat:
                             othAx[t].format_coord = general_format_coord(othAx[t],thisax)
@@ -499,28 +515,28 @@ class Plotter(object):
             sc = ax.scatter(line['x'],line['y'],
                          **{k:line[k] for k in line
                             if k not in exclude_list})
-        if line['plottype'] == 'pie':
+        elif line['plottype'] == 'pie':
             sc = ax.pie(line['x'],
                          **{k:line[k] for k in line
                             if k not in exclude_list})
-        if line['plottype'] == 'scatter3d':
+        elif line['plottype'] == 'scatter3d':
             sc = ax.scatter(line['x'],line['y'],line['z'],
                          **{k:line[k] for k in line
                             if k not in exclude_list})
-        if line['plottype'] == 'stackplot':
+        elif line['plottype'] == 'stackplot':
             sc = ax.stackplot(line['x'],line['y'],
                          **{k:line[k] for k in line
                             if k not in exclude_list})
-        if line['plottype'] == 'hist':
+        elif line['plottype'] == 'hist':
             sc = ax.hist(line['x'],line['bins'],
                          **{k:line[k] for k in line
                             if k not in exclude_list})
-        if line['plottype'] == 'bar':
-            sc = ax.bar(line['x'],line['height'],line['width'],line['bottom'],line['align'],
+        elif line['plottype'] == 'bar':
+            sc = ax.bar(line['x'],line['height'],width=line['width'],bottom=line['bottom'],align=line['align'],
                          **{k:line[k] for k in line
                             if k not in exclude_list})
-        if line['plottype'] == 'barh':
-            sc = ax.barh(line['x'],line['width'],line['height'],line['left'],line['align'],
+        elif line['plottype'] == 'barh':
+            sc = ax.barh(line['x'],line['width'],height=line['height'],left=line['left'],align=line['align'],
                          **{k:line[k] for k in line
                             if k not in exclude_list})
         return sc
@@ -542,6 +558,7 @@ class Plotter(object):
             self.lines.append(self.sub[axid]['lines'][-1])
         else:
             print('Invalid axis reference')
+            return
         # last entry in axis lines is a blank dictionary
         self.sub[axid]['lines'][-1]['plottype'] = 'plot'
         self.sub[axid]['lines'][-1]['x'] = x
@@ -558,6 +575,7 @@ class Plotter(object):
             self.lines.append(self.sub[axid]['lines'][-1])
         else:
             print('Invalid axis reference')
+            return
         # last entry in axis lines is a blank dictionary
         self.sub[axid]['lines'][-1]['plottype'] = 'scatter'
         self.sub[axid]['lines'][-1]['x'] = x
@@ -573,6 +591,7 @@ class Plotter(object):
             self.lines.append(self.sub[axid]['lines'][-1])
         else:
             print('Invalid axis reference')
+            return
         # last entry in axis lines is a blank dictionary
         self.sub[axid]['lines'][-1]['plottype'] = 'scatter3d'
         self.sub[axid]['lines'][-1]['x'] = x
@@ -589,6 +608,7 @@ class Plotter(object):
             self.lines.append(self.sub[axid]['lines'][-1])
         else:
             print('Invalid axis reference')
+            return
         # last entry in axis lines is a blank dictionary
         self.sub[axid]['lines'][-1]['plottype'] = 'pie'
         self.sub[axid]['lines'][-1]['x'] = sizes
@@ -603,6 +623,7 @@ class Plotter(object):
             self.lines.append(self.sub[axid]['lines'][-1])
         else:
             print('Invalid axis reference')
+            return
         # last entry in axis lines is a blank dictionary
         self.sub[axid]['lines'][-1]['plottype'] = 'stackplot'
         self.sub[axid]['lines'][-1]['x'] = x
@@ -618,6 +639,7 @@ class Plotter(object):
             self.lines.append(self.sub[axid]['lines'][-1])
         else:
             print('Invalid axis reference')
+            return
         # last entry in axis lines is a blank dictionary
         self.sub[axid]['lines'][-1]['plottype'] = 'hist'
         self.sub[axid]['lines'][-1]['x'] = x
@@ -633,6 +655,7 @@ class Plotter(object):
             self.lines.append(self.sub[axid]['lines'][-1])
         else:
             print('Invalid axis reference')
+            return
         # last entry in axis lines is a blank dictionary
         self.sub[axid]['lines'][-1]['plottype'] = 'bar'
         self.sub[axid]['lines'][-1]['x'] = x
@@ -651,8 +674,9 @@ class Plotter(object):
             self.lines.append(self.sub[axid]['lines'][-1])
         else:
             print('Invalid axis reference')
+            return
         # last entry in axis lines is a blank dictionary
-        self.sub[axid]['lines'][-1]['plottype'] = 'plot'
+        self.sub[axid]['lines'][-1]['plottype'] = 'barh'
         self.sub[axid]['lines'][-1]['x'] = x
         self.sub[axid]['lines'][-1]['width'] = width
         self.sub[axid]['lines'][-1]['height'] = height
@@ -681,7 +705,7 @@ class Plotter(object):
                     cnt+=1
             newref = axid+(cnt,)
             self.initAxes(newref,1,1)
-            self.parseCommand(newref,'twin()'.format(axis),[kwargs])
+            self.parseCommand(newref,'twin{}'.format(axis),[kwargs])
             return newref
         else:
             print('Invalid axis reference.')
@@ -1098,13 +1122,13 @@ if __name__ == '__main__':
         elif OPTION == 3:
             plt.subplots_adjust(left=0.2, bottom=0.25, right=0.95)
         
-        pltr.parseCommand(ax,'ylabel',[["Loss in ${0}'s".format(value_increment)]])
+        pltr.parseCommand(ax,'set_ylabel',[["Loss in ${0}'s".format(value_increment)]])
 #        plt.ylabel("Loss in ${0}'s".format(value_increment))
-        pltr.parseCommand(ax,'yticks',[[values * value_increment, ['%d' % val for val in values]]])
+        pltr.parseCommand(ax,'set_yticks',[[values * value_increment, ['%d' % val for val in values]]])
 #        plt.yticks(values * value_increment, ['%d' % val for val in values])
-        pltr.parseCommand(ax,'xticks',[[]])
+        pltr.parseCommand(ax,'set_xticks',[[[]]])
 #        plt.xticks([])
-        pltr.parseCommand(ax,'title',[['Loss by Disaster']])
+        pltr.parseCommand(ax,'set_title',[['Loss by Disaster']])
 #        plt.title('Loss by Disaster')
         pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
         
