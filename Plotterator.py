@@ -31,7 +31,18 @@ option: -nt <##>
     if len(sys.argv) == 1:
         print(NOTES)
         sys.exit(0)
-        
+    else:
+        sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'Importerator'))
+        import Importerator
+        exports, tup = Importerator.buildDepends('Plotterator')
+        RELATIVE_LIB_PATH = Importerator.RELATIVE_LIB_PATH
+        for line in exports.splitlines():
+            try:
+                exec line in globals(), globals()
+                print(line)
+            except:
+                print('{} did not work.'.format(line))
+"""IMPORTERATOR        
 import glob
 import cPickle
 import numpy as np
@@ -43,12 +54,12 @@ from matplotlib.lines import Line2D
 from matplotlib import table
 from mpl_toolkits.mplot3d import Axes3D
 from multiprocessing import cpu_count, Pool
-
-try:
-    import cartopy.crs as ccrs
-    from cartopy import config
-    from cartopy.io.shapereader import Reader
-    import cartopy.feature as cfeature
+import cartopy.crs as ccrs
+from cartopy import config
+from cartopy.io.shapereader import Reader
+import cartopy.feature as cfeature
+"""
+if 'ccrs' in dir():
     CfgDir = config['repo_data_dir']
     lenCfgDir = len(CfgDir)+1
     resolution ='10m'
@@ -57,14 +68,12 @@ try:
                                             'natural_earth',
                                             resolution+'_cultural')
     ADMIN0_COUNTRIES_NAME    = glob.glob(os.path.join(shapefiles_cultural_path, 'ne_'+resolution+'_admin_0_countries*.shp'))[0]
-except:
-    ccrs = None
 
-if not hasattr(sys,'frozen'):
-    RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    sys.path.extend([_ for _ in glob.glob(os.path.join(RELATIVE_LIB_PATH,'*')) if os.path.isdir(_)])
-else:
-    RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
+#if not hasattr(sys,'frozen'):
+#    RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+##    sys.path.extend([_ for _ in glob.glob(os.path.join(RELATIVE_LIB_PATH,'*')) if os.path.isdir(_)])
+#else:
+#    RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
     
 STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
 ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presentation.mplstyle')
