@@ -39,6 +39,7 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
 from matplotlib import table
 from mpl_toolkits.mplot3d import Axes3D
 from multiprocessing import cpu_count, Pool
@@ -211,6 +212,7 @@ class Plotter(object):
         self.fig['classification'] = kwargs.pop('classy','SECRET//NOFORN')
         self.fig['facecolor'] = kwargs.pop('facecolor',plt.rcParams['figure.facecolor'])
         self.fig['picker'] = kwargs.pop('picker',False)
+        self.fig['customlegend'] = None
         
     def initAxes(self,axid,rowspan,colspan,threeD=False,colorbar={},combinelegend=False,mapplot=False,mapproj='PlateCarree()',table=None):
         """
@@ -229,7 +231,8 @@ class Plotter(object):
                           'mapplot':mapplot,
                           'mapproj':mapproj,
                           'mapimg':None,
-                          'table':table}
+                          'table':table,
+                          'customlegend':None}
         
     def buildExecString(self,command):
         """
@@ -412,6 +415,10 @@ class Plotter(object):
                         h1,l1 = othAx[t].get_legend_handles_labels()
                         h += h1
                         l += l1
+                if 'customlegend' in self.sub[rowcol] and self.sub[rowcol]['customlegend']:
+                    h, l = self.sub[rowcol]['customlegend']
+                    h = [eval('Line2D(hndl[0],hndl[1],{})'.format(self.buildKwargs(hndl[2])[:-1]),{'Line2D':Line2D},{'hndl':hndl})
+                            for hndl in h]
                 if self.sub[rowcol]['commands']:
                     for command in self.sub[rowcol]['commands']:
                         if command['cmd'] == 'legend':
@@ -464,6 +471,12 @@ class Plotter(object):
                     thisax.format_coord = general_format_coord(thisax)
         gotTitle = False
         figlng = None
+        figh = []
+        figl = []
+        if 'customlegend' in self.fig and self.fig['customlegend']:
+            figh, figl = self.sub[rowcol]['customlegend']
+            figh = [eval('Line2D(hndl[0],hndl[1],{})'.format(self.buildKwargs(hndl[2])[:-1]),{'Line2D':Line2D},{'hndl':hndl})
+                    for hndl in figh]
         if self.fig['commands']:
             for command in self.fig['commands']:
                 if not(command['cmd'].startswith('get_legend')) and not(command['cmd'] == 'legend'):
@@ -473,8 +486,12 @@ class Plotter(object):
                     exec(execString,{"ccrs":ccrs},{"fig":fig})
             for command in self.fig['commands']:
                 if command['cmd'] == 'legend':
-                    execString = "fig."+self.buildExecString(command)
-                    figlng = eval(execString,{"ccrs":ccrs},{"fig":fig})
+                    if h:
+                        execString = "fig.legend(figh,figl,"+self.buildExecString(command)[7:]
+                        figlng = eval(execString,{"ccrs":ccrs},{"fig":fig,"figh":figh,"figl":figl})
+                    else:
+                        execString = "fig."+self.buildExecString(command)
+                        figlng = eval(execString,{"ccrs":ccrs},{"fig":fig})
         if figlng:
             if self.fig['commands']:
                 for command in self.fig['commands']:
@@ -799,7 +816,39 @@ class Plotter(object):
                                                                 'kwargs':kwargs},
                                    'cellParams':{'cellFontSize':cellFontSize,
                                                  'cellHeight':cellHeight}}
-        
+
+    def add_customlegend(self,obj,handles,labels,**kwargs):
+        if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
+            print('Unrecognized reference object.')
+            return
+        if not isinstance(handles,list) or not isinstance(labels,list) or len(handles) != len(labels):
+            print(obj,handles,labels)
+            print('Invalid input to parseCommand.')
+            return
+        # OK now do stuff        
+        if obj == 'fig':
+            thisthing = self.fig
+        else:
+            thisthing = self.sub[obj]
+        newhandles = []
+        for a,b,c in handles:
+            newc = {}
+            for k in c:
+                if isinstance(c[k],dict):
+                    newc[k] = {}
+                    for k1 in c[k]:
+                        if isinstance(c[k][k1],str) or isinstance(c[k][k1],unicode):
+                            newc[k][k1] = "'''"+c[k][k1]+"'''"
+                        else:
+                            newc[k][k1] = c[k][k1]
+                elif isinstance(c[k],str) or isinstance(c[k],unicode):
+                    newc[k] = "'''"+c[k]+"'''"
+                else:
+                    newc[k] = c[k]
+            newhandles.append((a,b,newc))
+        thisthing['customlegend'] = (newhandles,labels)
+        self.parseCommand(obj,'legend',[kwargs])
+            
     def retrievePlot(self,fname):
         if os.path.isfile(fname):
             tempDict = cPickle.load(file(fname,'rb'))
@@ -907,7 +956,7 @@ class Plotter(object):
 #        return axinfo
         
 if __name__ == '__main__':
-    if False:
+    if True:
         pltr = Plotter(combinelegend=True)
         pltr.add_subplot()
         x = np.random.randint(0,100,20)
@@ -916,9 +965,11 @@ if __name__ == '__main__':
         pltr.parseCommand((0,0),'legend',[[]])
         ax1 = pltr.add_subplot((1,0))
         pltr.scatter(y,x,axid=ax1,label='FYL')
-        pltr.parseCommand(ax1,'legend',[[]])
-        pltr.parseCommand(ax1,'legend',[dict(loc='best')])
-        
+#        pltr.parseCommand(ax1,'legend',[[]])
+#        pltr.parseCommand(ax1,'legend',[dict(loc='best')])
+        l = ['FudgeMyLife']
+        h = [([0],[0],dict(markerfacecolor='red',marker='d',color='w'))]
+        pltr.add_customlegend(ax1,h,l,loc='best')
         ax2 = pltr.add_subplot((2,0))
         pltr.scatter(y,y,ax2,label='fudge dragon')
         
@@ -1042,7 +1093,7 @@ if __name__ == '__main__':
         pltr.parseCommand(ax,'text',[[delhi_lon+3,delhi_lat-12,'New York'],
                                      dict(ha='left',transform='Geodetic()')])
         pltr.createPlot('test.png',SAVEONLY=True)
-    if True:
+    if False:
         """
         ==========
         Table Demo
