@@ -21,27 +21,53 @@ from PyQt5 import QtSql
 from PyQt5.QtCore import QVariant
 from PyQt5 import QtSql, uic#, QtOpenGL
 
+noshow_dict = {'plot':['x','y','plottype'],
+               'scatter':['x','y','plottype'],
+               'pie':['x','plottype'],
+               'scatter3d':['x','y','z','plottype'],
+               'stackplot':['x','y','plottype'],
+               'hist':['x','bins','plottype'],
+               'bar':['x','height','plottype'],
+               'barh':['x','width','plottype'],
+               }
+        
 class Pleditor(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         uic.loadUi('Pleditor.ui', self)
-        fname = 'C://Users//DivollHJ//Documents//Scripts//python//flashstuff//test.pklplt'
+        fname = 'C://Users//jdivoll//Documents//dev//analytix-master//test.pklplt'
         if os.path.isfile(fname):
-            d = cPickle.load(file(fname,'rb'))
+            self.plotDict = cPickle.load(file(fname,'rb'))
             self.setupTreeWidget(self.PlotOptionsTree,d)
 
-    def setupTreeWidget(self,widget,treedata):#,includelists):
+    def buildTreeDict(self,treedata,nested):
+        """
+        worst case -> sub[(0,0)]['commands'][0]['kwargs']['prop']['size'] = 6
+        """
+        for k,v in treedata:
+            if isinstance(v,dict):
+                nested[k] = {}
+                self.buildTreeDict(treedata[k],nested[k])
+            elif isinstance(v,list):
+                if isinstance(v[0],dict):
+                    nested[k] = []
+                    for newd in v:
+                        nested[k].append({})
+                        self.buildTreeDict(newd,nested[k][-1]
+                else:
+                    nested[k] = {'itemtype':'list',
+                                 'widget':}
+    def setupTreeWidget(self,widget,treedata):
+        """
+        worst case -> sub[(0,0)]['commands'][0]['kwargs']['prop']['size'] = 6
+        """
         treedata = OrderedDict(treedata.items())
         self.PlotOptionsTree.clear()
         widget.blockSignals(True)
-        self.nestedwidgets = {k:{} for k in treedata.keys()}
-        for k in treedata.keys():
-            self.nestedwidgets[k]['colorcontainer'] = QWidget()
-            self.nestedwidgets[k]['legendcontainer'] = QWidget()
-            self.nestedwidgets[k]['markercontainer'] = QWidget()
+        self.nestedwidgets = {}
         def walkDict(d,parent,key):
             d = OrderedDict(d)
-            index = int(key.split(':')[-1])
+#            index = int(key.split(':')[-1])
             for k, v in d.iteritems():
 #                if k not in includelist:
 #                    continue
@@ -60,7 +86,7 @@ class Pleditor(QMainWindow):
                     self.nestedwidgets[key][k] = QLineEdit(v)
                     grandchild = QTreeWidgetItem(child)
                     widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
-                    self.nestedwidgets[key][k].textChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k],plindex=index,plkey=k:self.EditPlotOptions(plwidget,plindex,plkey,None))
+#                    self.nestedwidgets[key][k].textChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k],plindex=index,plkey=k:self.EditPlotOptions(plwidget,plindex,plkey,None))
                 else:
                     pass
 #                #Sliders for single values
