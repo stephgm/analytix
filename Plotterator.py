@@ -451,7 +451,15 @@ class Plotter(object):
                         thisax.add_feature(featOfStrength)
                 if 'table' in self.sub[rowcol] and self.sub[rowcol]['table']:
                     execString = "(thisax,"+self.buildExecString(self.sub[rowcol]['table']['command'])[1:]
-                    exec('table.table'+execString,{"table":table},{"thisax":thisax})
+                    the_table = eval('table.table'+execString,{"table":table},{"thisax":thisax})
+                    if 'cellParams' in self.sub[rowcol]['table'] and (self.sub[rowcol]['table']['cellParams']['cellFontSize'] or
+                                                                      self.sub[rowcol]['table']['cellParams']['cellHeight']):
+                        prop=the_table.properties()
+                        cells = prop['child_artists']
+                        for cell in cells:
+                            if self.sub[rowcol]['table']['cellParams']['cellFontSize']:
+                                cell.set_fontsize(self.sub[rowcol]['table']['cellParams']['cellFontSize'])
+                                cell.set_height(cell.get_height() * self.sub[rowcol]['table']['cellParams']['cellHeight']) 
                 if setformat:
                     thisax.format_coord = general_format_coord(thisax)
         gotTitle = False
@@ -776,13 +784,21 @@ class Plotter(object):
                   cellLoc='right', colWidths=None,
                   rowLabels=None, rowColours=None, rowLoc='left',
                   colLabels=None, colColours=None, colLoc='center',
-                  loc='bottom', bbox=None, edges='closed',
+                  loc='bottom', bbox=None, edges='closed', 
+                  cellFontSize=None,cellHeight=None,
                   kwargs={}):
         if not (isinstance(axid,tuple) and axid in self.sub):
             print('Unrecognized reference object.')
             return
         # OK now do stuff
-        self.sub[axid]['table'] = {'ax':axid,'command':{'cmd':'','args':[cellText,cellColours,"'''"+cellLoc+"'''",colWidths,rowLabels,rowColours,"'''"+rowLoc+"'''",colLabels,colColours,"'''"+colLoc+"'''","'''"+loc+"'''",bbox,"'''"+edges+"'''"],'kwargs':kwargs}}
+        self.sub[axid]['table'] = {'ax':axid,'command':{'cmd':'','args':[cellText,cellColours,
+                                                                         "'''"+cellLoc+"'''",colWidths,
+                                                                         rowLabels,rowColours,"'''"+rowLoc+"'''",
+                                                                         colLabels,colColours,"'''"+colLoc+"'''",
+                                                                         "'''"+loc+"'''",bbox,"'''"+edges+"'''"],
+                                                                'kwargs':kwargs},
+                                   'cellParams':{'cellFontSize':cellFontSize,
+                                                 'cellHeight':cellHeight}}
         
     def retrievePlot(self,fname):
         if os.path.isfile(fname):
@@ -1078,14 +1094,17 @@ if __name__ == '__main__':
         cell_text.reverse()
         
         # Add a table at the bottom of the axes
-        if OPTION == 1 or OPTION == 3:
-            pltr.add_table(ax,cellText=cell_text,
-                                  rowLabels=rows,
-                                  rowColours=colors,
-                                  colLabels=columns,
-                                  loc='bottom',
-                                  colLoc='center',
-                                  rowLoc='center')
+#        if OPTION == 1 or OPTION == 3:
+        print cell_text
+        pltr.add_table(ax,cellText=cell_text,
+                              rowLabels=rows,
+                              rowColours=colors,
+                              colLabels=columns,
+                              loc='bottom',
+                              colLoc='center',
+                              rowLoc='center',
+                              cellFontSize=10,
+                              cellHeight=1.4)
 #            the_table = plt.table(cellText=cell_text,
 #                                  rowLabels=rows,
 #                                  rowColours=colors,
@@ -1093,38 +1112,39 @@ if __name__ == '__main__':
 #                                  loc='bottom',
 #                                  colLoc='center',
 #                                  rowLoc='center')
-        elif OPTION == 2:
-            the_table = plt.table(cellText=cell_text,
-                                  rowLabels=rows,
-                                  rowColours=colors,
-                                  colLabels=columns,
-                                  loc='bottom',
-                                  colLoc='center',
-                                  rowLoc='center',
-                                  bbox=[0, -0.3, 1, 0.275])
+#        elif OPTION == 2:
+#            the_table = plt.table(cellText=cell_text,
+#                                  rowLabels=rows,
+#                                  rowColours=colors,
+#                                  colLabels=columns,
+#                                  loc='bottom',
+#                                  colLoc='center',
+#                                  rowLoc='center',
+#                                  bbox=[0, -0.3, 1, 0.275])
         
-        if False:
-            prop=the_table.properties()
-            cells = prop['child_artists']
-            for cell in cells:
-                if OPTION != 3:
-                    continue
-                cell.set_fontsize(10)
-                #cell.set_facecolor('red')
-                # this works if you leave off the bbox from the original call
-                cell.set_height(cell.get_height() * 1.4)
-                # don't seem to work
-                #cell['height'] =1
-                #cell.set_height(1)
-                #cell.set_visible(False)
+#        if False:
+#            prop=the_table.properties()
+#            cells = prop['child_artists']
+#            for cell in cells:
+#                if OPTION != 3:
+#                    continue
+#                cell.set_fontsize(10)
+#                #cell.set_facecolor('red')
+#                # this works if you leave off the bbox from the original call
+#                cell.set_height(cell.get_height() * 1.4)
+#                # don't seem to work
+#                #cell['height'] =1
+#                #cell.set_height(1)
+#                #cell.set_visible(False)
         
         # Adjust layout to make room for the table:
-        if OPTION == 1:
-            plt.subplots_adjust(left=0.2, bottom=0.2)
-        elif OPTION == 2:
-            plt.subplots_adjust(left=0.2, bottom=0.2)
-        elif OPTION == 3:
-            plt.subplots_adjust(left=0.2, bottom=0.25, right=0.95)
+#        if OPTION == 1:
+#            plt.subplots_adjust(left=0.2, bottom=0.2)
+#        elif OPTION == 2:
+#            plt.subplots_adjust(left=0.2, bottom=0.2)
+#        elif OPTION == 3:
+        pltr.parseCommand('fig','subplots_adjust',[dict(left=0.2, bottom=0.35, right=0.95)])
+#            plt.subplots_adjust(left=0.2, bottom=0.25, right=0.95)
         
         pltr.parseCommand(ax,'set_ylabel',[["Loss in ${0}'s".format(value_increment)]])
 #        plt.ylabel("Loss in ${0}'s".format(value_increment))
