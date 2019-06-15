@@ -8,7 +8,7 @@ import numpy as np
 
 def countcrazy(num):
     for i in range(num):
-        print(i)
+        print i
         
 def calcpi(x0,y0,num):
     x = {'pi':[],'index':[]}
@@ -23,7 +23,7 @@ def calcpi(x0,y0,num):
         x['pi'].append(pi0)
         x['index'].append(i)
     newpi = pi0*((newx+1.)/(newy+1.))
-    print(newpi)
+    print newpi
     return x
 
 def calcPI(starter,num):
