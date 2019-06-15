@@ -99,7 +99,6 @@ def handle_InternationalDateline(iLat,iLon):
         alllons = np.append(poslons,neglons)
         alllats = np.append(poslats,neglats)
         alllons,alllats = orderPolygon(alllons,alllats)
-        plt.scatter(alllons,alllats)
         poly = Polygon(zip(alllons,alllats))
         line = LineString([(0,-5000),(0,5000)])
         spoly = split(poly,line)
