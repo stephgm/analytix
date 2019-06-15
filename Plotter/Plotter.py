@@ -71,8 +71,8 @@ orkeys = [str(i) for i in range(10)]
 orkeys.insert(0,'')
 
 
-BlueMarbleHD = os.path.join(RELATIVE_LIB_PATH,'BlueMarbleHD.png')
-BlueMarbleSD = os.path.join(RELATIVE_LIB_PATH,'BlueMarbleSD.jpg')
+BlueMarbleHD = os.path.join(RELATIVE_LIB_PATH,'Plotter','BlueMarbleHD.png')
+BlueMarbleSD = os.path.join(RELATIVE_LIB_PATH,'Plotter','BlueMarbleSD.jpg')
 
 import Plotterator as Plotterator
 from collections import OrderedDict
@@ -2631,9 +2631,10 @@ class Plotter(QMainWindow):
                                     for ii in range(len(lats)):
                                         pltr.add_patch(pax,'Polygon',[dict(xy=np.array([lons[ii],lats[ii]]).T,closed=True,fill=pl['fill DA'],color=pl['color'][i],alpha=pl['alpha']/100.,transform='PlateCarree()',ls=pl['DA line style'],zorder=int(pl['z order'][i]))])
                             if not self.PlotListHideLegendChk.isChecked():
-                                handles.append(Line2D([0],[0],color=pl['color'][i]))
-#                        if not self.PlotListHideLegendChk.isChecked() and pl['bmoa']:
-#                            pltr.parseCommand('fig','legend',[dict(handles=handles,labels=pl['legend'],prop=dict(size=6),loc='best',ncol=4)])
+                                handles.append(([0],[0],dict(color=pl['color'][i])))
+                        if not self.PlotListHideLegendChk.isChecked() and pl['bmoa']:
+                            #TODO make this figure legend
+                            pltr.add_customlegend(pax,handles,pl['legend'],loc='best',prop=dict(size=6),ncol=4)
                         pltr.parseCommand(pax,'set_global',[])
                         if pl['color map']:
                             pltr.add_colorbar(pax,pl['color map name'],pl['colorbar Label'])
@@ -2651,7 +2652,7 @@ class Plotter(QMainWindow):
                         if pl['color map']:
                             pltr.add_colorbar(pax,pl['color map name'],pl['colorbar Label'])
                         pltr.parseCommand(pax,'set_zlabel',[[pl['z label']],dict(fontsize=15)])
-                    if not self.PlotListHideLegendChk.isChecked():
+                    if not self.PlotListHideLegendChk.isChecked() and not pl['bmoa']:
                         pltr.parseCommand('fig','legend',[dict(prop=dict(size=6),loc='best',ncol=4)])
                     pltr.parseCommand(pax,'set_xlabel',[[pl['x label']],dict(fontsize=15)])
                     pltr.parseCommand(pax,'set_ylabel',[[pl['y label']],dict(fontsize=15)])
@@ -3602,8 +3603,8 @@ class AdvancedPlot(QDialog):
                         pltr.parseCommand(pax,'set_aspect',[['equal']])
                         if not widget.HideLegendChk.isChecked():
                             pltr.parseCommand(pax,'legend',[dict(loc='best',labels=pl['legend'])])
-#                            pltr.parseCommand(pax,'legend',[dict(loc='best')])
                     if pl['plot type'] in ['Basemap']:
+                        handles = []
                         for i,ydat in enumerate(pl['y data']):
                             if not pl['bmoa']:
                                 pltr.scatter(pl['x data'][i],ydat,axid=pax,s=pl['marker size'],c=pl['color'][i],cmap=pl['color map name'],marker=pl['marker'][i],label = pl['legend'][i],transform='PlateCarree()',zorder=int(pl['z order'][i])+zorderfixer)
@@ -3616,8 +3617,12 @@ class AdvancedPlot(QDialog):
                                         lats,lons = ID.handle_InternationalDateline(pl['y data'][i][j],pl['x data'][i][j])
                                     for ii in range(len(lats)):
                                         pltr.add_patch(pax,'Polygon',[dict(xy=np.array([lons[ii],lats[ii]]).T,closed=True,fill=pl['fill DA'],color=pl['color'][i],alpha=pl['alpha']/100.,transform='PlateCarree()',ls=pl['DA line style'],zorder=int(pl['z order'][i])+zorderfixer)])
+                                if not widget.HideLegendChk.isChecked():
+                                    handles.append(([0],[0],dict(color=pl['color'][i])))
+                        if not widget.HideLegendChk.isChecked() and pl['bmoa']:
+                            pltr.add_customlegend(pax,handles,pl['legend'],loc='best',prop=dict(size=6),ncol=4)
                         pltr.parseCommand(pax,'set_global',[])
-                        if not widget.HideLegendChk.isChecked():
+                        if not widget.HideLegendChk.isChecked() and not pl['bmoa']:
                             pltr.parseCommand(pax,'legend',[dict(loc='best')])
                         if pl['color map']:
                             pltr.add_colorbar(pax,pl['color map name'],pl['colorbar Label'])
