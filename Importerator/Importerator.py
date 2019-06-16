@@ -68,11 +68,10 @@ def buildDepends(key):
         if l in basekeys:
             if l != basekeys[l]:
                 paths_to_add.add(os.path.dirname(basekeys[l]))
-            basedepends.union(set(thedict[basekeys[l]]))
+            basedepends.update(thedict[basekeys[l]])
     sys.path.extend([os.path.join(RELATIVE_LIB_PATH,newpath) for newpath in paths_to_add])
     dstring = ''
     for tup in basedepends:
-#        dstring += '{}\n'.format(buildImport(tup))
         dstring = buildImport(tup)
         try:
             exec dstring in globals(), globals()
@@ -93,5 +92,5 @@ def returnGlobals():
     
 if __name__ == '__main__':
 #    thefile = 'C://Users/DivollHJ/Documents/Scripts/python/dev/analytix-master/theimports.pkl'
-#    buildDepends('Plotter')
-    scanSource('C://Users/DivollHJ/Documents/Scripts/python/dev/analytix-master')
+    buildDepends('Plotterator')
+#    scanSource(RELATIVE_LIB_PATH)
