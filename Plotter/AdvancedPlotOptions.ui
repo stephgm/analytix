@@ -66,19 +66,41 @@
          <property name="sizeConstraint">
           <enum>QLayout::SetDefaultConstraint</enum>
          </property>
-         <item row="5" column="1" colspan="3">
-          <widget class="QTreeWidget" name="PlotListData">
-           <property name="dragDropMode">
-            <enum>QAbstractItemView::DragOnly</enum>
+         <item row="2" column="1" colspan="3">
+          <widget class="QLineEdit" name="Classification">
+           <property name="text">
+            <string>Demo</string>
            </property>
-           <column>
-            <property name="text">
-             <string notr="true">1</string>
-            </property>
-           </column>
           </widget>
          </item>
-         <item row="5" column="0">
+         <item row="0" column="2">
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>Columns</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1" colspan="3">
+          <widget class="QLineEdit" name="FigureColorValue">
+           <property name="text">
+            <string>#ffffff</string>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="RowCombo">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
             <widget class="QComboBox" name="PlotListType">
@@ -153,8 +175,43 @@
            </item>
           </layout>
          </item>
-         <item row="0" column="1">
-          <widget class="QComboBox" name="RowCombo">
+         <item row="4" column="1" colspan="3">
+          <widget class="QTreeWidget" name="PlotListData">
+           <property name="dragDropMode">
+            <enum>QAbstractItemView::DragOnly</enum>
+           </property>
+           <column>
+            <property name="text">
+             <string notr="true">1</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QPushButton" name="FigureColor">
+           <property name="text">
+            <string>Figure Color</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="1" colspan="3">
+          <widget class="QLineEdit" name="FigureTitle"/>
+         </item>
+         <item row="0" column="3">
+          <widget class="QComboBox" name="ColumnCombo">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -177,77 +234,10 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
-          <widget class="QPushButton" name="FigureColor">
-           <property name="text">
-            <string>Figure Color</string>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="1">
-          <spacer name="verticalSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="1" column="1" colspan="3">
-          <widget class="QLineEdit" name="FigureTitle"/>
-         </item>
          <item row="0" column="0">
           <widget class="QLabel" name="label_3">
            <property name="text">
             <string>Rows</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="QComboBox" name="ColumnCombo">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1" colspan="3">
-          <widget class="QLineEdit" name="Classification">
-           <property name="text">
-            <string>SECRET//NOFORN</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QLabel" name="label_6">
-           <property name="text">
-            <string>Columns</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1" colspan="3">
-          <widget class="QLineEdit" name="FigureColorValue">
-           <property name="text">
-            <string>#ffffff</string>
-           </property>
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1" colspan="3">
-          <widget class="QLineEdit" name="SaveDirectory"/>
-         </item>
-         <item row="4" column="0">
-          <widget class="QPushButton" name="SaveOutputDirButton">
-           <property name="text">
-            <string>Output Directory</string>
            </property>
           </widget>
          </item>
@@ -268,9 +258,6 @@
     </widget>
    </item>
   </layout>
-  <zorder>JustDoIt</zorder>
-  <zorder>MainSplit</zorder>
-  <zorder>SaveButton</zorder>
  </widget>
  <resources/>
  <connections/>

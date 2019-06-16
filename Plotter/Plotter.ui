@@ -239,7 +239,7 @@
          <item row="0" column="0">
           <widget class="QTabWidget" name="tabWidget">
            <property name="currentIndex">
-            <number>0</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="tab_4">
             <attribute name="title">
@@ -1859,7 +1859,7 @@
                      <item>
                       <widget class="QLineEdit" name="PlotListClassy">
                        <property name="text">
-                        <string>SECRET//NOFORN</string>
+                        <string>Demo</string>
                        </property>
                       </widget>
                      </item>
@@ -2049,9 +2049,7 @@
   <tabstop>ClearPlotList</tabstop>
   <tabstop>ImportFilters</tabstop>
  </tabstops>
- <resources>
-  <include location="plotter.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>ClearPlotListSelection</sender>

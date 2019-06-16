@@ -5,8 +5,8 @@ Created on Fri Dec 21 16:12:00 2018
 @author: Jordan
 """
 
+"""IMPORTERATOR
 import matplotlib.font_manager as mplfm
-
 import os
 import sys
 import numpy as np
@@ -20,7 +20,7 @@ import PyQt5.QtGui as QtWidgets
 from PyQt5.Qt import *
 from PyQt5 import QtSql
 from PyQt5.QtCore import QVariant
-from PyQt5 import QtSql, uic#, QtOpenGL
+from PyQt5 import QtSql, uic
 import operator
 import matplotlib
 import matplotlib.pyplot as plt
@@ -29,7 +29,6 @@ from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2
 from matplotlib.figure import Figure
 from matplotlib import colors as mcolors
 import matplotlib.patches as mpatches
-#import geopandas as gp
 import cartopy
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -37,24 +36,85 @@ from cartopy.io.shapereader import Reader
 import time
 import Queue as queue
 import LongFunc as lf
-#import h5_traj_generator as trajgen
 import random
 import cPickle as pickle
 from mpl_toolkits.mplot3d import Axes3D
+import FilterClass
+import InternationalDateline as ID
+import Plotterator as Plotterator
+from collections import OrderedDict
+from matplotlib.lines import Line2D
+"""
+#import matplotlib.font_manager as mplfm
+#
+#import os
+#import sys
+#import numpy as np
+#import pandas as pd
+#import h5py
+#from glob import glob
+#import copy
+#import PyQt5.QtCore as QtCore
+#import PyQt5.QtGui as QtGui
+#import PyQt5.QtGui as QtWidgets
+#from PyQt5.Qt import *
+#from PyQt5 import QtSql
+#from PyQt5.QtCore import QVariant
+#from PyQt5 import QtSql, uic#, QtOpenGL
+#import operator
+#import matplotlib
+#import matplotlib.pyplot as plt
+#from matplotlib.backends.qt_compat import QtCore, QtWidgets, is_pyqt5
+#from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+#from matplotlib.figure import Figure
+#from matplotlib import colors as mcolors
+#import matplotlib.patches as mpatches
+##import geopandas as gp
+#import cartopy
+#import cartopy.crs as ccrs
+#import cartopy.feature as cfeature
+#from cartopy.io.shapereader import Reader
+#import time
+#import Queue as queue
+#import LongFunc as lf
+##import h5_traj_generator as trajgen
+#import random
+#import cPickle as pickle
+#from mpl_toolkits.mplot3d import Axes3D
 #sys.path.insert(0, 'C:\\Users\\Jordan\\Desktop\\Work Practice\\PyOpenGL_World_Py35_Qt5CarlVersion\\')
 #import ota_world as otaw
 
 #RELATIVE_LIB_PATH = os.path.join(os.path.expanduser('~'),'PyModules')
-if not hasattr(sys,'frozen'):
-    RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    sys.path.append(RELATIVE_LIB_PATH)
-    sys.path.append(glob(os.path.join(RELATIVE_LIB_PATH,'*')))
-else:
-    RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
+#if not hasattr(sys,'frozen'):
+#    RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#    sys.path.append(RELATIVE_LIB_PATH)
+#    sys.path.append(glob(os.path.join(RELATIVE_LIB_PATH,'*')))
+#else:
+#    RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
 
 
-import FilterClass
-import InternationalDateline as ID
+#import FilterClass
+#import InternationalDateline as ID
+import os
+import sys
+import time
+if __name__ == '__main__':
+    sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'Importerator'))
+    import Importerator
+    exports, tup = Importerator.buildDepends('Plotter\Plotter')
+    RELATIVE_LIB_PATH = Importerator.RELATIVE_LIB_PATH
+    for line in exports.splitlines():
+        try:
+            exec line in globals(), globals()
+            print(line)
+        except:
+            print('{} did not work.'.format(line))
+    
+#    import FilterClass
+#    import InternationalDateline as ID
+#    import Plotterator as Plotterator
+#    BlueMarbleHD = os.path.join(RELATIVE_LIB_PATH,'Plotter','BlueMarbleHD.png')
+#    BlueMarbleSD = os.path.join(RELATIVE_LIB_PATH,'Plotter','BlueMarbleSD.jpg')
 
 colors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
 
@@ -74,9 +134,9 @@ orkeys.insert(0,'')
 BlueMarbleHD = os.path.join(RELATIVE_LIB_PATH,'Plotter','BlueMarbleHD.png')
 BlueMarbleSD = os.path.join(RELATIVE_LIB_PATH,'Plotter','BlueMarbleSD.jpg')
 
-import Plotterator as Plotterator
-from collections import OrderedDict
-from matplotlib.lines import Line2D
+#import Plotterator as Plotterator
+#from collections import OrderedDict
+#from matplotlib.lines import Line2D
 plotcolor.append('COLORBAR')
 TIMEFIELDS = ['ValidityTime_TALO','ScenarioTime_TALO','Time','time']
 TRANSFORMS = ['Plate Carree','North Polar','EckertV','Rotated Pole','Orthographic']
@@ -94,6 +154,7 @@ BarPlotBarWidthNormalize = 80.
 
 #spath = 'C:\Users\Jordan\Desktop'
 spath = os.path.dirname(os.path.realpath(__file__))
+#print RELATIVE_LIB_PATH
 
 
 def BMOACorrection(lat,lon,radius_km):
@@ -144,6 +205,12 @@ class Plotter(QMainWindow):
         self.plotlistColor = []
         self.Filter = FilterClass.FilterClass(self,self.FilterTree,connect=False)
         
+        
+        #The new ish
+        if  not os.path.isdir(os.path.join(os.path.expanduser('~'),'Phobos_Plots')):
+            os.mkdir(os.path.join(os.path.expanduser('~'),'Phobos_Plots'))
+        self.PlotListSaveDir.setText(os.path.join(os.path.expanduser('~'),'Phobos_Plots','*Plot-Title_TimeStamp*'))
+        
     def Alert(self,msg,This=True,That=True):
         print msg
         
@@ -158,8 +225,8 @@ class Plotter(QMainWindow):
         self.PlotType.currentIndexChanged.connect(self.StackedPlotOptions.setCurrentIndex)
         self.PlotColorSymbol.itemChanged.connect(lambda:self.updateCanvas())
         self.AddToPlotlist.clicked.connect(lambda:self.addToPlotList())
-        self.PlotListPlot.clicked.connect(lambda:self.plotListPlot(Save=False))
-        self.PlotListSave.clicked.connect(lambda:self.plotListPlot(Save=True))
+        self.PlotListPlot.clicked.connect(lambda:self.plotListPlot(SaveOnly=False))
+        self.PlotListSave.clicked.connect(lambda:self.plotListPlot(SaveOnly=True))
         self.AdvancedOptions.clicked.connect(lambda:self.plotListAdvanced())
         self.setDynamicConnections()
         self.PlotListRemoveSelected.clicked.connect(lambda:self.clearPlotListSelection())
@@ -168,6 +235,7 @@ class Plotter(QMainWindow):
         self.PlotOptionsTree.itemExpanded.connect(lambda:self.PlotOptionsTree.resizeColumnToContents(0))
         self.PlotOptionsTree.itemExpanded.connect(lambda:self.PlotOptionsTree.resizeColumnToContents(1))
         self.optionsTabWidget.currentChanged.connect(lambda:self.initPlotOptions())
+        self.PlotListSaveDirectoryButton.clicked.connect(lambda:self.updateSaveDirectory())
 #        self.TableTab.currentChanged.connect(lambda:self.initPlot())
         
         
@@ -1915,7 +1983,7 @@ class Plotter(QMainWindow):
                     self.nestedwidgets[key][k].append(QComboBox())
                     self.nestedwidgets[key][k][-1].clear()
                     self.nestedwidgets[key][k][-1].addItems(linestyles)
-                    lsindex = self.nestedwidgets[key][k][-1].findText(str(item))
+                    lsindex = self.nestedwidgets[key][k][-1].findText(str(v))
                     self.nestedwidgets[key][k][-1].setCurrentIndex(lsindex)
                     self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey=k:self.EditPlotOptions(plwidget,plindex,plkey,None))
                     grandchild = QTreeWidgetItem(child)
@@ -2658,14 +2726,23 @@ class Plotter(QMainWindow):
                     pltr.parseCommand(pax,'set_ylabel',[[pl['y label']],dict(fontsize=15)])
                     pltr.parseCommand(pax,'set_title',[[pl['plot title']]])
                     pltr.parseCommand(pax,'set_facecolor',[[pl['axis background color']]])
-                    pltr.createPlot('',PERSIST=True)
+                    if not SaveOnly:
+                        pltr.createPlot('',PERSIST=True)
+                    if SaveOnly:
+                        filename = self.PlotListSaveDir.text().replace('*Plot-Title_TimeStamp*',pl['plot title']+str(time.strftime("%m-%d-%Y_%H_%M_%S")+'.png'))
+                        print filename
+                        pltr.createPlot(filename,SAVEPNG=True,SAVEPKL=True)
         if Advanced:
             self.dialog = AdvancedPlot(self.plotList,self)
-            self.dialog.exec_()
+            self.dialog.show()
             
             pass
     
-    
+    def updateSaveDirectory(self):
+        sdir = QFileDialog.getExistingDirectory(self, "Select Directory")
+        sdir = os.path.join(sdir,'*Plot-Title_TimeStamp*')
+        self.PlotListSaveDir.setText(sdir)
+        
     def Calc(self):
         self.queue = queue.Queue()
         self.thread.append(SimpleThread(self.queue, self.addOutsideData,lf.calcPI,self,np.sqrt(2),2000000))
@@ -3451,12 +3528,13 @@ class AdvancedPlot(QDialog):
     def makeConnections(self):
         self.ColumnCombo.activated.connect(lambda:self.setGrid())
         self.RowCombo.activated.connect(lambda:self.setGrid())
-        self.JustDoIt.clicked.connect(lambda:self.getit())
+        self.JustDoIt.clicked.connect(lambda:self.getit(Save=False))
         self.PlotListType.activated.connect(lambda:self.populateList())
         self.PlotListData.itemSelectionChanged.connect(lambda:self.greyThings())
         self.PlotListType.activated.connect(lambda:self.greyThings(Trans=True))
         self.EnableAll.clicked.connect(lambda:self.greyThings(Trans=True))
         self.FigureColor.clicked.connect(lambda:self.parent.colorPicker(self.FigureColorValue))
+        self.SaveButton.clicked.connect(lambda:self.getit(Save=True))
         
     def populateList(self):
         self.PlotListData.clear()
@@ -3523,12 +3601,12 @@ class AdvancedPlot(QDialog):
                                 else:
                                     widget.TreeWidget.setEnabled(False)
                             else:
-                                if pl['plot type'] in widget.Type[0] and (((xaxis,pl['projection'],pl['orthographic center']) == widget.Type[1:]) or widget.Type == (None,None,None,None)):
+                                if (pl['plot type'] in widget.Type[0] and ((xaxis,pl['projection'],pl['orthographic center']) == widget.Type[1:])) or widget.Type == (None,None,None,None):
                                     widget.TreeWidget.setEnabled(True)
                                 else:
                                     widget.TreeWidget.setEnabled(False)
         
-    def getit(self):
+    def getit(self,Save=False):
         axdict = {}
         for i in range(self.split_V.count()):
             axdict[i]={}
@@ -3651,8 +3729,13 @@ class AdvancedPlot(QDialog):
             pltr.parseCommand('fig','legend',[dict(prop=dict(size=6),loc='best',ncol=4)])
 #            pltr.createPlot('',PERSIST=True)
                 
-                    
-        pltr.createPlot('',PERSIST=True)
+        if not Save:
+            pltr.createPlot('',PERSIST=True)
+        else:
+            sdir = os.path.join(os.path.expanduser('~'),'Phobos_Plots')
+            fname = QFileDialog.getSaveFileName(self, 'Save File',sdir,"png(*.png)")[0]
+            print fname
+            pltr.createPlot(fname,SAVE=True,SAVEPKL=True)
     def preview(self):
         pass
     
@@ -3875,4 +3958,20 @@ def main():
 
 
 if __name__ == '__main__':
+#    sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'Importerator'))
+#    import Importerator
+#    exports, tup = Importerator.buildDepends('Plotter\Plotter')
+#    RELATIVE_LIB_PATH = Importerator.RELATIVE_LIB_PATH
+#    for line in exports.splitlines():
+#        try:
+#            exec line in globals(), globals()
+#            print(line)
+#        except:
+#            print('{} did not work.'.format(line))
+#    
+##    import FilterClass
+##    import InternationalDateline as ID
+##    import Plotterator as Plotterator
+#    BlueMarbleHD = os.path.join(RELATIVE_LIB_PATH,'Plotter','BlueMarbleHD.png')
+#    BlueMarbleSD = os.path.join(RELATIVE_LIB_PATH,'Plotter','BlueMarbleSD.jpg')
     main()
