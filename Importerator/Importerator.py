@@ -72,8 +72,13 @@ def buildDepends(key):
     sys.path.extend([os.path.join(RELATIVE_LIB_PATH,newpath) for newpath in paths_to_add])
     dstring = ''
     for tup in basedepends:
-        dstring += '{}\n'.format(buildImport(tup))
-    return dstring, tup
+#        dstring += '{}\n'.format(buildImport(tup))
+        dstring = buildImport(tup)
+        try:
+            exec dstring in globals(), globals()
+            print(dstring)
+        except:
+            print('{} did not work.'.format(dstring))
     
 def buildImport(tup):
     if tup[2]:
@@ -82,6 +87,9 @@ def buildImport(tup):
         return 'import {} as {}'.format(tup[0],tup[1])
     else:
         return 'import {}'.format(tup[0])
+
+def returnGlobals():
+    return globals()
     
 if __name__ == '__main__':
 #    thefile = 'C://Users/DivollHJ/Documents/Scripts/python/dev/analytix-master/theimports.pkl'

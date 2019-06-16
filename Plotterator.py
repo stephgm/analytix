@@ -7,6 +7,11 @@ Created on Fri May 31 12:46:02 2019
 
 import sys
 import os
+
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'Importerator'))
+import Importerator
+RELATIVE_LIB_PATH = Importerator.RELATIVE_LIB_PATH
+        
 if __name__ == '__main__':
     if os.name == 'posix':
         try:
@@ -32,16 +37,16 @@ option: -nt <##>
         print(NOTES)
         sys.exit(0)
     else:
-        sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'Importerator'))
-        import Importerator
-        exports, tup = Importerator.buildDepends('Plotterator')
-        RELATIVE_LIB_PATH = Importerator.RELATIVE_LIB_PATH
-        for line in exports.splitlines():
-            try:
-                exec line in globals(), globals()
-                print(line)
-            except:
-                print('{} did not work.'.format(line))
+        Importerator.buildDepends('Plotterator')
+#        exports, tup = Importerator.buildDepends('Plotterator')
+#        for line in exports.splitlines():
+#            try:
+#                exec line in globals(), globals()
+#                print(line)
+#            except:
+#                print('{} did not work.'.format(line))
+        
+globals().update(Importerator.returnGlobals())
 """IMPORTERATOR        
 import glob
 import cPickle
