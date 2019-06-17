@@ -37,7 +37,7 @@ option: -nt <##>
         print(NOTES)
         sys.exit(0)
     else:
-        Importerator.buildDepends('Plotterator')
+        Importerator.loadDepends('Plotterator')
 #        exports, tup = Importerator.buildDepends('Plotterator')
 #        for line in exports.splitlines():
 #            try:
@@ -46,7 +46,9 @@ option: -nt <##>
 #            except:
 #                print('{} did not work.'.format(line))
         
+print globals(), '\n\nbreak\n\n'
 globals().update(Importerator.returnGlobals())
+print globals()
 #tits.makeAndPrintArray()
 intermediary.deeperNdeeper()
 """IMPORTERATOR        
