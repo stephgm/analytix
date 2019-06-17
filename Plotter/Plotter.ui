@@ -1841,13 +1841,13 @@
                   </item>
                  </layout>
                 </widget>
-                <widget class="QSplitter" name="splitter_3">
+                <widget class="QSplitter" name="PlotListPropertiesSplitter">
                  <property name="orientation">
                   <enum>Qt::Vertical</enum>
                  </property>
                  <widget class="QWidget" name="horizontalLayoutWidget">
                   <layout class="QGridLayout" name="gridLayout_8">
-                   <item row="0" column="1">
+                   <item row="0" column="2">
                     <layout class="QHBoxLayout" name="horizontalLayout_3">
                      <item>
                       <widget class="QLabel" name="label_10">
@@ -1865,7 +1865,7 @@
                      </item>
                     </layout>
                    </item>
-                   <item row="1" column="1">
+                   <item row="1" column="2">
                     <layout class="QHBoxLayout" name="horizontalLayout_4">
                      <item>
                       <widget class="QPushButton" name="PlotListSaveDirectoryButton">
@@ -1883,6 +1883,20 @@
                     <widget class="QCheckBox" name="PlotListHideLegendChk">
                      <property name="text">
                       <string>Hide Legend</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QPushButton" name="PopTree">
+                     <property name="text">
+                      <string>Pop Tree</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QPushButton" name="ReplaceTree">
+                     <property name="text">
+                      <string>PushButton</string>
                      </property>
                     </widget>
                    </item>
