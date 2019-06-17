@@ -47,6 +47,8 @@ option: -nt <##>
 #                print('{} did not work.'.format(line))
         
 globals().update(Importerator.returnGlobals())
+#tits.makeAndPrintArray()
+intermediary.deeperNdeeper()
 """IMPORTERATOR        
 import glob
 import cPickle
@@ -63,6 +65,8 @@ import cartopy.crs as ccrs
 from cartopy import config
 from cartopy.io.shapereader import Reader
 import cartopy.feature as cfeature
+IMPORTERATOR_FROM_REPO
+import intermediary
 """
 if 'ccrs' in dir():
     CfgDir = config['repo_data_dir']
