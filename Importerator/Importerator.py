@@ -53,8 +53,10 @@ def gatherImportsFromRepo(srcdir):
             if os.path.splitext(xfile)[1] == '.py':
                 with open(os.path.join(root,xfile),'r') as fid:
                     lines = fid.read().splitlines()
-                thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])] = {'stack':[],
-                                                                                        'repo':[]}
+                thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])] = {'stack':{},
+                                                                                        'repo':{}}
+                sdict = thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])]['stack']
+                rdict = thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])]['repo']
                 startGathering = False
                 stacking = True
                 for line in lines:
@@ -63,12 +65,16 @@ def gatherImportsFromRepo(srcdir):
                     elif startGathering and line.find('IMPORTERATOR_FROM_REPO') != -1:
                         stacking = False
                     elif line.find('import') != -1 and startGathering:
-                        val = parseImport(line)
+                        val, tup = parseImport(line)
                         if val:
                             if stacking:
-                                thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])]['stack'].append(val)
+                                if val not in sdict:
+                                    sdict[val] = []
+                                sdict[val].append(tup)
                             else:
-                                thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])]['repo'].append(val)
+                                if val not in rdict:
+                                    rdict[val] = []
+                                rdict[val].append(tup)
                     elif line.strip().startswith('"""') and startGathering:
                         break
                     
@@ -81,15 +87,15 @@ def parseImport(line):
     if line.startswith('import'):
         words = line.split()
         if len(words) > 2 and words[2] == 'as':
-            return {words[1]:(words[3],())}
+            return words[1],(words[3],())
         else:
-            return {words[1]:('',())}
+            return words[1],('',())
     elif line.startswith('from'): # assume from x import y,z,foo
         words = line.split(None,3)
         funcs = map(str.strip,words[3].split(','))
-        return {words[1]:('',tuple(funcs))}
+        return words[1],('',tuple(funcs))
     else:
-        return []
+        return '',[]
 
 def buildDepends(key):
     thedict = cPickle.load(file(os.path.join(os.path.dirname(os.path.realpath(__file__)),'theimports.pkl'),'rb'))
@@ -119,40 +125,43 @@ def buildDepends(key):
     for key in stackdepends:
         if key not in importedPkgs:
             importedPkgs.add(key)
-            dstring = buildImport(key,stackdict[key])
-            try:
-                exec dstring in globals(), globals()
-                print(dstring)
-            except:
-                print('{} did not work.'.format(dstring))
+            for tup in stackdict[key]:
+                dstring = buildImport(key,tup)
+                try:
+                    exec dstring in globals(), globals()
+                    print(dstring)
+                except:
+                    print('{} did not work.'.format(dstring))
     for key in repodepends:
         if key not in importedPkgs:
             importedPkgs.add(key)
-            dstring = buildImport(key,repodict[key])
-            try:
-                exec dstring in globals(), globals()
-                print(dstring)
-            except:
-                print('{} did not work.'.format(dstring))
+            for tup in repodict[key]:
+                dstring = buildImport(key,tup)
+                try:
+                    exec dstring in globals(), globals()
+                    print(dstring)
+                except:
+                    print('{} did not work.'.format(dstring))
                 
 def walkDepends(thedict,key,basekeys,importedBy,repodepends,stackdepends,repodict,stackdict):
-    for d in thedict[key]['stack']:
-        for k in d:
-            stackdepends.append(k)
-            stackdict.update(d)
-    for d in thedict[key]['repo']:
-        for k in d:
-            repodepends.append(k)
-            repodict.update(d)
+    for k in thedict[key]['stack']:
+        stackdepends.append(k)
+        if k not in stackdict:
+            stackdict[k] = []
+        stackdict[k].extend(thedict[key]['stack'][k])
+    for k in thedict[key]['repo']:
+        repodepends.append(k)
+        if k not in repodict:
+            repodict[k] = []
+        repodict[k].extend(thedict[key]['repo'][k])
     paths_to_add = set()    
-    for d in thedict[key]['repo']:
-        for l in d:
-            if l not in importedBy:
-                importedBy[l] = set()
-            importedBy[l].add(os.path.basename(key))
-            if l != basekeys[l]:
-                paths_to_add.add(os.path.dirname(basekeys[l]))
-            paths_to_add.update(walkDepends(thedict,basekeys[l],basekeys,importedBy,repodepends,stackdepends,repodict,stackdict))
+    for k in thedict[key]['repo']:
+        if k not in importedBy:
+            importedBy[k] = set()
+        importedBy[k].add(os.path.basename(key))
+        if k != basekeys[k]:
+            paths_to_add.add(os.path.dirname(basekeys[k]))
+        paths_to_add.update(walkDepends(thedict,basekeys[k],basekeys,importedBy,repodepends,stackdepends,repodict,stackdict))
     return paths_to_add
 
 def buildImport(k,tup):
