@@ -54,7 +54,8 @@ def gatherImportsFromRepo(srcdir):
                 with open(os.path.join(root,xfile),'r') as fid:
                     lines = fid.read().splitlines()
                 thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])] = {'stack':{},
-                                                                                        'repo':{}}
+                                                                                        'repo':{},
+                                                                                        'importString':''}
                 sdict = thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])]['stack']
                 rdict = thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])]['repo']
                 startGathering = False
@@ -84,13 +85,13 @@ def gatherImportsFromRepo(srcdir):
              
 def parseImport(line):
     line = line.strip()
-    if line.startswith('import'):
+    if line.startswith('import '):
         words = line.split()
         if len(words) > 2 and words[2] == 'as':
             return words[1],(words[3],())
         else:
             return words[1],('',())
-    elif line.startswith('from'): # assume from x import y,z,foo
+    elif line.startswith('from '): # assume from x import y,z,foo
         words = line.split(None,3)
         funcs = map(str.strip,words[3].split(','))
         return words[1],('',tuple(funcs))
@@ -122,27 +123,31 @@ def buildDepends(key):
             repodepends.insert(ind,l)
     importedPkgs = set()
     dstring = ''
-    for key in stackdepends:
-        if key not in importedPkgs:
-            importedPkgs.add(key)
-            for tup in stackdict[key]:
-                dstring = buildImport(key,tup)
-                try:
-                    exec dstring in globals(), globals()
-                    print(dstring)
-                except:
-                    print('{} did not work.'.format(dstring))
-    for key in repodepends:
-        if key not in importedPkgs:
-            importedPkgs.add(key)
-            for tup in repodict[key]:
-                dstring = buildImport(key,tup)
-                try:
-                    exec dstring in globals(), globals()
-                    print(dstring)
-                except:
-                    print('{} did not work.'.format(dstring))
-                
+    for skey in stackdepends:
+        if skey not in importedPkgs:
+            importedPkgs.add(skey)
+            for tup in stackdict[skey]:
+                dstring += '{}\n'.format(buildImport(skey,tup))
+#                try:
+#                    exec dstring in globals(), globals()
+#                    print(dstring)
+#                except:
+#                    print('{} did not work.'.format(dstring))
+    for dkey in repodepends:
+        if dkey not in importedPkgs:
+            importedPkgs.add(dkey)
+            for tup in repodict[dkey]:
+                dstring += '{}\n'.format(buildImport(dkey,tup))
+#                try:
+#                    exec dstring in globals(), globals()
+#                    print(dstring)
+#                except:
+#                    print('{} did not work.'.format(dstring))
+    thedict[key]['importString'] = dstring[:-1]
+    cPickle.dump(thedict,
+                 file(os.path.join(os.path.dirname(os.path.realpath(__file__)),'theimports.pkl'),'wb'),
+                 protocol=cPickle.HIGHEST_PROTOCOL)
+    
 def walkDepends(thedict,key,basekeys,importedBy,repodepends,stackdepends,repodict,stackdict):
     for k in thedict[key]['stack']:
         stackdepends.append(k)
@@ -172,11 +177,22 @@ def buildImport(k,tup):
     else:
         return 'import {}'.format(k)
 
+def loadDepends(key):
+    thedict = cPickle.load(file(os.path.join(os.path.dirname(os.path.realpath(__file__)),'theimports.pkl'),'rb'))
+    dstring = thedict[key]['importString']
+    if dstring:
+        lines = dstring.splitlines()
+        for line in lines:
+            try:
+                exec line in globals(), globals()
+                print(line)
+            except:
+                print('{} did not work.'.format(line))
+            
 def returnGlobals():
     return globals()
     
 if __name__ == '__main__':
 #    thefile = 'C://Users/DivollHJ/Documents/Scripts/python/dev/analytix-master/theimports.pkl'
-#    buildDepends('Plotterator')
-#    scanSource(RELATIVE_LIB_PATH)
-    gatherImportsFromRepo(RELATIVE_LIB_PATH)
+    buildDepends('Plotterator')
+#    gatherImportsFromRepo(RELATIVE_LIB_PATH)
