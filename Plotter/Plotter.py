@@ -35,15 +35,16 @@ import cartopy.feature as cfeature
 from cartopy.io.shapereader import Reader
 import time
 import Queue as queue
-import LongFunc as lf
 import random
 import cPickle as pickle
 from mpl_toolkits.mplot3d import Axes3D
+from collections import OrderedDict
+from matplotlib.lines import Line2D
+IMPORTERATOR_FROM_REPO
+import LongFunc as lf
 import FilterClass
 import InternationalDateline as ID
 import Plotterator as Plotterator
-from collections import OrderedDict
-from matplotlib.lines import Line2D
 """
 import matplotlib.font_manager as mplfm
 #
