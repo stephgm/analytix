@@ -8,43 +8,75 @@ import sys
 import os
 import cPickle
 import copy
+from cStringIO import StringIO
+
 if not hasattr(sys,'frozen'):
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     sys.path.append(RELATIVE_LIB_PATH)
 else:
     RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
 
-def scanSource(srcdir):
-    thedict = {}
-    srcdirlen = len(srcdir)
-    for root, dirs, files in os.walk(srcdir):
-        for xfile in files:
-            if os.path.splitext(xfile)[1] == '.py':
-                with open(os.path.join(root,xfile),'r') as fid:
-                    lines = fid.read().splitlines()
-                thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])] = []
-                appender = thedict[os.path.join(root[srcdirlen+1:],os.path.splitext(xfile)[0])].append
-                quotinBig = False
-                quotinSmall = False
-                for line in lines:
-                    if (line.strip().startswith('"""') or line.strip().endswith('"""')) and line.find('IMPORTERATOR') == -1:
-                        if not quotinBig:
-                            quotinBig = True
-                        else:
-                            quotinBig = False
-                    if line.strip().startswith("'''") or line.strip().endswith("'''"):
-                        if not quotinSmall:
-                            quotinSmall = True
-                        else:
-                            quotinSmall = False
-                    if line.find('import') != -1 and not (quotinBig or quotinSmall):
-                        val = parseImport(line)
-                        if val:
-                            appender(val)
-    cPickle.dump(thedict,
-                 file(os.path.join(os.path.dirname(os.path.realpath(__file__)),'theimports.pkl'),'wb'),
-                 protocol=cPickle.HIGHEST_PROTOCOL)
-
+def updateSourceFile(fname):
+    fname = os.path.realpath(fname)
+    if os.path.splitext(fname)[1] == '.py':
+        thedict = {'stack':[],
+               'repo':[],
+               'unknown':[]}
+        fileLines = StringIO()
+        with open(fname,'r') as fid:
+            lines = fid.read().splitlines()
+        quotinBig = False
+        quotinSmall = False
+        impSection = False
+        stacking = True
+        for line in lines:
+            if line.startswith('"""') and impSection:
+                impSection = False
+                stacking = True
+                continue
+            if line.find('"""IMPORTERATOR') != -1:
+                impSection = True
+                continue
+            if line.find('IMPORTERATOR_FROM_REPO') != -1:
+                stacking = False
+                continue
+            if (line.strip().startswith('"""') or line.strip().endswith('"""')) and line.find('IMPORTERATOR') == -1:
+                if not quotinBig:
+                    quotinBig = True
+                else:
+                    quotinBig = False
+            if line.strip().startswith("'''") or line.strip().endswith("'''"):
+                if not quotinSmall:
+                    quotinSmall = True
+                else:
+                    quotinSmall = False
+            if line.find('import ') != -1 and not (quotinBig or quotinSmall) and \
+                    line.find('import os') == -1 and line.find('import sys') == -1 and line.find('import Importerator') == -1:
+                if impSection:
+                    if stacking:
+                        thedict['stack'].append('{}\n'.format(line))
+                    else:
+                        thedict['repo'].append('{}\n'.format(line))
+                else:
+                    thedict['unknown'].append('{}\n'.format(line))
+            else:
+                fileLines.write('{}\n'.format(line))
+    with open(fname, 'w') as outfid:
+        outfid.write('"""IMPORTERATOR\n')
+        for line in thedict['stack']:
+            outfid.write(line)
+        if thedict['repo']:
+            outfid.write('IMPORTERATOR_FROM_REPO\n')
+        for line in thedict['repo']:
+            outfid.write(line)
+        if thedict['unknown']:
+            outfid.write('IMPORTERATOR_UNKNOWN\n')
+        for line in thedict['unknown']:
+            outfid.write(line)
+        outfid.write('"""\n')
+        fileLines.flush()
+        outfid.write(fileLines.getvalue())
+        
 def gatherImportsFromRepo(srcdir):
     thedict = {}
     srcdirlen = len(srcdir)
@@ -194,5 +226,7 @@ def returnGlobals():
     
 if __name__ == '__main__':
 #    thefile = 'C://Users/DivollHJ/Documents/Scripts/python/dev/analytix-master/theimports.pkl'
-    buildDepends('Plotterator')
+    fname = os.path.join(RELATIVE_LIB_PATH,'InternationalDateline.py')
+    updateSourceFile(fname)
+#    buildDepends('Plotterator')
 #    gatherImportsFromRepo(RELATIVE_LIB_PATH)
