@@ -92,18 +92,25 @@ def parseImport(line):
         else:
             return words[1],('',())
     elif line.startswith('from '): # assume from x import y,z,foo
-        words = line.split(None,3)
-        funcs = map(str.strip,words[3].split(','))
-        return words[1],('',tuple(funcs))
+        if ' as ' in line: # from x import y as z
+            asLoc = line.find(' as ')
+            wordsEnd = line[asLoc:].split()
+            wordsStart = line.split(None,3)
+            funcs = map(str.strip,wordsStart[3].split(','))
+            return wordsStart[1],(wordsEnd[1],tuple(funcs))
+        else: # from x import y
+            words = line.split(None,3)
+            funcs = map(str.strip,words[3].split(','))
+            return words[1],('',tuple(funcs))
     else:
         return '',[]
 
 def buildDepends(key):
     thedict = cPickle.load(file(os.path.join(os.path.dirname(os.path.realpath(__file__)),'theimports.pkl'),'rb'))
     basekeys = {os.path.basename(k):k for k in thedict}
-    stackdepends = []#copy.deepcopy(thedict[key]['stack'])
+    stackdepends = []
     stackdict = {}
-    repodepends = []#copy.deepcopy(thedict[key]['repo'])
+    repodepends = []
     repodict = {}
     importedBy = {}
     
@@ -128,21 +135,11 @@ def buildDepends(key):
             importedPkgs.add(skey)
             for tup in stackdict[skey]:
                 dstring += '{}\n'.format(buildImport(skey,tup))
-#                try:
-#                    exec dstring in globals(), globals()
-#                    print(dstring)
-#                except:
-#                    print('{} did not work.'.format(dstring))
     for dkey in repodepends:
         if dkey not in importedPkgs:
             importedPkgs.add(dkey)
             for tup in repodict[dkey]:
                 dstring += '{}\n'.format(buildImport(dkey,tup))
-#                try:
-#                    exec dstring in globals(), globals()
-#                    print(dstring)
-#                except:
-#                    print('{} did not work.'.format(dstring))
     thedict[key]['importString'] = dstring[:-1]
     cPickle.dump(thedict,
                  file(os.path.join(os.path.dirname(os.path.realpath(__file__)),'theimports.pkl'),'wb'),
@@ -171,7 +168,10 @@ def walkDepends(thedict,key,basekeys,importedBy,repodepends,stackdepends,repodic
 
 def buildImport(k,tup):
     if tup[1]:
-        return 'from {} import {}'.format(k,','.join(tup[1]))
+        if tup[0]:
+            return 'from {} import {} as {}'.format(k,','.join(tup[1]),tup[0])
+        else:
+            return 'from {} import {}'.format(k,','.join(tup[1]))
     elif tup[0]:
         return 'import {} as {}'.format(k,tup[0])
     else:
