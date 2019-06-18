@@ -18,7 +18,7 @@ newstring = re.sub(" ' '"," ' '  ",newstring)
 newstring = re.sub(" ' ' "," HHH'   'HHH ",newstring)
 #Replace quotes that have more than 2 spaces in them with the item you want
 # HHH'        'HHH -> ' FML '
-newstring = re.sub("HHH'  +'HHH",' FML ',newstring)
+newstring = re.sub("HHH'  +'HHH",' XXX ',newstring)
 #Replace things with one ore more spaces with just one space
 # The quick      brown    fox ->  The quick brown fox
 newstring = re.sub(" +"," ",newstring)
@@ -27,3 +27,6 @@ newstring = re.sub(" +"," ",newstring)
 newstring = re.sub("'","",newstring)
 #Split on the spaces
 x = newstring.split()
+for i,item in enumerate(x):
+    if item == 'XXX':
+        x[i] = ''
