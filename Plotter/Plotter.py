@@ -35,16 +35,15 @@ import cartopy.feature as cfeature
 from cartopy.io.shapereader import Reader
 import time
 import Queue as queue
+import LongFunc as lf
 import random
 import cPickle as pickle
 from mpl_toolkits.mplot3d import Axes3D
-from collections import OrderedDict
-from matplotlib.lines import Line2D
-IMPORTERATOR_FROM_REPO
-import LongFunc as lf
 import FilterClass
 import InternationalDateline as ID
 import Plotterator as Plotterator
+from collections import OrderedDict
+from matplotlib.lines import Line2D
 """
 import matplotlib.font_manager as mplfm
 #
@@ -158,6 +157,8 @@ BarPlotBarWidthNormalize = 80.
 spath = os.path.dirname(os.path.realpath(__file__))
 #print RELATIVE_LIB_PATH
 
+#clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+#print clsmembers
 
 def BMOACorrection(lat,lon,radius_km):
     arclength = radius_km
@@ -662,11 +663,39 @@ class Plotter(QMainWindow):
             if set(['Lat','Lon','Radius']).issubset(hdrchk):
                 self.addNativeHeadersbyHeader(['Lat','Lon','Radius'])
                 types.append('DA R')
+            if set(['Lat','Lon','width','length','orientation']).issubset(hdrchk):
+                self.addNativeHeadersbyHeader(['Lat','Lon','width','length','orientation'])
+                types.append('DA Ellipse')
             if types == []:
                 self.Alert("No Lat Lon Data found in dataset",True)
             self.GetTypeLatLon.clear()
             self.GetTypeLatLon.addItems(types)
             self.GetTypeLatLon.setCurrentIndex(-1)
+            
+    def BasemapCirclePolyFolder(self,data,locfield,radfield,polyorderfld,latfld,lonfld):
+        idx = data[radfield] > 0
+        print list(data)
+        circs = data[idx]
+        polys = data[~idx]
+        dfs = pd.DataFrame()
+        if polys.shape[0]:
+            locations = pd.unique(polys[locationfield].tolist())
+            dictionary = {k:[] for k in polys.columns}
+            for loc in locations:
+                locidx = polys[locationfield] == loc
+                polyloc = polys.sort_values(polyorderfld)[locidx]
+                lats = polyloc[latfld].tolist()
+                lons = polyloc[lonfld].tolist()
+                for key in dictionary:
+                    if key == latfld:
+                        dictionary[key].append(lats)
+                    elif key == lonfld:
+                        dictionary[key].append(lons)
+                    else:
+                        dictionary[key].append(polyloc[key].iloc[0])
+            dfs = pd.DataFrame(dictionary)
+        return pd.concat([circs,dfs],ignore_index=True).reset_index(drop=True)
+        
     
     def tformMapper(self,name=None):
         if isinstance(self.Transform,QComboBox):
@@ -1329,6 +1358,9 @@ class Plotter(QMainWindow):
             plbinnum = 0
             plalpha = 0
             plradii = []
+            plori = []
+            plmajor = []
+            plminor = []
             plxAxisDataHeader = ''
             plplottedheaders = []
             plzAxisDataHeader = ''
@@ -1347,6 +1379,13 @@ class Plotter(QMainWindow):
             orthocenter = ''
             plzorder = []
             pldalinestyle = None
+            plOriField = ''
+            plMajorField = ''
+            plMinorField = ''
+            plRadiusField = ''
+            plBmoaType = ''
+            plLocationsFld = ''
+            plPolyOrderFld = ''
 
             ptype = self.PlotType.currentText()
             if self.XAxisCombo.currentText():
@@ -1521,6 +1560,7 @@ class Plotter(QMainWindow):
                         dax.set_aspect('auto')
                     
                 if ptype in ['Basemap']:
+                    Type = 'Point'
                     lltext = self.GetTypeLatLon.currentText()
                     if lltext:
                         if lltext == 'Lat/Lon':
@@ -1567,41 +1607,100 @@ class Plotter(QMainWindow):
                             Lat = 'Lat'
                             Lon = 'Lon'
                             Radius = 'Circle_Radius'
+                            Locations = 'INSERT'
+                            PolyOrder = 'PolyOrder'
                             plotBmoa = True
+                            plRadiusField = Radius
+                            plLocationsFld = Locations
+                            plPolyOrderFld = PolyOrder
                             self.ColorBarHeaderLabel.hide()
                             self.ColorBarLabelLabel.hide()
                             self.ColorbarHeaderCombo.hide()
                             self.ColorbarNameCombo.hide()
                             self.ColorbarLabel.hide()
+                            Type = 'Circle'
                         elif lltext == 'DA R':
                             Lat = 'Lat'
                             Lon = 'Lon'
                             Radius = 'Radius'
+                            Locations = 'INSERT'
+                            PolyOrder = 'PolyOrder'
                             plotBmoa = True
+                            plRadiusField = Radius
+                            plLocationsFld = Locations
+                            plPolyOrderFld = PolyOrder
                             self.ColorBarHeaderLabel.hide()
                             self.ColorBarLabelLabel.hide()
                             self.ColorbarHeaderCombo.hide()
                             self.ColorbarNameCombo.hide()
                             self.ColorbarLabel.hide()
+                            Type = 'Circle'
+                        elif lltext == 'DA Ellipse':
+                            Lat = 'Lat'
+                            Lon = 'Lon'
+                            Major = 'length'
+                            Minor = 'width'
+                            Ori = 'orientation'
+                            plotBmoa = True
+                            plOriField = Ori
+                            plMajorField = Major
+                            plMinorField = Minor
+                            self.ColorBarHeaderLabel.hide()
+                            self.ColorBarLabelLabel.hide()
+                            self.ColorbarHeaderCombo.hide()
+                            self.ColorbarNameCombo.hide()
+                            self.ColorbarLabel.hide()
+                            Type = 'Ellipse'
                         #Fix for ellipses
                     else:
                         return
-#                    if 'DA' in lltext:
-#                        self.AlphaLabel.show()
-#                        self.AlphaSlider.show()
-#                        self.FillDA.show()
-#                    else:
-#                        self.AlphaLabel.hide()
-#                        self.AlphaSlider.hide()
-#                        self.FillDA.hide()
                     if plotBmoa:
-                        bmoaradii = model.getColumnData(Radius)
-                        plradii.append(bmoaradii)
+                        plBmoaType = Type
                         plalpha = float(self.alpha.text())
                         plfillDA = self.FillDA.isChecked()
                         pldalinestyle = self.DALineStyle.currentText()
                         if not pldalinestyle:
                             pldalinestyle = None
+                    if plotBmoa and Type == 'Circle':
+                        bmoaradii = model.getColumnData(Radius)
+                        plradii.append(bmoaradii)
+                        
+                    elif plotBmoa and Type == 'Ellipse':
+                        bmoaMajor = model.getColumnData(Major)
+                        bmoaMinor = model.getColumnData(Minor)
+                        bmoaOri = model.getColumnData(Ori)
+                        plmajor.append(bmoaMajor)
+                        plminor.append(bmoaMinor)
+                        plori.append(bmoaOri)
+#                    elif plotBmoa and Type == 'Circle':
+#                        tabledat = model.getTableData()
+#                        idx = tabledat[Radius] > 0
+#                        circs = tabledat[idx]
+#                        polys = tabledat[~idx]
+#                        polygonsy = []
+#                        polygonsx = []
+#                        dfs = pd.DataFrame()
+#                        if polys.shape[0]:
+#                            locations = pd.unique(polys[locationfield].tolist())
+#                            dictionary = {k:[] for k in polys.columns}
+#                            for loc in locations:
+#                                
+#                                locidx = polys[locationfield] == loc
+#                                polyloc = polys.sort_values(polyorder)[locidx]
+#                                lats = polyloc[Lat].tolist()
+#                                lons = polyloc[Lon].tolist()
+#                                for key in dictionary:
+#                                    if key == Lat:
+#                                        dictionary[key].append(lats)
+#                                    elif key == Lon:
+#                                        dictionary[key].append(lons)
+#                                    else:
+#                                        dictionary[key].append(polyloc[key].iloc[0])
+#                            dfs = pd.DataFrame(dictionary)
+#                        tabledat = pd.concat([circs,dfs],ignore_index=True).reset_index(drop=True)
+#                        
+                            
+                        
                     else:
                         plradii = None
 #                        pass
@@ -1615,8 +1714,11 @@ class Plotter(QMainWindow):
                             if True in idx:
                                 ply.append(ydata[idx])
                                 plx.append(xdata[idx])
-                    elif self.SymbolCodeChk.isChecked() and plotBmoa:
+                    elif self.SymbolCodeChk.isChecked() and plotBmoa and Type == 'Ellipse':
                         plradii = []
+                        plori = []
+                        plmajor = []
+                        plminor = []
                         ydata = model.getColumnData(Lat)
                         pluniquevals = pd.unique(model.getColumnData(self.SymbolCodeCombo.currentText()))
                         uniquedata = model.getColumnData(self.SymbolCodeCombo.currentText())
@@ -1626,7 +1728,35 @@ class Plotter(QMainWindow):
                             if True in idx:
                                 ply.append(ydata[idx].reset_index(drop=True))
                                 plx.append(xdata[idx].reset_index(drop=True))
+                                if Type == 'Circle':
+                                    plradii.append(bmoaradii[idx].reset_index(drop=True))
+                                elif Type == 'Ellipse':
+                                    plori.append(bmoaOri[idx].reset_index(drop=True))
+                                    plmajor.append(bmoaMajor[idx].reset_index(drop=True))
+                                    plminor.append(bmoaMinor[idx].reset_index(drop=True))
+                    elif self.SymbolCodeChk.isChecked() and plotBmoa and Type == 'Circle':
+                        plradii = []
+                        tdata = self.BasemapCirclePolyFolder(model.getTableData(),Locations,Radius,PolyOrder,Lat,Lon)
+                        ydata = tdata[Lat]
+                        xdata = tdata[Lon]
+                        bmoaradii = tdata[Radius]
+                        pluniquevals = pd.unique(model.getColumnData(self.SymbolCodeCombo.currentText()))
+                        uniquedata = model.getColumnData(self.SymbolCodeCombo.currentText())
+                        for i,val in enumerate(pluniquevals):
+                            idx = uniquedata == val
+                            if True in idx:
+                                ply.append(ydata[idx].reset_index(drop=True))
+                                plx.append(xdata[idx].reset_index(drop=True))
                                 plradii.append(bmoaradii[idx].reset_index(drop=True))
+                    elif not self.SymbolCodeChk.isChecked() and plotBmoa and Type == 'Circle':
+                        plradii = []
+                        tdata = self.BasemapCirclePolyFolder(model.getTableData(),Locations,Radius,PolyOrder,Lat,Lon)
+                        ydata = tdata[Lat]
+                        xdata = tdata[Lon]
+                        bmoaradii = tdata[Radius]
+                        ply.append(ydata)
+                        plx.append(xdata)
+                        plradii.append(bmoaradii)
                     else:
                         ply.append(model.getColumnData(Lat))
                         plx.append(model.getColumnData(Lon))
@@ -1657,7 +1787,7 @@ class Plotter(QMainWindow):
                         if not plotBmoa:
                             plzorder.append(i+1)
                             sc = dax.scatter(plx[i],ydat,s = plmarkersize, c = plcolor[i], cmap = plcm, marker = plmarker[i], label = pllegends[i], transform = ccrs.PlateCarree(),zorder=plzorder[-1])
-                        elif plotBmoa:
+                        elif plotBmoa and Type == 'Circle':
                             plzorder.append(i+1)
                             for j,r in enumerate(plradii[i]):
                                 if r > 0:
@@ -1665,6 +1795,16 @@ class Plotter(QMainWindow):
                                     lats,lons = ID.handle_InternationalDateline(lats,lons)
                                 else:
                                     lats,lons = ID.handle_InternationalDateline(ply[i][j],plx[i][j])
+                                for ii in range(len(lats)):
+                                    dax.add_patch(mpatches.Polygon(xy=np.array([lons[ii],lats[ii]]).T,closed = True,fill = plfillDA,color=plcolor[i],alpha=plalpha/100.,transform=ccrs.PlateCarree(),ls=pldalinestyle,zorder=plzorder[-1]))
+                            if not self.HideLegend.isChecked():
+                                handles.append(Line2D([0],[0],color=plcolor[i]))
+                        elif plotBmoa and Type == 'Ellipse':
+                            plzorder.append(i+1)
+                            for j,(major,minor,ori) in enumerate(zip(plmajor[i],plminor[i],plori[i])):
+                                if major >= 0. and minor >= 0.:
+                                    lats,lons = ID.ellipseLatLons(ply[i][j],plx[i][j],major,minor,ori)
+                                    lats,lons = ID.handle_InternationalDateline(lats,lons)
                                 for ii in range(len(lats)):
                                     dax.add_patch(mpatches.Polygon(xy=np.array([lons[ii],lats[ii]]).T,closed = True,fill = plfillDA,color=plcolor[i],alpha=plalpha/100.,transform=ccrs.PlateCarree(),ls=pldalinestyle,zorder=plzorder[-1]))
                             if not self.HideLegend.isChecked():
@@ -1802,6 +1942,9 @@ class Plotter(QMainWindow):
                     self.plotList[-1]['bin num']=plbinnum
                     self.plotList[-1]['bmoa']=plotBmoa
                     self.plotList[-1]['radii']=plradii
+                    self.plotList[-1]['orientations']=plori
+                    self.plotList[-1]['majors']=plmajor
+                    self.plotList[-1]['minors']=plminor
                     self.plotList[-1]['x axis data header']=plxAxisDataHeader
                     self.plotList[-1]['y axis data header']=plplottedheaders
                     self.plotList[-1]['z axis data header']=plzAxisDataHeader
@@ -1816,6 +1959,13 @@ class Plotter(QMainWindow):
                     self.plotList[-1]['fill DA']=plfillDA
                     self.plotList[-1]['DA line style'] = pldalinestyle
                     self.plotList[-1]['unique values']=pluniquevals
+                    self.plotList[-1]['orientation'] = plOriField
+                    self.plotList[-1]['major'] = plMajorField
+                    self.plotList[-1]['minor'] = plMinorField
+                    self.plotList[-1]['radius'] = plRadiusField
+                    self.plotList[-1]['bmoalocation'] = plLocationsFld 
+                    self.plotList[-1]['bmoapolyorder'] = plPolyOrderFld
+                    self.plotList[-1]['bmoa Type'] = plBmoaType
                     self.plotList[-1]['marker']=plmarker
                     self.plotList[-1]['marker size']=plmarkersize
                     self.plotList[-1]['legend']=pllegends
@@ -1937,13 +2087,15 @@ class Plotter(QMainWindow):
         def walkDict(d,parent,key):
             d = OrderedDict(d)
             index = int(key.split(':')[-1])
+            dontshows = ['legend','color','marker','line style','z order']
             for k, v in d.iteritems():
                 if k not in includelist:
                     continue
                 if not isinstance(k,str):
                     k = str(k)
-                    
-                if k not in ['legend','color','marker','line style','z order']:
+                if d['bmoa']:
+                    dontshows.append('colorbar')
+                if k not in dontshows:
                     child = QTreeWidgetItem(parent)
                     child.setText(0,k)
                 if isinstance(v, dict):
@@ -2041,79 +2193,80 @@ class Plotter(QMainWindow):
                         self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey=k,pllistindex=i:self.EditPlotOptions(plwidget,plindex,plkey,pllistindex))
                 #Colorbar stuff
                 if k in ['colorbar']:
-                    intable = d['keyID'] in self.MasterData
-                    self.nestedwidgets[key][k]=[]
-                    #0 label
-                    self.nestedwidgets[key][k].append(QLabel('has colorbar:'))
-                    grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
-                    
-                    #1 has colorbar combo
-                    self.nestedwidgets[key][k].append(QComboBox())
-                    self.nestedwidgets[key][k][-1].addItems(['True','False'])
-                    lsindex = self.nestedwidgets[key][k][-1].findText(str(d['colorbar']))
-                    self.nestedwidgets[key][k][-1].setCurrentIndex(lsindex)
-                    grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
-                    activate = self.nestedwidgets[key][k][-1].currentText()
-                    self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey=k,dictkey=key:self.handleColorbar(plwidget,plindex,plkey,dictkey))
-                    self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey='colorbar':self.EditPlotOptions(plwidget,plindex,plkey,None))
-                    if not intable and self.nestedwidgets[key][k][-1].currentText()=='False':
-                        self.nestedwidgets[key][k][-1].setEnabled(False)
-                    
-                    #2 label
-                    self.nestedwidgets[key][k].append(QLabel('color map header:'))
-                    grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
-                    
-                    #3 colorbar headers
-                    self.nestedwidgets[key][k].append(QComboBox())
-                    if intable:
-                        self.nestedwidgets[key][k][-1].addItems(d['non string headers'])
-                    else:
-                        self.nestedwidgets[key][k][-1].addItems([d['color map header']])
-                    lsindex = self.nestedwidgets[key][k][-1].findText(str(d['color map header']))
-                    self.nestedwidgets[key][k][-1].setCurrentIndex(lsindex)
-                    grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
-                    if activate == 'False':
-                        self.nestedwidgets[key][k][-1].setEnabled(False)
-                    if not intable:
-                        self.nestedwidgets[key][k][-1].setEnabled(False)
-                    self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][1],plindex=index,plkey=k,dictkey=key:self.handleColorbar(plwidget,plindex,plkey,dictkey))
-                    self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash,plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey='color map header':self.EditPlotOptions(plwidget,plindex,plkey,None))
-                    
-                    #4 label
-                    self.nestedwidgets[key][k].append(QLabel('color map name:'))
-                    grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
-                    
-                    #5 colorbar map
-                    self.nestedwidgets[key][k].append(QComboBox())
-                    self.nestedwidgets[key][k][-1].addItems(maps)
-                    lsindex = self.nestedwidgets[key][k][-1].findText(str(d['color map name']))
-                    self.nestedwidgets[key][k][-1].setCurrentIndex(lsindex)
-                    grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
-                    if activate == 'False':
-                        self.nestedwidgets[key][k][-1].setEnabled(False)
-                    self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][1],plindex=index,plkey=k,dictkey=key:self.handleColorbar(plwidget,plindex,plkey,dictkey))
-                    self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash,plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey='color map name':self.EditPlotOptions(plwidget,plindex,plkey,None))
-                    
-                    #6 label
-                    self.nestedwidgets[key][k].append(QLabel('colorbar label:'))
-                    grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
-                    
-                    #7 colorbar laabel
-                    self.nestedwidgets[key][k].append(QLineEdit(str(d['colorbar Label'])))
-                    grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
-                    if activate == 'False':
-                        self.nestedwidgets[key][k][-1].setEnabled(False)
-                    if not intable:
-                        self.nestedwidgets[key][k][-1].setEnabled(False)
-                    self.nestedwidgets[key][k][-1].textChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey='colorbar Label':self.EditPlotOptions(plwidget,plindex,plkey,None))
+                    if not d['bmoa']:
+                        intable = d['keyID'] in self.MasterData
+                        self.nestedwidgets[key][k]=[]
+                        #0 label
+                        self.nestedwidgets[key][k].append(QLabel('has colorbar:'))
+                        grandchild = QTreeWidgetItem(child)
+                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                        
+                        #1 has colorbar combo
+                        self.nestedwidgets[key][k].append(QComboBox())
+                        self.nestedwidgets[key][k][-1].addItems(['True','False'])
+                        lsindex = self.nestedwidgets[key][k][-1].findText(str(d['colorbar']))
+                        self.nestedwidgets[key][k][-1].setCurrentIndex(lsindex)
+                        grandchild = QTreeWidgetItem(child)
+                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                        activate = self.nestedwidgets[key][k][-1].currentText()
+                        self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey=k,dictkey=key:self.handleColorbar(plwidget,plindex,plkey,dictkey))
+                        self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey='colorbar':self.EditPlotOptions(plwidget,plindex,plkey,None))
+                        if not intable and self.nestedwidgets[key][k][-1].currentText()=='False':
+                            self.nestedwidgets[key][k][-1].setEnabled(False)
+                        
+                        #2 label
+                        self.nestedwidgets[key][k].append(QLabel('color map header:'))
+                        grandchild = QTreeWidgetItem(child)
+                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                        
+                        #3 colorbar headers
+                        self.nestedwidgets[key][k].append(QComboBox())
+                        if intable:
+                            self.nestedwidgets[key][k][-1].addItems(d['non string headers'])
+                        else:
+                            self.nestedwidgets[key][k][-1].addItems([d['color map header']])
+                        lsindex = self.nestedwidgets[key][k][-1].findText(str(d['color map header']))
+                        self.nestedwidgets[key][k][-1].setCurrentIndex(lsindex)
+                        grandchild = QTreeWidgetItem(child)
+                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                        if activate == 'False':
+                            self.nestedwidgets[key][k][-1].setEnabled(False)
+                        if not intable:
+                            self.nestedwidgets[key][k][-1].setEnabled(False)
+                        self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][1],plindex=index,plkey=k,dictkey=key:self.handleColorbar(plwidget,plindex,plkey,dictkey))
+                        self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash,plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey='color map header':self.EditPlotOptions(plwidget,plindex,plkey,None))
+                        
+                        #4 label
+                        self.nestedwidgets[key][k].append(QLabel('color map name:'))
+                        grandchild = QTreeWidgetItem(child)
+                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                        
+                        #5 colorbar map
+                        self.nestedwidgets[key][k].append(QComboBox())
+                        self.nestedwidgets[key][k][-1].addItems(maps)
+                        lsindex = self.nestedwidgets[key][k][-1].findText(str(d['color map name']))
+                        self.nestedwidgets[key][k][-1].setCurrentIndex(lsindex)
+                        grandchild = QTreeWidgetItem(child)
+                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                        if activate == 'False':
+                            self.nestedwidgets[key][k][-1].setEnabled(False)
+                        self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][1],plindex=index,plkey=k,dictkey=key:self.handleColorbar(plwidget,plindex,plkey,dictkey))
+                        self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash,plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey='color map name':self.EditPlotOptions(plwidget,plindex,plkey,None))
+                        
+                        #6 label
+                        self.nestedwidgets[key][k].append(QLabel('colorbar label:'))
+                        grandchild = QTreeWidgetItem(child)
+                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                        
+                        #7 colorbar laabel
+                        self.nestedwidgets[key][k].append(QLineEdit(str(d['colorbar Label'])))
+                        grandchild = QTreeWidgetItem(child)
+                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                        if activate == 'False':
+                            self.nestedwidgets[key][k][-1].setEnabled(False)
+                        if not intable:
+                            self.nestedwidgets[key][k][-1].setEnabled(False)
+                        self.nestedwidgets[key][k][-1].textChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k][-1],plindex=index,plkey='colorbar Label':self.EditPlotOptions(plwidget,plindex,plkey,None))
                     
                 if k in ['symbol code']:
                     intable = d['keyID'] in self.MasterData
@@ -2453,6 +2606,7 @@ class Plotter(QMainWindow):
         
     def handleSymbolCode(self,widget,index,key,dictkey):
         ply,plx,plz = [],[],[]
+        rad,major,minor,ori = [],[],[],[]
         if widget.currentText() == 'True':
             activated = True
         else:
@@ -2538,19 +2692,26 @@ class Plotter(QMainWindow):
                         self.nestedwidgets[dictkey]['megacontainer'].layout().addWidget(self.nestedwidgets[dictkey]['z order'][i],i+1,j,1,1)
                         j+=1
             else:
-                nwindex = self.nestedwidgets[dictkey]['colorbar'][1].findText('False')
-                self.nestedwidgets[dictkey]['colorbar'][1].setCurrentIndex(nwindex)
-                self.nestedwidgets[dictkey]['colorbar'][3].setCurrentIndex(-1)
-                self.nestedwidgets[dictkey]['colorbar'][3].setEnabled(False)
-                self.nestedwidgets[dictkey]['colorbar'][5].setCurrentIndex(-1)
-                self.nestedwidgets[dictkey]['colorbar'][5].setEnabled(False)
-                self.nestedwidgets[dictkey]['colorbar'][7].setText('')
-                self.nestedwidgets[dictkey]['colorbar'][7].setEnabled(False)
+                if 'colorbar' in self.nestedwidgets[dictkey]:
+                    nwindex = self.nestedwidgets[dictkey]['colorbar'][1].findText('False')
+                    self.nestedwidgets[dictkey]['colorbar'][1].setCurrentIndex(nwindex)
+                    self.nestedwidgets[dictkey]['colorbar'][3].setCurrentIndex(-1)
+                    self.nestedwidgets[dictkey]['colorbar'][3].setEnabled(False)
+                    self.nestedwidgets[dictkey]['colorbar'][5].setCurrentIndex(-1)
+                    self.nestedwidgets[dictkey]['colorbar'][5].setEnabled(False)
+                    self.nestedwidgets[dictkey]['colorbar'][7].setText('')
+                    self.nestedwidgets[dictkey]['colorbar'][7].setEnabled(False)
                 self.plotList[index]['unique values'] = pd.unique(origtabledata[self.nestedwidgets[dictkey]['symbol code'][symbolcodeheaderindex+1].currentText()])
                 uniquedata = origtabledata[self.nestedwidgets[dictkey]['symbol code'][symbolcodeheaderindex+1].currentText()]
                 xdata = origtabledata[self.plotList[index]['x axis data header']]
                 if self.plotList[index]['plot type'] == '3D Plot':
                     zdata = origtabledata[self.plotList[index]['z axis data header']]
+                if self.plotList[index]['bmoa'] and self.plotList[index]['bmoa Type'] == 'Circle':
+                    radii = origtabledata[self.plotList[index]['radius']]
+                if self.plotList[index]['bmoa'] and self.plotList[index]['bmoa Type'] == 'Ellipse':
+                    daori = origtabledata[self.plotList[index]['orientation']]
+                    damajor = origtabledata[self.plotList[index]['major']]
+                    daminor = origtabledata[self.plotList[index]['minor']]
                 for i,header in enumerate(self.plotList[index]['y axis data header']):
                     if self.plotList[index]['plot type'] not in ['Timeline']:
                         ydata = origtabledata[header]
@@ -2603,12 +2764,24 @@ class Plotter(QMainWindow):
                             p+=1
                         idx = uniquedata == val
                         if True in idx:
-                            ply.append(ydata[idx])
-                            plx.append(xdata[idx])
+                            ply.append(ydata[idx].reset_index(drop=True))
+                            plx.append(xdata[idx].reset_index(drop=True))
                             if self.plotList[index]['plot type'] == '3D Plot':
-                                plz.append(zdata[idx])
+                                plz.append(zdata[idx].reset_index(drop=True))
+                            if self.plotList[index]['bmoa'] and self.plotList[index]['bmoa Type'] == 'Circle':
+                                rad.append(radii[idx].reset_index(drop=True))
+                            if self.plotList[index]['bmoa'] and self.plotList[index]['bmoa Type'] == 'Ellipse':
+                                ori.append(daori[idx].reset_index(drop=True))
+                                major.append(damajor[idx].reset_index(drop=True))
+                                minor.append(daminor[idx].reset_index(drop=True))
                 self.plotList[index]['y data'] = ply
                 self.plotList[index]['x data'] = plx
+                if self.plotList[index]['bmoa'] and self.plotList[index]['bmoa Type'] == 'Circle':
+                    self.plotList[index]['radii'] = rad
+                if self.plotList[index]['bmoa'] and self.plotList[index]['bmoa Type'] == 'Ellipse':
+                    self.plotList[index]['orientations'] = ori
+                    self.plotList[index]['majors'] = major
+                    self.plotList[index]['minors'] = minor
                 if self.plotList[index]['plot type'] == '3D Plot':
                     self.plotList[index]['z data'] = plz
         else:
@@ -2701,13 +2874,20 @@ class Plotter(QMainWindow):
                         for i,ydat in enumerate(pl['y data']):
                             if not pl['bmoa']:
                                 pltr.scatter(pl['x data'][i],ydat,pax,s=pl['marker size'],c=pl['color'][i],cmap=pl['color map name'],marker=pl['marker'][i],label = pl['legend'][i],transform='PlateCarree()',zorder=int(pl['z order'][i]))
-                            else:
+                            elif pl['bmoa'] and pl['bmoa Type']=='Circle':
                                 for j,r in enumerate(pl['radii'][i]):
                                     if r > 0:
                                         lats,lons = ID.circleLatLons(pl['y data'][i][j],pl['x data'][i][j],r)
                                         lats,lons = ID.handle_InternationalDateline(lats,lons)
                                     else:
                                         lats,lons = ID.handle_InternationalDateline(pl['y data'][i][j],pl['x data'][i][j])
+                                    for ii in range(len(lats)):
+                                        pltr.add_patch(pax,'Polygon',[dict(xy=np.array([lons[ii],lats[ii]]).T,closed=True,fill=pl['fill DA'],color=pl['color'][i],alpha=pl['alpha']/100.,transform='PlateCarree()',ls=pl['DA line style'],zorder=int(pl['z order'][i]))])
+                            elif pl['bmoa'] and pl['bmoa Type']=='Ellipse':
+                                for j,(major,minor,ori) in enumerate(zip(pl['majors'][i],pl['minors'][i],pl['orientations'][i])):
+                                    if major >= 0. and minor >= 0.:
+                                        lats,lons = ID.ellipseLatLons(pl['y data'][i][j],pl['x data'][i][j],major,minor,ori)
+                                        lats,lons = ID.handle_InternationalDateline(lats,lons)
                                     for ii in range(len(lats)):
                                         pltr.add_patch(pax,'Polygon',[dict(xy=np.array([lons[ii],lats[ii]]).T,closed=True,fill=pl['fill DA'],color=pl['color'][i],alpha=pl['alpha']/100.,transform='PlateCarree()',ls=pl['DA line style'],zorder=int(pl['z order'][i]))])
                             if not self.PlotListHideLegendChk.isChecked():
