@@ -8,9 +8,9 @@ Created on Fri May 31 12:46:02 2019
 import sys
 import os
 
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'Importerator'))
-import Importerator
-RELATIVE_LIB_PATH = Importerator.RELATIVE_LIB_PATH
+#sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'Importerator'))
+#import Importerator
+#RELATIVE_LIB_PATH = Importerator.RELATIVE_LIB_PATH
         
 if __name__ == '__main__':
     if os.name == 'posix':
@@ -36,8 +36,8 @@ option: -nt <##>
     if len(sys.argv) == 1:
         print(NOTES)
         sys.exit(0)
-    else:
-        Importerator.loadDepends('Plotterator')
+#    else:
+#        Importerator.loadDepends('Plotterator')
 #        exports, tup = Importerator.buildDepends('Plotterator')
 #        for line in exports.splitlines():
 #            try:
@@ -46,12 +46,12 @@ option: -nt <##>
 #            except:
 #                print('{} did not work.'.format(line))
         
-print globals(), '\n\nbreak\n\n'
-globals().update(Importerator.returnGlobals())
-print globals()
-#tits.makeAndPrintArray()
-intermediary.deeperNdeeper()
-"""IMPORTERATOR        
+#print globals(), '\n\nbreak\n\n'
+#globals().update(Importerator.returnGlobals())
+#print globals()
+##tits.makeAndPrintArray()
+#intermediary.deeperNdeeper()
+#"""IMPORTERATOR        
 import glob
 import cPickle
 import numpy as np
@@ -63,14 +63,17 @@ from matplotlib.lines import Line2D
 from matplotlib import table
 from mpl_toolkits.mplot3d import Axes3D
 from multiprocessing import cpu_count, Pool
-import cartopy.crs as ccrs
-from cartopy import config
-from cartopy.io.shapereader import Reader
-import cartopy.feature as cfeature
-IMPORTERATOR_FROM_REPO
-import intermediary
-"""
-if 'ccrs' in dir():
+try:
+    import cartopy.crs as ccrs
+    from cartopy import config
+    from cartopy.io.shapereader import Reader
+    import cartopy.feature as cfeature
+except:
+    ccrs = None
+#IMPORTERATOR_FROM_REPO
+#import intermediary
+#"""
+if ccrs:#'ccrs' in dir():
     CfgDir = config['repo_data_dir']
     lenCfgDir = len(CfgDir)+1
     resolution ='10m'
@@ -79,12 +82,14 @@ if 'ccrs' in dir():
                                             'natural_earth',
                                             resolution+'_cultural')
     ADMIN0_COUNTRIES_NAME    = glob.glob(os.path.join(shapefiles_cultural_path, 'ne_'+resolution+'_admin_0_countries*.shp'))[0]
+else:
+    ccrs = None
 
-#if not hasattr(sys,'frozen'):
-#    RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-##    sys.path.extend([_ for _ in glob.glob(os.path.join(RELATIVE_LIB_PATH,'*')) if os.path.isdir(_)])
-#else:
-#    RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
+if not hasattr(sys,'frozen'):
+    RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    sys.path.extend([_ for _ in glob.glob(os.path.join(RELATIVE_LIB_PATH,'*')) if os.path.isdir(_)])
+else:
+    RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
     
 STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
 ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presentation.mplstyle')
@@ -233,6 +238,7 @@ class Plotter(object):
         self.fig['facecolor'] = kwargs.pop('facecolor',plt.rcParams['figure.facecolor'])
         self.fig['picker'] = kwargs.pop('picker',False)
         self.fig['customlegend'] = None
+        self.fig['sharing'] = []
         
     def initAxes(self,axid,rowspan,colspan,threeD=False,colorbar={},combinelegend=False,mapplot=False,mapproj='PlateCarree()',table=None):
         """
@@ -243,6 +249,7 @@ class Plotter(object):
                           'lines':[],
                           'patches':[],
                           'features':[],
+                          'cfeatures':[],
                           'rowspan':rowspan,
                           'colspan':colspan,
                           '3d':threeD,
@@ -336,6 +343,7 @@ class Plotter(object):
         space = ' '*(int(self.fig['figsize'][0])*15)
         numrows = 1
         numcols = 1
+        gotTable = False
         for rowcol in self.sub:
             if len(rowcol) == 2:
                 if rowcol[0]+self.sub[rowcol]['rowspan'] > numrows:
@@ -346,16 +354,17 @@ class Plotter(object):
         setformat = False
         rowcols = self.sub.keys()
         rowcols.sort()
+        theaxes = {}
         for rowcol in rowcols:
             if len(rowcol) == 2:
                 cm = {None:None}
                 othAx = {}
                 if self.sub[rowcol]['3d']:
-                    thisax = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
+                    theaxes[rowcol] = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
                                                 rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']],
                                              projection='3d')
                 elif 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['mapplot']:
-                    thisax = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
+                    theaxes[rowcol] = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
                                                 rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']],
                                              projection=eval('ccrs.{}'.format(self.sub[rowcol]['mapproj']),{"ccrs":ccrs}))
                     lonScale = None
@@ -369,14 +378,14 @@ class Plotter(object):
                             if loc > -1:
                                 lonScale = 1.-(float(self.sub[rowcol]['mapproj'][cloc:loc])/360.)
                 else:
-                    thisax = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
+                    theaxes[rowcol] = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
                                                 rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']])
                 for t in self.sub:
                     if len(t) == 3 and t[:2] == rowcol:
                         for command in self.sub[t]['commands']:
                             if command['cmd'].startswith('twin'):
                                 execString = "thisax."+self.buildExecString(command)
-                                othAx[t] = eval(execString,{},{"thisax":thisax})
+                                othAx[t] = eval(execString,{},{"thisax":theaxes[rowcol]})
                 cbs = [(rc,self.sub[rc]['colorbar']['colorbarname']) for rc in rowcols
                            if len(rc) == 3 and rc[:2] == rowcol and self.sub[rc]['colorbar']]
                 for rc,cb in cbs:
@@ -386,18 +395,18 @@ class Plotter(object):
                         line['cmap'] = plt.cm.get_cmap(line['cmap'])
                     if 'transform' in line:
                         line['transform'] = eval('ccrs.{}'.format(line['transform']),{"ccrs":ccrs})
-                    sc = self.plotCall(thisax,line)
+                    sc = self.plotCall(theaxes[rowcol],line)
                     if line['plottype'] == 'plot':
                         setformat = True
                 if self.sub[rowcol]['commands']:
                     for command in self.sub[rowcol]['commands']:
                         if not(command['cmd'].startswith('get_legend')) and not(command['cmd'] == 'legend'):
                             execString = "thisax."+self.buildExecString(command)
-                            exec(execString,{"ccrs":ccrs},{"thisax":thisax})
+                            exec(execString,{"ccrs":ccrs},{"thisax":theaxes[rowcol]})
                     if 'patches' in self.sub[rowcol] and self.sub[rowcol]['patches']:
                         for patch in self.sub[rowcol]['patches']:
                             execString ="thisax.add_patch(mpatches.{})".format(self.buildExecString(patch))
-                            exec(execString,{"ccrs":ccrs,"mpatches":mpatches},{"thisax":thisax})
+                            exec(execString,{"ccrs":ccrs,"mpatches":mpatches},{"thisax":theaxes[rowcol]})
                 for t in self.sub:
                     if len(t) == 3 and t[:2] == rowcol and not self.sub[t]['colorbar']:
                         for line in deepcopy(self.sub[t]['lines']):
@@ -418,7 +427,7 @@ class Plotter(object):
                                 execString ="othAx[t].add_patch(mpatches.{})".format(self.buildExecString(patch))
                                 exec(execString,{"ccrs":ccrs,"mpatches":mpatches},{"othAx":othAx,"t":t})
                         if setformat:
-                            othAx[t].format_coord = general_format_coord(othAx[t],thisax)
+                            othAx[t].format_coord = general_format_coord(othAx[t],theaxes[rowcol])
                         lng = othAx[t].get_legend()
                         if lng:
                             if self.sub[t]['commands']:
@@ -430,7 +439,7 @@ class Plotter(object):
                 h = []
                 l = []
                 if 'combinelegend' in self.sub[rowcol] and self.sub[rowcol]['combinelegend']:
-                    h, l = thisax.get_legend_handles_labels()
+                    h, l = theaxes[rowcol].get_legend_handles_labels()
                     for t in othAx:
                         h1,l1 = othAx[t].get_legend_handles_labels()
                         h += h1
@@ -444,17 +453,17 @@ class Plotter(object):
                         if command['cmd'] == 'legend':
                             if h:
                                 execString = "thisax.legend(h,l,"+self.buildExecString(command)[7:]
-                                exec(execString,{"ccrs":ccrs},{"thisax":thisax,"h":h,"l":l})
+                                exec(execString,{"ccrs":ccrs},{"thisax":theaxes[rowcol],"h":h,"l":l})
                             else:
                                 execString = "thisax."+self.buildExecString(command)
-                                exec(execString,{"ccrs":ccrs},{"thisax":thisax})
-                lng = thisax.get_legend()
+                                exec(execString,{"ccrs":ccrs},{"thisax":theaxes[rowcol]})
+                lng = theaxes[rowcol].get_legend()
                 if lng:
                     if self.sub[rowcol]['commands']:
                         for command in self.sub[rowcol]['commands']:
                             if command['cmd'].startswith('get_legend'):
                                 execString = "thisax."+self.buildExecString(command)
-                                exec(execString,{"ccrs":ccrs},{"thisax":thisax})
+                                exec(execString,{"ccrs":ccrs},{"thisax":theaxes[rowcol]})
                     lng.draggable()
                 for rc,cb in cbs:
                     thiscb = fig.colorbar(sc)
@@ -463,22 +472,27 @@ class Plotter(object):
                     EARTH_IMG = plt.imread(os.path.join(RELATIVE_LIB_PATH,'data',self.sub[rowcol]['mapimg']))
                     #EARTH_IMG = EARTH_IMG[::-1]
                     if lonScale:
-                        thisax.set_global()
+                        theaxes[rowcol].set_global()
                         #EARTH_IMG = np.roll(EARTH_IMG,int(lonScale*np.size(EARTH_IMG,1)),axis=1)
-                    thisax.imshow(EARTH_IMG,
+                    theaxes[rowcol].imshow(EARTH_IMG,
                                         origin='upper',
                                         transform=ccrs.PlateCarree(),
                                         extent=[-180,180,-90,90])
                     #j.set_data(EARTH_IMG)
-                if 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['features']:
+                if 'mapplot' in self.sub[rowcol] and 'features' in self.sub[rowcol] and self.sub[rowcol]['features']:
                     for feature in self.sub[rowcol]['features']:
                         featOfStrength = cfeature.ShapelyFeature(Reader(os.path.join(CfgDir,feature['fname'])).geometries(),
                                                                  eval('ccrs.{}'.format(feature['transform']),{"ccrs":ccrs}),
                                                                  **feature['kwargs'])
-                        thisax.add_feature(featOfStrength)
+                        theaxes[rowcol].add_feature(featOfStrength)
+                if 'mapplot' in self.sub[rowcol] and 'cfeatures' in self.sub[rowcol] and self.sub[rowcol]['cfeatures']:
+                    for feature in self.sub[rowcol]['cfeatures']:
+                        featOfStrength = eval('cfeature.{}'.format(feature['fname']),{"cfeature":cfeature})
+                        theaxes[rowcol].add_feature(featOfStrength)
                 if 'table' in self.sub[rowcol] and self.sub[rowcol]['table']:
+                    gotTable = True
                     execString = "(thisax,"+self.buildExecString(self.sub[rowcol]['table']['command'])[1:]
-                    the_table = eval('table.table'+execString,{"table":table},{"thisax":thisax})
+                    the_table = eval('table.table'+execString,{"table":table},{"thisax":theaxes[rowcol]})
                     if 'cellParams' in self.sub[rowcol]['table'] and (self.sub[rowcol]['table']['cellParams']['cellFontSize'] or
                                                                       self.sub[rowcol]['table']['cellParams']['cellHeight']):
                         prop=the_table.properties()
@@ -488,7 +502,8 @@ class Plotter(object):
                                 cell.set_fontsize(self.sub[rowcol]['table']['cellParams']['cellFontSize'])
                                 cell.set_height(cell.get_height() * self.sub[rowcol]['table']['cellParams']['cellHeight']) 
                 if setformat:
-                    thisax.format_coord = general_format_coord(thisax)
+                    theaxes[rowcol].format_coord = general_format_coord(theaxes[rowcol])
+        
         gotTitle = False
         figlng = None
         figh = []
@@ -523,9 +538,18 @@ class Plotter(object):
             fig.suptitle(self.fig['title'])
         fig.text(.03,.97,self.fig['classification'],fontdict=figClassFD,ha='left',color='r')
         fig.text(.97,.03,self.fig['classification'],fontdict=figClassFD,ha='right',color='r')
+        if 'sharing' in self.fig and self.fig['sharing']:
+            for share in self.fig['sharing']:
+                execString = 'ax1.get_shared_{}_axes().join(ax1, ax2)'.format(share['axis'])
+                exec(execString,{},{'ax1':theaxes[share['target']],'ax2':theaxes[share['source']]})
+                if share['clearticks']:
+                    execString = 'ax1.set_{}ticklabels([])'.format(share['axis'])
+                    exec(execString,{},{'ax1':theaxes[share['target']]})
         if self.fig['picker']:
             fig.canvas.mpl_connect('pick_event',on_pick)
             fig.canvas.mpl_connect('button_release_event',on_release)
+        if not gotTable:
+            fig.tight_layout(rect=[0,0.03,1,0.97])
         if PERSIST:
             plt.show()
         else:
@@ -759,6 +783,22 @@ class Plotter(object):
         else:
             print('Invalid axis reference.')
             return []
+
+    def share(self,source,target,axis='x',clearticks=True):
+        if source not in self.sub:
+            print('Invalid source axis reference.')
+        elif target not in self.sub:
+            print('Invalid target axis reference.')
+        elif axis not in ('x','y','both'):
+            print("Invalid share axis designation. Use 'x', 'y', or 'both'.")
+        else:
+            if 'sharing' not in self.fig:
+                self.fig['sharing'] = []
+            if axis == 'both':
+                self.fig['sharing'].append({'source':source,'target':target,'axis':'x','clearticks':clearticks})
+                self.fig['sharing'].append({'source':source,'target':target,'axis':'y','clearticks':clearticks})
+            else:
+                self.fig['sharing'].append({'source':source,'target':target,'axis':axis,'clearticks':clearticks})
         
     def add_map(self,filename,axid=(0,0),**kwargs):
         if not os.path.isfile(os.path.join(RELATIVE_LIB_PATH,'data',filename)):
@@ -815,6 +855,16 @@ class Plotter(object):
             print('Subplot is not a Map Plot.')
         else:
             self.sub[axid]['features'].append({'fname':filename[lenCfgDir:],'transform':transform,'kwargs':kwargs})
+            
+    def add_cfeature(self,featurename,axid=(0,0),**kwargs):
+        if not cfeature:
+            print('cartopy.feature not loaded.')
+        elif axid not in self.sub:
+            print('Invalid axis reference.')
+        elif not self.sub[axid]['mapplot']:
+            print('Subplot is not a Map Plot.')
+        else:
+            self.sub[axid]['cfeatures'].append({'fname':featurename,'kwargs':kwargs})
             
     def add_table(self,axid,
                   cellText=None, cellColours=None,
@@ -996,6 +1046,9 @@ if __name__ == '__main__':
 #        pltr.add_colorbar(colorbarname='bone',label='FML')
         pltr.parseCommand(ax2,'legend',[[]])
         pltr.parseCommand('fig','legend',[dict(prop=dict(size=6),loc='best',ncol=4)])
+        pltr.share((0,0),ax1,'x')
+        pltr.share((0,0),ax2,'both',False)
+
         pltr.createPlot('test.png',PERSIST=True)
     if False:
         jobs = []
