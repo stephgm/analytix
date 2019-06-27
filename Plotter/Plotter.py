@@ -124,8 +124,11 @@ by_hsv = sorted((tuple(mcolors.rgb_to_hsv(mcolors.to_rgba(color)[:3])), name)
                 for name, color in colors.items())
 random.shuffle(by_hsv)
 plotcolor = [name for hsv, name in by_hsv]
+plotsymb = filter(lambda i:(((type(i) is unicode) or (type(i) is str)) and (i != 'None') and i),matplotlib.markers.MarkerStyle.markers.keys())
+#plotsymb = [x for x in plotsymb if not x.isdigit()]
+
 operators = ['Equal To','Less Than','Greater Than','Not Equal To','In Range','Not In Range','Starts With','Does Not Start With','Ends With','Does Not End With','Contains','Does Not Contain','Ascending Order','Descending Order']
-plotsymb = ['.',',','o','v','^','<','>','8','s','P','p','*','h','H','D','d']
+#plotsymb = ['.',',','o','v','^','<','>','8','s','P','p','*','h','H','D','d','x']
 #plotcolor = ['blue','black','red','green']
 maps = sorted(m for m in plt.cm.datad if not m.endswith("_r"))
 orkeys = [str(i) for i in range(10)]
@@ -143,9 +146,10 @@ TIMEFIELDS = ['ValidityTime_TALO','ScenarioTime_TALO','Time','time']
 TRANSFORMS = ['Plate Carree','North Polar','EckertV','Rotated Pole','Orthographic']
 ORTHOCENTERS = ['','USA']
 BLUEMARBLE = ['','Blue Marble HD','Blue Marble SD']
-cbartypes = ['Scatter','Timeline','Basemap','3D Plot']
+cbartypes = ['Scatter','Timeline','Basemap','3D Plot','Line']
 zordertypes = ['Scatter','Line','Timeline','Bar','Basemap']
-linestyles = ['-','--']
+linestyles = matplotlib.lines.lineStyles.keys()
+#linestyles = ['-','--']
 LinePlotMarkerNormalize = 10.
 LinePlotLineWidthNormalize = 20.
 BarPlotBarWidthNormalize = 80.
@@ -180,6 +184,7 @@ class Plotter(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         uic.loadUi('Plotter.ui', self)
+        print len(plotcolor)*len(plotsymb)
         self.thread = []
         self.tableList = {}
         self.tableIDList = []
@@ -1038,6 +1043,10 @@ class Plotter(QMainWindow):
             md = self.MasterData[keyID]
             model = self.tableList[keyID].model()
             headers = model.getHeaderNames()
+            nsheaders = []
+            for header in headers:
+                if model.getDtype(header) != 'O':
+                    nsheaders.append(header)
         types = self.PlotType.currentText()
         for i in reversed(range(self.PlotLayout.count())):
             widgetToRemove = self.PlotLayout.itemAt(i).widget()
@@ -1064,7 +1073,7 @@ class Plotter(QMainWindow):
                         index = self.XAxisCombo.findText(header)
                         break
                 if index < 0:
-                    index = 0
+                    index = self.XAxisCombo.findText(nsheaders[0])
                 self.XAxisCombo.setCurrentIndex(index)
                 self._dynamic_ax = self.dynamic_canvas.figure.subplots(subplot_kw={'projection':ccrs.PlateCarree()})
                 self._dynamic_ax.figure.tight_layout()
@@ -1076,7 +1085,7 @@ class Plotter(QMainWindow):
                         index = self.XAxisCombo.findText(header)
                         break
                 if index < 0:
-                    index = 0
+                    index = self.XAxisCombo.findText(nsheaders[0])
                 self.XAxisCombo.setCurrentIndex(index)
                 self._dynamic_ax = Axes3D(self.dynamic_canvas.figure)
                 self._dynamic_ax.figure.tight_layout()
@@ -1106,7 +1115,7 @@ class Plotter(QMainWindow):
             for header in headers:
                 if model.getDtype(header) != 'O':
                     nsheaders.append(header)
-                if len(pd.unique(model.getColumnData(header))) < 50:
+                if len(pd.unique(model.getColumnData(header))) < len(plotsymb)*(len(plotcolor)-1):
                     uniqueheaders.append(header)
             
             self.PlotColorSymbol.blockSignals(True)
@@ -1131,8 +1140,7 @@ class Plotter(QMainWindow):
                         index = self.XAxisCombo.findText(header)
                         break
                 if index < 0:
-                    index = 0
-                
+                    index = self.XAxisCombo.findText(nsheaders[0])
             self.XAxisCombo.setCurrentIndex(index)
             codeName = self.SymbolCodeCombo.currentText()
             self.SymbolCodeCombo.clear()
@@ -1140,6 +1148,11 @@ class Plotter(QMainWindow):
             index = self.SymbolCodeCombo.findText(codeName)
             self.SymbolCodeCombo.setCurrentIndex(index)
             self.makeAxis()
+            if not uniqueheaders:
+                self.SymbolCodeChk.setChecked(False)
+                self.SymbolCodeChk.setEnabled(False)
+            else:
+                self.SymbolCodeChk.setEnabled(True)
             if self.PlotType.currentText() in cbartypes:
                 if self.ColorbarHeaderCombo.currentText() and not self.ColorbarNameCombo.currentText() and not self.SymbolCodeChk.isChecked():
                     self.ColorbarNameCombo.setCurrentIndex(0)
@@ -1164,15 +1177,18 @@ class Plotter(QMainWindow):
                     self.ColorbarHeaderCombo.setCurrentIndex(index)
                     self.SymbolCodeCombo.setCurrentIndex(-1)
                 elif self.SymbolCodeChk.isChecked() and not self.SymbolCodeCombo.currentText():
+                    print 'here'
                     self.SymbolCodeCombo.setCurrentIndex(0)
                     self.ColorbarHeaderCombo.setCurrentIndex(-1)
                     self.ColorbarNameCombo.setCurrentIndex(-1)
                     self.ColorbarLabel.setText('')
                 elif self.SymbolCodeChk.isChecked() and self.SymbolCodeCombo.currentText():
+                    print 'here in this one'
                     self.ColorbarHeaderCombo.setCurrentIndex(-1)
                     self.ColorbarNameCombo.setCurrentIndex(-1)
                     self.ColorbarLabel.setText('')
                 else:
+                    print 'in the else'
                     self.SymbolCodeCombo.setCurrentIndex(-1)
                     self.ColorbarHeaderCombo.setCurrentIndex(-1)
                     self.ColorbarNameCombo.setCurrentIndex(-1)
@@ -1205,7 +1221,7 @@ class Plotter(QMainWindow):
                         index = self.XAxisCombo.findText(header)
                         break
                 if index < 0:
-                    index = 0
+                    index = self.XAxisCombo.findText(nsheaders[0])
                 self.XAxisCombo.setCurrentIndex(index)
                 self.XComboLabel.hide()
                 self.XAxisCombo.hide()
@@ -1316,8 +1332,8 @@ class Plotter(QMainWindow):
         else:
             self.PlotColorSymbol.setItemWidget(item,3,self.plotSymbol[-1])
         self.PlotColorSymbol.setItemWidget(item,2,self.plotColor[-1])
-        self.plotColor[-1].setCurrentIndex(Index%len(plotcolor))
-        self.plotSymbol[-1].setCurrentIndex(Index%len(plotsymb))
+        self.plotColor[-1].setCurrentIndex(Index%(len(plotcolor)-1))
+        self.plotSymbol[-1].setCurrentIndex(Index%(len(plotsymb)-1))
         
     
     def updateSymbolCodes(self):
@@ -1412,7 +1428,7 @@ class Plotter(QMainWindow):
                             pluniquevals = pd.unique(model.getColumnData(self.SymbolCodeCombo.currentText()))
                             uniquedata = model.getColumnData(self.SymbolCodeCombo.currentText())
                             xdata = model.getColumnData(self.XAxisCombo.currentText())
-                            if ptype in ['Scatter']:
+                            if ptype in ['Scatter','Line']:
                                 ydata = model.getColumnData(headers[index.column()])
                             elif ptype == 'Timeline':
                                 ydata = np.array([md['Dset']+headers[index.column()]]*xdata.size)
@@ -1466,6 +1482,7 @@ class Plotter(QMainWindow):
                             plcm = None
                         if ptype in ['Scatter','Timeline']:
                             plzorder.append(i+1)
+                            print plcolor[i]
                             sc = dax.scatter(plx[i],ydat,s = plmarkersize, c = plcolor[i], cmap = plcm, marker = plmarker[i], label = pllegends[i],zorder=plzorder[-1])
                         if ptype in ['Line']:
                             plzorder.append(i+1)
@@ -1926,7 +1943,7 @@ class Plotter(QMainWindow):
                     for header in headers:
                         if model.getDtype(header) != 'O':
                             plnsheaders.append(header)
-                        if len(pd.unique(model.getColumnData(header))) < 50:
+                        if len(pd.unique(model.getColumnData(header))) < (len(plotcolor)-1)*len(plotsymb):
                             pluniqueheaders.append(header)
                     self.plotList[-1]['x label']=plxlabel
                     self.plotList[-1]['y label']=plylabel
@@ -2056,7 +2073,7 @@ class Plotter(QMainWindow):
                 if self.plotList[i]['plot type'] == 'Scatter':
                     includelist.extend(['plot title','x label','y label','marker size','marker','symbol code','color','colorbar','legend','z order','figure background color','axis background color'])
                 if self.plotList[i]['plot type'] == 'Line':
-                    includelist.extend(['plot title','x label','y label','marker size','marker','color','legend','line style','line width','z order','figure background color','axis background color'])
+                    includelist.extend(['plot title','x label','y label','marker size','marker','symbol code','color','legend','line style','line width','z order','figure background color','axis background color'])
                 if self.plotList[i]['plot type'] == 'Timeline':
                     includelist.extend(['plot title','x label','y label','marker size','marker','symbol code','color','colorbar','legend','figure background color','axis background color'])
                 if self.plotList[i]['plot type'] == 'Stacked':
@@ -2292,6 +2309,8 @@ class Plotter(QMainWindow):
                     widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
                     
                     self.nestedwidgets[key][k].append(QComboBox())
+                    if not d['unique headers']:
+                        self.nestedwidgets[key][k][1].setEnabled(False)
                     if intable:
                         self.nestedwidgets[key][k][-1].addItems(d['unique headers'])
                     else:
@@ -3456,7 +3475,7 @@ class FieldTableModel(QAbstractTableModel):
         for header in headers:
             if header not in self.header:
                 self.header.append(header)
-                self.DataOrig = self.DataOrig.join(data)
+                self.DataOrig = self.DataOrig.join(data[header])
             else:
                 self.DataOrig[header] = data[header]
         self.filterTable(self.procedures)

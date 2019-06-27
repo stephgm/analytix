@@ -239,7 +239,7 @@
          <item row="0" column="0">
           <widget class="QTabWidget" name="tabWidget">
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="tab_4">
             <attribute name="title">
@@ -602,7 +602,7 @@
                      </widget>
                      <widget class="QStackedWidget" name="StackedPlotOptions">
                       <property name="currentIndex">
-                       <number>6</number>
+                       <number>1</number>
                       </property>
                       <widget class="QWidget" name="page">
                        <layout class="QGridLayout" name="gridLayout_6">
@@ -833,6 +833,16 @@
                           </item>
                           <item row="0" column="1">
                            <layout class="QVBoxLayout" name="verticalLayout_23">
+                            <item>
+                             <widget class="QCheckBox" name="LinePlotSymbolCodeCheckBox">
+                              <property name="text">
+                               <string>Code by Symbols</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QComboBox" name="LinePlotSymbolCode"/>
+                            </item>
                             <item>
                              <layout class="QHBoxLayout" name="horizontalLayout_12">
                               <item>
@@ -1684,6 +1694,9 @@
                      <property name="selectionBehavior">
                       <enum>QAbstractItemView::SelectItems</enum>
                      </property>
+                     <property name="verticalScrollMode">
+                      <enum>QAbstractItemView::ScrollPerPixel</enum>
+                     </property>
                      <column>
                       <property name="text">
                        <string>Header</string>
@@ -1903,6 +1916,24 @@
                   </layout>
                  </widget>
                  <widget class="QTreeWidget" name="PlotOptionsTree">
+                  <property name="verticalScrollBarPolicy">
+                   <enum>Qt::ScrollBarAlwaysOn</enum>
+                  </property>
+                  <property name="sizeAdjustPolicy">
+                   <enum>QAbstractScrollArea::AdjustToContents</enum>
+                  </property>
+                  <property name="autoScroll">
+                   <bool>false</bool>
+                  </property>
+                  <property name="verticalScrollMode">
+                   <enum>QAbstractItemView::ScrollPerPixel</enum>
+                  </property>
+                  <property name="headerHidden">
+                   <bool>false</bool>
+                  </property>
+                  <attribute name="headerCascadingSectionResizes">
+                   <bool>true</bool>
+                  </attribute>
                   <column>
                    <property name="text">
                     <string>Properties</string>
