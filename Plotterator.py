@@ -91,6 +91,17 @@ if not hasattr(sys,'frozen'):
 else:
     RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
     
+if os.path.isfile(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy')):
+    BLUEMARBLEHD = np.load(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy'))
+else:
+    BLUEMARBLEHD = plt.imread(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.png'))
+    np.save(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy'),BLUEMARBLEHD)
+if os.path.isfile(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_8192x4096.npy')):
+    BLUEMARBLESD = np.load(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_8192x4096.npy'))
+else:
+    BLUEMARBLESD = plt.imread(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_8192x4096.png'))
+    np.save(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_8192x4096.npy'),BLUEMARBLESD)
+BlueMarbleImg = {'bluemarblehd':BLUEMARBLEHD,'bluemarblesd':BLUEMARBLESD}
 STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
 ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presentation.mplstyle')
 plt.style.use(STYLE_SHEET)
@@ -333,6 +344,7 @@ class Plotter(object):
         SHOW = kwargs.pop('SHOW',False)
         PERSIST = kwargs.pop('PERSIST',False)
         SAVEONLY = kwargs.pop('SAVEONLY',False)
+        RETURN = kwargs.pop('RETURN',False)
         if SAVEONLY:
             self.savePkl(fname)
             return
@@ -357,7 +369,7 @@ class Plotter(object):
         theaxes = {}
         for rowcol in rowcols:
             if len(rowcol) == 2:
-                cm = {None:None}
+                cm = []
                 othAx = {}
                 if self.sub[rowcol]['3d']:
                     theaxes[rowcol] = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
@@ -386,10 +398,12 @@ class Plotter(object):
                             if command['cmd'].startswith('twin'):
                                 execString = "thisax."+self.buildExecString(command)
                                 othAx[t] = eval(execString,{},{"thisax":theaxes[rowcol]})
-                cbs = [(rc,self.sub[rc]['colorbar']['colorbarname']) for rc in rowcols
+                cbs = [(rc,self.sub[rc]['colorbar']['colorbarname'],self.sub[rc]['colorbar']['cbardata']) for rc in rowcols
                            if len(rc) == 3 and rc[:2] == rowcol and self.sub[rc]['colorbar']]
-                for rc,cb in cbs:
-                    cm[cb] = plt.cm.get_cmap(cb)
+                for rc,cb,dt in cbs:
+                    thisSC = plt.cm.ScalarMappable(cmap=plt.cm.get_cmap(cb))
+                    thisSC.set_array(dt)
+                    cm.append(thisSC)
                 for line in deepcopy(self.sub[rowcol]['lines']):
                     if 'cmap' in line and line['cmap']:
                         line['cmap'] = plt.cm.get_cmap(line['cmap'])
@@ -465,11 +479,12 @@ class Plotter(object):
                                 execString = "thisax."+self.buildExecString(command)
                                 exec(execString,{"ccrs":ccrs},{"thisax":theaxes[rowcol]})
                     lng.draggable()
-                for rc,cb in cbs:
-                    thiscb = fig.colorbar(sc)
+                for i,(rc,cb,dt) in enumerate(cbs):
+                    thiscb = fig.colorbar(cm[i])
                     thiscb.set_label(self.sub[rc]['colorbar']['label'])
                 if 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['mapplot'] and self.sub[rowcol]['mapimg']:
-                    EARTH_IMG = plt.imread(os.path.join(RELATIVE_LIB_PATH,'data',self.sub[rowcol]['mapimg']))
+                    EARTH_IMG = BlueMarbleImg[self.sub[rowcol]['mapimg']]
+#                    EARTH_IMG = plt.imread(os.path.join(RELATIVE_LIB_PATH,'data',self.sub[rowcol]['mapimg']))
                     #EARTH_IMG = EARTH_IMG[::-1]
                     if lonScale:
                         theaxes[rowcol].set_global()
@@ -540,11 +555,9 @@ class Plotter(object):
         fig.text(.97,.03,self.fig['classification'],fontdict=figClassFD,ha='right',color='r')
         if 'sharing' in self.fig and self.fig['sharing']:
             for share in self.fig['sharing']:
-                execString = 'ax1.get_shared_{}_axes().join(ax1, ax2)'.format(share['axis'])
-                exec(execString,{},{'ax1':theaxes[share['target']],'ax2':theaxes[share['source']]})
-                if share['clearticks']:
-                    execString = 'ax1.set_{}ticklabels([])'.format(share['axis'])
-                    exec(execString,{},{'ax1':theaxes[share['target']]})
+                if share['source'] in self.sub and share['target'] in self.sub:
+                    execString = 'ax1.get_shared_{}_axes().join(ax1, ax2)'.format(share['axis'])
+                    exec(execString,{},{'ax1':theaxes[share['target']],'ax2':theaxes[share['source']]})
         if self.fig['picker']:
             fig.canvas.mpl_connect('pick_event',on_pick)
             fig.canvas.mpl_connect('button_release_event',on_release)
@@ -553,6 +566,8 @@ class Plotter(object):
         if PERSIST:
             plt.show()
         else:
+            if RETURN:
+                return fig
             if SAVEPNG:
                 fig.savefig(os.path.splitext(fname)[0]+'.png',facecolor=self.fig['facecolor'],format='png')
             if SAVEPKL:
@@ -757,7 +772,7 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['align'] = align
         self.sub[axid]['lines'][-1].update(kwargs)
 
-    def add_colorbar(self,axid=(0,0),colorbarname='jet',label=''):
+    def add_colorbar(self,axid=(0,0),colorbarname='jet',label='',dateridontevenknower=np.array([0,1])):
         if axid in self.sub:
             cnt = 0
             for t in self.sub:
@@ -765,7 +780,8 @@ class Plotter(object):
                     cnt+=1
             newref = axid+(cnt,)
             self.initAxes(newref,1,1,False,{'colorbarname':colorbarname,
-                                            'label':label})
+                                            'label':label,
+                                            'cbardata':dateridontevenknower})
             return newref
         else:
             print('Invalid axis reference.')
@@ -784,7 +800,7 @@ class Plotter(object):
             print('Invalid axis reference.')
             return []
 
-    def share(self,source,target,axis='x',clearticks=True):
+    def share(self,source,target,axis='x'):
         if source not in self.sub:
             print('Invalid source axis reference.')
         elif target not in self.sub:
@@ -795,20 +811,20 @@ class Plotter(object):
             if 'sharing' not in self.fig:
                 self.fig['sharing'] = []
             if axis == 'both':
-                self.fig['sharing'].append({'source':source,'target':target,'axis':'x','clearticks':clearticks})
-                self.fig['sharing'].append({'source':source,'target':target,'axis':'y','clearticks':clearticks})
+                self.fig['sharing'].append({'source':source,'target':target,'axis':'x'})
+                self.fig['sharing'].append({'source':source,'target':target,'axis':'y'})
             else:
-                self.fig['sharing'].append({'source':source,'target':target,'axis':axis,'clearticks':clearticks})
+                self.fig['sharing'].append({'source':source,'target':target,'axis':axis})
         
     def add_map(self,filename,axid=(0,0),**kwargs):
-        if not os.path.isfile(os.path.join(RELATIVE_LIB_PATH,'data',filename)):
-            print('{} not in ./src/data'.format(filename))
+        if filename.lower() not in BlueMarbleImg:
+            print('{} not in dictionary'.format(filename.lower()))
         elif axid not in self.sub:
             print('Invalid axis reference.')
         elif not self.sub[axid]['mapplot']:
             print('Subplot is not a Map Plot.')
         else:
-            self.sub[axid]['mapimg'] = filename
+            self.sub[axid]['mapimg'] = filename.lower()
             
     def add_patch(self,obj,cmd,cargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
