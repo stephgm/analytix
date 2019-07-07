@@ -142,9 +142,11 @@ class Pleditor(QMainWindow):
         self.fname = ''
         self.fname = QFileDialog.getOpenFileName(self, 'Open File',os.getcwd(),'pickle plot (*.pklplt)')[0]
         if self.fname:
+            self.Alert('Loading the Plot')
             self.plotDict = cPickle.load(file(self.fname,'rb'))
-            self.setupTreeWidget(self.PlotOptionsTree,self.plotDict)
+            self.setupTreeWidget(None,self.plotDict)
             self.preview()
+            self.Alert('Done Loading')
             
     def preview(self):
         old = self.dynamic_canvas.figure
@@ -217,14 +219,58 @@ class Pleditor(QMainWindow):
         """
         treedata = copy.deepcopy(treedata)
         treedata = OrderedDict(treedata.items())
-        plottype = treedata['sub']
-        self.PlotOptionsTree.clear()
-        widget.blockSignals(True)
+        self.PlotTabWidget.clear()
+#        self.PlotOptionsTree.clear()
+#        widget.blockSignals(True)
         self.nestedwidgets = {key:{} for key in treedata.keys()}
         def walkDict(d,parent,dkeymap):
+            print parent
+            print dkeymap
+#            if not parent:
+            if len(dkeymap) == 1 and 'fig' in dkeymap:
+                tablewidget = QWidget()
+                tablelayout = QGridLayout()
+                self.currentTreeWidget = QTreeWidget()
+                tablelayout.addWidget(self.currentTreeWidget)
+                tablewidget.setLayout(tablelayout)
+                self.PlotTabWidget.addTab(tablewidget,'fig')
+                self.parent = QTreeWidgetItem(self.currentTreeWidget)
+            elif len(dkeymap) == 2 and isinstance(dkeymap[1],tuple):
+                self.currentTreeWidget.expandAll()
+                tablewidget = QWidget()
+                tablelayout = QGridLayout()
+                self.OGLinesTW = QTreeWidget()
+                self.currentTreeWidget = self.OGLinesTW
+                self.CurrentLineTab = QTabWidget()
+                tablelayout.addWidget(self.CurrentLineTab)
+                ltwidget = QWidget()
+                ltlayout = QGridLayout()
+                ltlayout.addWidget(self.currentTreeWidget)
+                ltwidget.setLayout(ltlayout)
+                self.CurrentLineTab.addTab(ltwidget,'Line Data')
+                tablewidget.setLayout(tablelayout)
+                self.PlotTabWidget.addTab(tablewidget,str(dkeymap[1]))
+                self.parent = QTreeWidgetItem(self.currentTreeWidget)
+#            widget = self.currentTreeWidget
+            else:
+                self.parent = parent
+#            widget = self.currentTreeWidget
             key = dkeymap[0]
             d = OrderedDict(d)
             for k, v in d.iteritems():
+                if k in ['patches','commands'] and len(dkeymap) > 1 and isinstance(dkeymap[1],tuple):
+                    self.currentTreeWidget.expandAll()
+                    cpwidget = QWidget()
+                    cplayout = QGridLayout()
+                    self.currentTreeWidget = QTreeWidget()
+                    cplayout.addWidget(self.currentTreeWidget)
+                    cpwidget.setLayout(cplayout)
+                    self.CurrentLineTab.addTab(cpwidget,k)
+                    self.parent = QTreeWidgetItem(self.currentTreeWidget)
+                elif len(dkeymap) > 1 and len(dkeymap)==2 and isinstance(dkeymap[1],tuple):
+                    self.currentTreeWidget = self.OGLinesTW
+                    self.parent = QTreeWidgetItem(self.currentTreeWidget)
+                    
                 unalteredk = copy.copy(k)
                 ogtype = type(v)
                 if isinstance(v,float):
@@ -238,10 +284,10 @@ class Pleditor(QMainWindow):
                 if not isinstance(k,str):
                     k = str(k)
                 if isinstance(v,list) and len(v):
-                    child = QTreeWidgetItem(parent)
+                    child = QTreeWidgetItem(self.parent)
                     child.setText(0,k)
                 else:
-                    child = QTreeWidgetItem(parent)
+                    child = QTreeWidgetItem(self.parent)
                     child.setText(0,k)
                 if isinstance(v, dict) and k not in ['commands']:
                     child.setFlags(child.flags())
@@ -250,7 +296,7 @@ class Pleditor(QMainWindow):
                     if v:
                         v = walkDict(v,child,nkeymap)
                     else:
-                        parent.removeChild(child)
+                        self.parent.removeChild(child)
                         continue
                 elif k in ['mapimg']:
                     layout = QHBoxLayout()
@@ -265,7 +311,7 @@ class Pleditor(QMainWindow):
                     self.nestedwidgets[key][k] = QWidget()
                     self.nestedwidgets[key][k].setLayout(layout)
                     grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
+                    self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
                 elif k in ['facecolor']:
                     self.nestedwidgets[key][k]=QWidget()
                     layout = QHBoxLayout()
@@ -278,13 +324,13 @@ class Pleditor(QMainWindow):
                     layout.addWidget(colorvalue)
                     self.nestedwidgets[key][k].setLayout(layout)
                     grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
+                    self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
                 elif k in ['cmap','picker','marker','mapproj','transform','ls','linestyle']:
                     if isinstance(d[k],np.ndarray) or isinstance(d[k],pd.DataFrame) or isinstance(d[k],pd.Series):
-                        parent.removeChild(child)
+                        self.parent.removeChild(child)
                         continue
                     if not d[k]:
-                        parent.removeChild(child)
+                        self.parent.removeChild(child)
                         continue
                     self.nestedwidgets[key][k] = QComboBox()
                     grandchild = QTreeWidgetItem(child)
@@ -300,14 +346,14 @@ class Pleditor(QMainWindow):
                         self.nestedwidgets[key][k].addItems(mpllines)
                     index = self.nestedwidgets[key][k].findText(str(v))
                     self.nestedwidgets[key][k].setCurrentIndex(index)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
+                    self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
                     self.nestedwidgets[key][k].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k],plkey=key,pldictkey=k,plkeymap=dkeymap,vtype=ogtype:self.updateDict(plwidget,plkey,pldictkey,plkeymap,vtype))
                 elif k in ['c','colors','color']:
                     if isinstance(d[k],np.ndarray) or isinstance(d[k],pd.DataFrame) or isinstance(d[k],pd.Series):
-                        parent.removeChild(child)
+                        self.parent.removeChild(child)
                         continue
                     if not d[k]:
-                        parent.removeChild(child)
+                        self.parent.removeChild(child)
                         continue
                     self.nestedwidgets[key][k] = []
                     if isinstance(v,list):
@@ -317,7 +363,7 @@ class Pleditor(QMainWindow):
                             self.nestedwidgets[key][k][-1].addItems(mplcolors)
                             index = self.nestedwidgets[key][k][-1].findText(str(item))
                             self.nestedwidgets[key][k][-1].setCurrentIndex(index)
-                            widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                            self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
                             self.nestedwidgets[key][k][-1].currentIndexChanged.connect(lambda trash,plwidget=self.nestedwidgets[key][k][-1],pldictkey=k,plkeymap=dkeymap,index=i,vtype=str:self.handleList(plwidget,pldictkey,plkeymap,index,vtype))
                     else:
                         self.nestedwidgets[key][k] = QComboBox()
@@ -325,7 +371,7 @@ class Pleditor(QMainWindow):
                         self.nestedwidgets[key][k].addItems(mplcolors)
                         index = self.nestedwidgets[key][k].findText(str(v))
                         self.nestedwidgets[key][k].setCurrentIndex(index)
-                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
+                        self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
                         self.nestedwidgets[key][k].currentIndexChanged.connect(lambda trash, plwidget=self.nestedwidgets[key][k],plkey=key,pldictkey=k,plkeymap=dkeymap,vtype=ogtype:self.updateDict(plwidget,plkey,pldictkey,plkeymap,vtype))
                 elif k in ['figsize']:
                     self.nestedwidgets[key][k] = []
@@ -342,7 +388,7 @@ class Pleditor(QMainWindow):
                         le.editingFinished.connect(lambda plkeymap=dkeymap,plkey=k,idx=j,plwidget=le:self.handleList(plwidget,plkey,plkeymap,idx,float))
 #                        le.setValidator(doublevalidator)
                         grandchild = QTreeWidgetItem(child)
-                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                        self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
                         j+=1
                 elif k in ['rowspan','colspan','zorder','s']:
                     le = QLineEdit(str(v))
@@ -350,9 +396,9 @@ class Pleditor(QMainWindow):
                     le.textChanged.connect(lambda trash, plwidget=le,plkey=key,pldictkey=k,plkeymap=dkeymap,vtype=ogtype:self.updateDict(plwidget,plkey,pldictkey,plkeymap,vtype))
                     self.nestedwidgets[key][k] = le
                     grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
+                    self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
                 elif k in ['table']:
-                    parent.removeChild(child)
+                    self.parent.removeChild(child)
                     continue
                 elif k in ['commands']:
                     self.nestedwidgets[key][k]=[]
@@ -442,13 +488,13 @@ class Pleditor(QMainWindow):
                     grandchild = QTreeWidgetItem(child)
                     totalwidget.setLayout(totallayout)
                     self.nestedwidgets[key][k].append(totalwidget)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                    self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
                     grandchild = QTreeWidgetItem(child)
                     addcommand = QPushButton('Add Command')
                     removecommand = QPushButton('Remove Command')
-                    widget.setItemWidget(grandchild,0,addcommand)
+                    self.currentTreeWidget.setItemWidget(grandchild,0,addcommand)
                     grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,removecommand)
+                    self.currentTreeWidget.setItemWidget(grandchild,0,removecommand)
                     addcommand.clicked.connect(lambda trash, plkeymap = dkeymap,plkey=k,pllayout=self.nestedwidgets[key][k][-1].layout(),plwidget=totalwidget:self.addCommand(plkeymap,plkey,pllayout,plwidget))
                     removecommand.clicked.connect(lambda trash, plkeymap = dkeymap,plkey=k,pllayout=self.nestedwidgets[key][k][-1].layout(),plwidget=totalwidget:self.removeCommand(plkeymap,plkey,pllayout,plwidget))
                 elif k in ['patches']:
@@ -541,13 +587,13 @@ class Pleditor(QMainWindow):
                     grandchild = QTreeWidgetItem(child)
                     ptotalwidget.setLayout(ptotallayout)
                     self.nestedwidgets[key][k].append(ptotalwidget)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                    self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
                     grandchild = QTreeWidgetItem(child)
                     paddcommand = QPushButton('Add Patch')
                     premovecommand = QPushButton('Remove Patch')
-                    widget.setItemWidget(grandchild,0,paddcommand)
+                    self.currentTreeWidget.setItemWidget(grandchild,0,paddcommand)
                     grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,premovecommand)
+                    self.currentTreeWidget.setItemWidget(grandchild,0,premovecommand)
                     paddcommand.clicked.connect(lambda trash, plkeymap = dkeymap,plkey=k,pllayout=self.nestedwidgets[key][k][-1].layout(),plwidget=ptotalwidget:self.addPatch(plkeymap,plkey,pllayout,plwidget))
                     premovecommand.clicked.connect(lambda trash, plkeymap = dkeymap,plkey=k,pllayout=self.nestedwidgets[key][k][-1].layout(),plwidget=ptotalwidget:self.removeCommand(plkeymap,plkey,pllayout,plwidget))
                 #Line edit for single values
@@ -556,10 +602,10 @@ class Pleditor(QMainWindow):
                         self.nestedwidgets[key][k] = QLineEdit(v)
                         self.nestedwidgets[key][k].setValidator(validator)
                         grandchild = QTreeWidgetItem(child)
-                        widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
+                        self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
                         self.nestedwidgets[key][k].editingFinished.connect(lambda plwidget=self.nestedwidgets[key][k],plkey=key,pldictkey=k,plkeymap=dkeymap,vtype = ogtype:self.updateDict(plwidget,plkey,pldictkey,plkeymap,vtype))
                     else:
-                        parent.removeChild(child)
+                        self.parent.removeChild(child)
                 elif isinstance(v,list):
                     if len(v) and isinstance(v[0],dict):
                         for i in range(len(v)):
@@ -576,29 +622,29 @@ class Pleditor(QMainWindow):
                             self.nestedwidgets[key][k].append(QLineEdit(str(v)))
                             self.nestedwidgets[key][k][-1].setValidator(validator)
                             grandchild = QTreeWidgetItem(child)
-                            widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                            self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
                             self.nestedwidgets[key][k][-1].editingFinished.connect(lambda plwidget=self.nestedwidgets[key][k][-1],plkey=key,pldictkey=k,plkeymap=dkeymap,vtype=ogtype:self.updateDict(plwidget,plkey,pldictkey,plkeymap,vtype))
                     else:
-                        parent.removeChild(child)
+                        self.parent.removeChild(child)
                 else:
                     self.nestedwidgets[key][k] = QLineEdit(str(v))
                     self.nestedwidgets[key][k].setValidator(validator)
                     grandchild = QTreeWidgetItem(child)
-                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
+                    self.currentTreeWidget.setItemWidget(grandchild,0,self.nestedwidgets[key][k])
                     self.nestedwidgets[key][k].editingFinished.connect(lambda plwidget=self.nestedwidgets[key][k],plkey=key,pldictkey=k,plkeymap=dkeymap,vtype=ogtype:self.updateDict(plwidget,plkey,pldictkey,plkeymap,vtype))
         for i,key in enumerate(treedata):
             if key not in noshow_keys:
-                parent = QTreeWidgetItem(widget)
-                parent.setText(0,key)
-                parent.setFlags(parent.flags())
+#                parent = QTreeWidgetItem(widget)
+#                parent.setText(0,key)
+#                parent.setFlags(parent.flags())
+                parent = None
                 keymap = [key]
                 if isinstance(treedata[key],dict):
                     walkDict(treedata[key],parent,keymap)
                 elif isinstance(treedata[key],list):
                     if isinstance(treedata[key],dict):
                         walkDict(dict(Placeholder=treedata[key]),parent,keymap)
-        widget.expandAll()
-        widget.blockSignals(False)
+        self.currentTreeWidget.expandAll()
     
     def removeArg(self,widget):
         for SelectedItem in widget.selectedItems():
