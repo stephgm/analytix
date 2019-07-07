@@ -114,6 +114,7 @@ class Pleditor(QMainWindow):
         self.timer.setInterval(5000)
         self.timer.start()
         self.timer.timeout.connect(lambda:self.Alert(''))
+        self.TreeList = []
     
     def warningBox(self,msg,detail):
         box = QMessageBox()
@@ -211,6 +212,16 @@ class Pleditor(QMainWindow):
         name = QFileDialog.getOpenFileName(self, 'Open File',os.getcwd(),'Files;(*.'+ext+')')[0]
         if name:
             widget.setText(name)
+            
+    def expandAllTrees(self):
+        for tree in self.TreeList:
+            tree.expandAll()
+            tree.setVerticalScrollMode(tree.ScrollPerPixel)
+            tree.header().hide()
+    
+    def resizeTrees(self):
+        for tree in self.TreeList:
+            tree.setSizeAdjustPolicy(tree.AdjustToContents)
     
     def setupTreeWidget(self,widget,treedata):
         """
@@ -227,23 +238,18 @@ class Pleditor(QMainWindow):
             if len(dkeymap) == 1 and 'fig' in dkeymap:
                 tablewidget = QWidget()
                 tablelayout = QGridLayout()
-                self.currentTreeWidget = QTreeWidget()
-                self.currentTreeWidget.setSizeAdjustPolicy(self.currentTreeWidget.AdjustToContents)
-                self.currentTreeWidget.header().hide()
-                self.currentTreeWidget.setVerticalScrollMode(self.currentTreeWidget.ScrollPerPixel)
+                self.TreeList.append(QTreeWidget())
+                self.currentTreeWidget = self.TreeList[-1]
                 tablelayout.addWidget(self.currentTreeWidget)
                 tablewidget.setLayout(tablelayout)
                 self.PlotTabWidget.addTab(tablewidget,'fig')
                 self.parent = QTreeWidgetItem(self.currentTreeWidget)
             elif len(dkeymap) == 2 and isinstance(dkeymap[1],tuple):
-                self.currentTreeWidget.expandAll()
                 tablewidget = QWidget()
                 tablelayout = QGridLayout()
-                self.OGLinesTW = QTreeWidget()
+                self.TreeList.append(QTreeWidget())
+                self.OGLinesTW = self.TreeList[-1]
                 self.currentTreeWidget = self.OGLinesTW
-                self.currentTreeWidget.header().hide()
-                self.currentTreeWidget.setSizeAdjustPolicy(self.currentTreeWidget.AdjustToContents)
-                self.currentTreeWidget.setVerticalScrollMode(self.currentTreeWidget.ScrollPerPixel)
                 self.CurrentLineTab = QTabWidget()
                 tablelayout.addWidget(self.CurrentLineTab)
                 ltwidget = QWidget()
@@ -262,22 +268,16 @@ class Pleditor(QMainWindow):
             d = OrderedDict(d)
             for k, v in d.iteritems():
                 if k in ['patches','commands'] and len(dkeymap) > 1 and isinstance(dkeymap[1],tuple):
-                    self.currentTreeWidget.expandAll()
                     cpwidget = QWidget()
                     cplayout = QGridLayout()
-                    self.currentTreeWidget = QTreeWidget()
-                    self.currentTreeWidget.header().hide()
-                    self.currentTreeWidget.setSizeAdjustPolicy(self.currentTreeWidget.AdjustToContents)
-                    self.currentTreeWidget.setVerticalScrollMode(self.currentTreeWidget.ScrollPerPixel)
+                    self.TreeList.append(QTreeWidget())
+                    self.currentTreeWidget = self.TreeList[-1]
                     cplayout.addWidget(self.currentTreeWidget)
                     cpwidget.setLayout(cplayout)
                     self.CurrentLineTab.addTab(cpwidget,k)
                     self.parent = QTreeWidgetItem(self.currentTreeWidget)
                 elif len(dkeymap) > 1 and len(dkeymap)==2 and isinstance(dkeymap[1],tuple):
                     self.currentTreeWidget = self.OGLinesTW
-                    self.currentTreeWidget.header().hide()
-                    self.currentTreeWidget.setSizeAdjustPolicy(self.currentTreeWidget.AdjustToContents)
-                    self.currentTreeWidget.setVerticalScrollMode(self.currentTreeWidget.ScrollPerPixel)
                     self.parent = QTreeWidgetItem(self.currentTreeWidget)
                     
                 unalteredk = copy.copy(k)
@@ -653,15 +653,18 @@ class Pleditor(QMainWindow):
                 elif isinstance(treedata[key],list):
                     if isinstance(treedata[key],dict):
                         walkDict(dict(Placeholder=treedata[key]),parent,keymap)
-        self.currentTreeWidget.expandAll()
+        self.resizeTrees()
+        self.expandAllTrees()
     
     def removeArg(self,widget):
         for SelectedItem in widget.selectedItems():
             widget.takeItem(widget.row(SelectedItem))
+        self.resizeTrees()
     
     def removeKwarg(self,widget):
         for SelectedItem in widget.selectedItems():
             widget.takeItem(widget.row(SelectedItem))
+        self.resizeTrees()
     
     def addArg(self,widget,totalwidget,dkeymap,key):
         itemN = QListWidgetItem()
@@ -670,6 +673,7 @@ class Pleditor(QMainWindow):
         widget.addItem(itemN)
         widget.setItemWidget(itemN,le)
         le.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget,plkey=key:self.rebuildCommands(plkeymap,plwidget,plkey))
+        self.resizeTrees()
         
     def addKwarg(self,widget,totalwidget,dkeymap,key,labelName=None,value=None):
         itemN = QListWidgetItem()
@@ -708,7 +712,7 @@ class Pleditor(QMainWindow):
         itemN.setSizeHint(container.sizeHint())
         widget.addItem(itemN)
         widget.setItemWidget(itemN,container)
-        
+        self.resizeTrees()
         
     def addCommand(self,keymap,key,layout,totalwidget):
         toplevellayout = QGridLayout()
@@ -737,7 +741,8 @@ class Pleditor(QMainWindow):
         kwargpushbutton.clicked.connect(lambda trash, listwidget=commandkwargs,plwidget=totalwidget,plkeymap=keymap,pldictkey=key:self.addKwarg(listwidget,plwidget,plkeymap,pldictkey))
         nwidget.setLayout(toplevellayout)
         layout.addWidget(nwidget)
-    
+        self.resizeTrees()
+        
     def addPatch(self,keymap,key,layout,totalwidget):
         patchtype = getSelectedItems(mplpatches)
         toplevellayout = QGridLayout()
@@ -789,7 +794,7 @@ class Pleditor(QMainWindow):
         nwidget.setLayout(toplevellayout)
         layout.addWidget(nwidget)
         self.rebuildCommands(keymap,totalwidget,key)
-        
+        self.resizeTrees()
     def changePatch(self,key,keymap,patchcombo,arglist,kwarglist,totalwidget):
         arglist.clear()
         kwarglist.clear()
@@ -811,6 +816,7 @@ class Pleditor(QMainWindow):
         self.addKwarg(kwarglist,totalwidget,keymap,key,'ls','-')
         self.addKwarg(kwarglist,totalwidget,keymap,key,'zorder','1')
         self.rebuildCommands(keymap,totalwidget,key)
+        self.resizeTrees()
         
     def removeCommand(self,keymap,key,layout,totalwidget):
         listofcommands = []
@@ -826,7 +832,7 @@ class Pleditor(QMainWindow):
             layout.itemAt(index).widget().deleteLater()
             layout.itemAt(index).widget().setParent(None)
         self.rebuildCommands(keymap,totalwidget,key)
-        
+        self.resizeTrees()
         
     def updateDict(self,widget,key,dictkey,keymap,vtype):
         if isinstance(widget,QLineEdit):
@@ -843,7 +849,8 @@ class Pleditor(QMainWindow):
             txt = widget.text()
         self.getFromDict(keymap)[dictkey][index]=vtype(txt)
         self.preview()
-            
+        self.resizeTrees()
+        
     def getFromDict(self,maplist):
         return reduce(operator.getitem,maplist,self.plotDict)
     
