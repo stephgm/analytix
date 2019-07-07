@@ -26,6 +26,7 @@ import Plotterator as plrt
 import matplotlib
 from functools import reduce
 import operator
+import re
 from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
 colors = dict(matplotlib.colors.BASE_COLORS, **matplotlib.colors.CSS4_COLORS)
 by_hsv = sorted((tuple(matplotlib.colors.rgb_to_hsv(matplotlib.colors.to_rgba(color)[:3])), name)
@@ -35,7 +36,7 @@ mplsymbols = filter(lambda i:(((type(i) is unicode) or (type(i) is str)) and (i 
 mplcmaps = sorted(m for m in matplotlib.pyplot.cm.datad if not m.endswith("_r"))
 mpllines = matplotlib.lines.lineStyles.keys()
 TRANSFORMS = ['PlateCarree()','NorthPolarStereo()','EckertV()','RotatedPole()','Orthographic()']
-
+mplpatches = ['Circle','Ellipse','Polygon','Rectangle']
 intvalidator = QtGui.QIntValidator()
 doublevalidator = QtGui.QDoubleValidator()
 
@@ -59,7 +60,10 @@ class getCommand(QDialog):
 def getSelectedItems(items):
     widget = getCommand(items)
     widget.exec_()
-    return widget.listwidget.currentItem().text()
+    try:
+        return widget.listwidget.currentItem().text()
+    except:
+        return ''
 
 class getLabel(QDialog):
     def __init__(self,parent=None):
@@ -100,7 +104,6 @@ class Pleditor(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         uic.loadUi('Pleditor.ui', self)
-        fname = r'C:\Users\Jordan\Phobos_Plots\06-29-2019_10_55_55.pklplt'
         self.makeConnections()
         self.dynamic_canvas = FigureCanvas(matplotlib.figure.Figure())
         self.CanvasLayout.addWidget(self.dynamic_canvas)
@@ -123,7 +126,6 @@ class Pleditor(QMainWindow):
         retval = box.exec_()
         
         if box.clickedButton() == force:
-            print 'ha'
             self.save(override=True)
         
     def Alert(self,msg):
@@ -157,26 +159,35 @@ class Pleditor(QMainWindow):
                 pltr = plrt.Plotter()
                 pltr.sub = self.plotDict['sub']
                 pltr.fig = self.plotDict['fig']
-                myfig = pltr.createPlot('',RETURN=True)
+                myfig,myax = pltr.createPlot('',RETURN=True)
+                self.CanvasLayout.addWidget(NavigationToolbar(self.dynamic_canvas,self))
                 self.CanvasLayout.addWidget(self.dynamic_canvas)
+                #Get the damn legend to move?
                 self.dynamic_canvas.figure = myfig
                 self.isValid = True
+                print 'made it here?'
         except:
+            for i in reversed(range(self.CanvasLayout.count())):
+                    widgetToRemove = self.CanvasLayout.itemAt(i).widget()
+                    self.CanvasLayout.removeWidget(widgetToRemove)
+                    widgetToRemove.deleteLater()
             self.dynamic_canvas = FigureCanvas(matplotlib.figure.Figure())
             self.dynamic_canvas.figure = old
             self.CanvasLayout.addWidget(self.dynamic_canvas)
             self.isValid = False
-            self.Alert('Maybe a kwarg needs to be updated')
+            self.Alert('Whatever you just did invalidated the plot.')
     
     def save(self,override=False):
         if self.fname and (self.isValid or override):
+            newfname = self.fname.strip('.pklplt')
             pltr = plrt.Plotter()
             pltr.sub = self.plotDict['sub']
             pltr.fig = self.plotDict['fig']
             if override:
-                pltr.savePkl(self.fname+'_INVALID.pklplt')
+                pltr.savePkl(newfname+'_INVALID.pklplt')
             else:
-                pltr.createPlot(self.fname+'_Edited.pklplt',SAVE=True,SAVEPKL=True)
+                pltr.createPlot(newfname+'_Edited.pklplt',SAVE=True,SAVEPKL=True)
+            self.Alert(newfname+' was saved!')
         else:
             msg = 'Warning: The plot you are trying to save is invalid.\nThe plot will not be saved'
             detail = 'Please check that all args and kwargs are correct.\n Visit https://matplotlib.org/ for assistance'
@@ -343,7 +354,7 @@ class Pleditor(QMainWindow):
                 elif k in ['table']:
                     parent.removeChild(child)
                     continue
-                elif k in ['commands','patches']:
+                elif k in ['commands']:
                     self.nestedwidgets[key][k]=[]
                     totallayout = QVBoxLayout()
                     totalwidget = QWidget()
@@ -358,7 +369,7 @@ class Pleditor(QMainWindow):
                             commandname = QLineEdit(cmd['cmd'])
                             commandname.setValidator(None)
                             commandargs = QListWidget()
-                            commandname.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget:self.rebuildCommands(plkeymap,plwidget))
+                            commandname.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget,pldictkey=k:self.rebuildCommands(plkeymap,plwidget,pldictkey))
                             for arg in cmd['args']:
                                 if isinstance(arg,float):
                                     argvalidator = doublevalidator
@@ -369,7 +380,7 @@ class Pleditor(QMainWindow):
 #                                if not isinstance(arg,np.ndarray):
                                 argwidget = QLineEdit(str(arg))
                                 argwidget.setValidator(argvalidator)
-                                argwidget.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget:self.rebuildCommands(plkeymap,plwidget))
+                                argwidget.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget,pldictkey=k:self.rebuildCommands(plkeymap,plwidget,pldictkey))
                                 itemN = QListWidgetItem()
                                 itemN.setSizeHint(argwidget.sizeHint())
                                 commandargs.addItem(itemN)
@@ -385,9 +396,25 @@ class Pleditor(QMainWindow):
                                 itemN = QListWidgetItem() 
                                 kwarglayout = QHBoxLayout()
                                 kwargname = QLabel(kwarg)
-                                kwargVal = QLineEdit(str(cmd['kwargs'][kwarg]))
-                                kwargVal.setValidator(kwargvalidator)
-                                kwargVal.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget:self.rebuildCommands(plkeymap,plwidget))
+                                if kwarg in ['color','closed','fill','ls','transform']:
+                                    kwargVal = QComboBox()
+                                    if kwarg == 'color':
+                                        kwargVal.addItems(mplcolors)
+                                    elif kwarg == 'closed':
+                                        kwargVal.addItems(['True','False'])
+                                    elif kwarg == 'fill':
+                                        kwargVal.addItems(['True','False'])
+                                    elif kwarg == 'ls':
+                                        kwargVal.addItems(mpllines)
+                                    elif kwarg == 'transform':
+                                        kwargVal.addItems(TRANSFORMS)
+                                    index = kwargVal.findText(str(cmd['kwargs'][kwarg]).strip("'''"))
+                                    kwargVal.setCurrentIndex(index)
+                                    kwargVal.currentIndexChanged.connect(lambda trash, plkeymap=dkeymap,plwidget=totalwidget,pldictkey=k:self.rebuildCommands(plkeymap,plwidget,pldictkey))
+                                else:
+                                    kwargVal = QLineEdit(str(cmd['kwargs'][kwarg]))
+                                    kwargVal.setValidator(kwargvalidator)
+                                    kwargVal.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget,pldictkey=k:self.rebuildCommands(plkeymap,plwidget,pldictkey))
                                 kwarglayout.addWidget(kwargname)
                                 kwarglayout.addWidget(kwargVal)
                                 kwargwidget = QWidget()
@@ -408,8 +435,8 @@ class Pleditor(QMainWindow):
                             toplevellayout.addWidget(rkwargpushbutton,3,2)
                             rargpushbutton.clicked.connect(lambda trash,listwidget=commandargs:self.removeArg(listwidget))
                             rkwargpushbutton.clicked.connect(lambda trash,listwidget=commandkwargs:self.removeKwarg(listwidget))
-                            argpushbutton.clicked.connect(lambda trash,listwidget=commandargs,plwidget=totalwidget,plkeymap=dkeymap:self.addArg(listwidget,plwidget,plkeymap))
-                            kwargpushbutton.clicked.connect(lambda trash, listwidget=commandkwargs,plwidget=totalwidget,plkeymap=dkeymap:self.addKwarg(listwidget,plwidget,plkeymap))
+                            argpushbutton.clicked.connect(lambda trash,listwidget=commandargs,plwidget=totalwidget,plkeymap=dkeymap,pldictkey=k:self.addArg(listwidget,plwidget,plkeymap,pldictkey))
+                            kwargpushbutton.clicked.connect(lambda trash, listwidget=commandkwargs,plwidget=totalwidget,plkeymap=dkeymap,pldictkey=k:self.addKwarg(listwidget,plwidget,plkeymap,pldictkey))
                             nwidget.setLayout(toplevellayout)
                             totallayout.addWidget(nwidget)
                     grandchild = QTreeWidgetItem(child)
@@ -423,7 +450,106 @@ class Pleditor(QMainWindow):
                     grandchild = QTreeWidgetItem(child)
                     widget.setItemWidget(grandchild,0,removecommand)
                     addcommand.clicked.connect(lambda trash, plkeymap = dkeymap,plkey=k,pllayout=self.nestedwidgets[key][k][-1].layout(),plwidget=totalwidget:self.addCommand(plkeymap,plkey,pllayout,plwidget))
-                    removecommand.clicked.connect(lambda trash, plkeymap = dkeymap,plkey=k,pllayout=self.nestedwidgets[key][k][-1].layout():self.removeCommand(plkeymap,plkey,pllayout))
+                    removecommand.clicked.connect(lambda trash, plkeymap = dkeymap,plkey=k,pllayout=self.nestedwidgets[key][k][-1].layout(),plwidget=totalwidget:self.removeCommand(plkeymap,plkey,pllayout,plwidget))
+                elif k in ['patches']:
+                    self.nestedwidgets[key][k]=[]
+                    ptotallayout = QVBoxLayout()
+                    ptotalwidget = QWidget()
+                    if d[k]:
+                        #cmd is list of commands
+                        for pcmd in d[k]:
+                            ptoplevellayout = QGridLayout()
+                            ptoplevellayout.addWidget(QLabel('Patch Type'),0,0)
+                            ptoplevellayout.addWidget(QLabel('Args'),0,1)
+                            ptoplevellayout.addWidget(QLabel('Kwargs'),0,2)
+                            pnwidget = QWidget()
+                            pcommandname = QLineEdit(pcmd['cmd'])
+                            pcommandname.setValidator(None)
+                            pcommandname.setReadOnly(True)
+                            pcommandargs = QListWidget()
+                            pcommandname.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=ptotalwidget,pldictkey=k:self.rebuildCommands(plkeymap,plwidget,pldictkey))
+                            for parg in pcmd['args']:
+                                if isinstance(parg,float):
+                                    pargvalidator = doublevalidator
+                                elif isinstance(parg,int):
+                                    pargvalidator = intvalidator
+                                else:
+                                    pargvalidator = None
+#                                if not isinstance(arg,np.ndarray):
+                                pargwidget = QLineEdit(str(parg))
+                                pargwidget.setValidator(pargvalidator)
+#                                argwidget.setReadOnly(True)
+                                pargwidget.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=ptotalwidget,pldictkey=k:self.rebuildCommands(plkeymap,plwidget,pldictkey))
+                                pitemN = QListWidgetItem()
+                                pitemN.setSizeHint(argwidget.sizeHint())
+                                pcommandargs.addItem(pitemN)
+                                pcommandargs.setItemWidget(pitemN,pargwidget)
+                            pcommandkwargs = QListWidget()
+                            for ii,pkwarg in enumerate(pcmd['kwargs']):
+                                if isinstance(pcmd['kwargs'][pkwarg],float):
+                                    pkwargvalidator = doublevalidator
+                                elif isinstance(pcmd['kwargs'][pkwarg],int):
+                                    pkwargvalidator = intvalidator
+                                else:
+                                    pkwargvalidator = None
+                                pitemN = QListWidgetItem() 
+                                pkwarglayout = QHBoxLayout()
+                                pkwargname = QLabel(pkwarg)
+                                if pkwarg in ['color','closed','fill','ls','transform']:
+                                    pkwargVal = QComboBox()
+                                    if pkwarg == 'color':
+                                        pkwargVal.addItems(mplcolors)
+                                    elif pkwarg == 'closed':
+                                        pkwargVal.addItems(['True','False'])
+                                    elif pkwarg == 'fill':
+                                        pkwargVal.addItems(['True','False'])
+                                    elif pkwarg == 'ls':
+                                        pkwargVal.addItems(mpllines)
+                                    elif pkwarg == 'transform':
+                                        pkwargVal.addItems(TRANSFORMS)
+                                    index = pkwargVal.findText(str(pcmd['kwargs'][pkwarg]).strip("'''"))
+                                    pkwargVal.setCurrentIndex(index)
+                                    pkwargVal.currentIndexChanged.connect(lambda trash, plkeymap=dkeymap,plwidget=ptotalwidget,pldictkey=k:self.rebuildCommands(plkeymap,plwidget,pldictkey))
+                                else:
+                                    pkwargVal = QLineEdit(str(pcmd['kwargs'][pkwarg]))
+                                    pkwargVal.setValidator(pkwargvalidator)
+                                    pkwargVal.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=ptotalwidget,pldictkey=k:self.rebuildCommands(plkeymap,plwidget,pldictkey))
+                                pkwarglayout.addWidget(pkwargname)
+                                pkwarglayout.addWidget(pkwargVal)
+                                pkwargwidget = QWidget()
+                                pkwargwidget.setLayout(pkwarglayout)
+                                pitemN.setSizeHint(pkwargwidget.sizeHint()) 
+                                pcommandkwargs.addItem(pitemN)
+                                pcommandkwargs.setItemWidget(pitemN,pkwargwidget)
+                            ptoplevellayout.addWidget(pcommandname,1,0)
+                            ptoplevellayout.addWidget(pcommandargs,1,1)
+                            ptoplevellayout.addWidget(pcommandkwargs,1,2)
+                            pargpushbutton = QPushButton('Add Arg')
+                            pkwargpushbutton = QPushButton('Add Kwarg')
+                            prargpushbutton = QPushButton('Remove Arg')
+                            prkwargpushbutton=QPushButton('Remove Kwarg')
+                            ptoplevellayout.addWidget(pargpushbutton,2,1)
+                            ptoplevellayout.addWidget(pkwargpushbutton,2,2)
+                            ptoplevellayout.addWidget(prargpushbutton,3,1)
+                            ptoplevellayout.addWidget(prkwargpushbutton,3,2)
+                            prargpushbutton.clicked.connect(lambda trash,listwidget=pcommandargs:self.removeArg(listwidget))
+                            prkwargpushbutton.clicked.connect(lambda trash,listwidget=pcommandkwargs:self.removeKwarg(listwidget))
+                            pargpushbutton.clicked.connect(lambda trash,listwidget=pcommandargs,plwidget=ptotalwidget,plkeymap=dkeymap,pldictkey=k:self.addArg(listwidget,plwidget,plkeymap,pldictkey))
+                            pkwargpushbutton.clicked.connect(lambda trash, listwidget=pcommandkwargs,plwidget=ptotalwidget,plkeymap=dkeymap,pldictkey=k:self.addKwarg(listwidget,plwidget,plkeymap,pldictkey))
+                            pnwidget.setLayout(ptoplevellayout)
+                            ptotallayout.addWidget(pnwidget)
+                    grandchild = QTreeWidgetItem(child)
+                    ptotalwidget.setLayout(ptotallayout)
+                    self.nestedwidgets[key][k].append(ptotalwidget)
+                    widget.setItemWidget(grandchild,0,self.nestedwidgets[key][k][-1])
+                    grandchild = QTreeWidgetItem(child)
+                    paddcommand = QPushButton('Add Patch')
+                    premovecommand = QPushButton('Remove Patch')
+                    widget.setItemWidget(grandchild,0,paddcommand)
+                    grandchild = QTreeWidgetItem(child)
+                    widget.setItemWidget(grandchild,0,premovecommand)
+                    paddcommand.clicked.connect(lambda trash, plkeymap = dkeymap,plkey=k,pllayout=self.nestedwidgets[key][k][-1].layout(),plwidget=ptotalwidget:self.addPatch(plkeymap,plkey,pllayout,plwidget))
+                    premovecommand.clicked.connect(lambda trash, plkeymap = dkeymap,plkey=k,pllayout=self.nestedwidgets[key][k][-1].layout(),plwidget=ptotalwidget:self.removeCommand(plkeymap,plkey,pllayout,plwidget))
                 #Line edit for single values
                 elif isinstance(v, str):
                     if v:
@@ -482,28 +608,52 @@ class Pleditor(QMainWindow):
         for SelectedItem in widget.selectedItems():
             widget.takeItem(widget.row(SelectedItem))
     
-    def addArg(self,widget,totalwidget,dkeymap):
+    def addArg(self,widget,totalwidget,dkeymap,key):
         itemN = QListWidgetItem()
         le = QLineEdit()
         itemN.setSizeHint(le.sizeHint())
         widget.addItem(itemN)
         widget.setItemWidget(itemN,le)
-        le.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget:self.rebuildCommands(plkeymap,totalwidget))
+        le.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget,plkey=key:self.rebuildCommands(plkeymap,plwidget,plkey))
         
-    def addKwarg(self,widget,totalwidget,dkeymap):
+    def addKwarg(self,widget,totalwidget,dkeymap,key,labelName=None,value=None):
         itemN = QListWidgetItem()
-        labelName = getlabel()
-        le = QLineEdit()
+        if not labelName:
+            labelName = getlabel()
+        if labelName in ['color','closed','fill','ls','transform']:
+            kwargVal = QComboBox()
+            if labelName == 'color':
+                kwargVal.addItems(mplcolors)
+            elif labelName == 'closed':
+                kwargVal.addItems(['True','False'])
+            elif labelName == 'fill':
+                kwargVal.addItems(['True','False'])
+            elif labelName == 'ls':
+                kwargVal.addItems(mpllines)
+            elif labelName == 'transform':
+                kwargVal.addItems(TRANSFORMS)
+            if value:
+                index = kwargVal.findText(value)
+                kwargVal.setCurrentIndex(index)
+            else:
+                kwargVal.setCurrentIndex(0)
+            kwargVal.currentIndexChanged.connect(lambda trash, plkeymap=dkeymap,plwidget=totalwidget,pldictkey=key:self.rebuildCommands(plkeymap,plwidget,pldictkey))
+        else:
+            if not value:
+                kwargVal = QLineEdit()
+            else:
+                kwargVal = QLineEdit(value)
+            kwargVal.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget,plkey=key:self.rebuildCommands(plkeymap,plwidget,plkey))
         label = QLabel(labelName)
         layout = QHBoxLayout()
         container = QWidget()
         layout.addWidget(label)
-        layout.addWidget(le)
+        layout.addWidget(kwargVal)
         container.setLayout(layout)
         itemN.setSizeHint(container.sizeHint())
         widget.addItem(itemN)
         widget.setItemWidget(itemN,container)
-        le.editingFinished.connect(lambda plkeymap=dkeymap,plwidget=totalwidget:self.rebuildCommands(plkeymap,totalwidget))
+        
         
     def addCommand(self,keymap,key,layout,totalwidget):
         toplevellayout = QGridLayout()
@@ -512,7 +662,7 @@ class Pleditor(QMainWindow):
         toplevellayout.addWidget(QLabel('Kwargs'),0,2)
         nwidget = QWidget()
         commandname = QLineEdit()
-        commandname.editingFinished.connect(lambda plkeymap=keymap,plwidget=totalwidget:self.rebuildCommands(plkeymap,totalwidget))
+        commandname.editingFinished.connect(lambda plkeymap=keymap,plwidget=totalwidget,plkey=key:self.rebuildCommands(plkeymap,plwidget,plkey))
         commandargs = QListWidget()
         commandkwargs = QListWidget()
         toplevellayout.addWidget(commandname,1,0)
@@ -528,20 +678,101 @@ class Pleditor(QMainWindow):
         toplevellayout.addWidget(rkwargpushbutton,3,2)
         rargpushbutton.clicked.connect(lambda trash,listwidget=commandargs:self.removeArg(listwidget))
         rkwargpushbutton.clicked.connect(lambda trash,listwidget=commandkwargs:self.removeKwarg(listwidget))
-        argpushbutton.clicked.connect(lambda trash,listwidget=commandargs,plwidget=totalwidget,plkeymap=keymap:self.addArg(listwidget,plwidget,plkeymap))
-        kwargpushbutton.clicked.connect(lambda trash, listwidget=commandkwargs,plwidget=totalwidget,plkeymap=keymap:self.addKwarg(listwidget,plwidget,plkeymap))
+        argpushbutton.clicked.connect(lambda trash,listwidget=commandargs,plwidget=totalwidget,plkeymap=keymap,pldictkey=key:self.addArg(listwidget,plwidget,plkeymap,pldictkey))
+        kwargpushbutton.clicked.connect(lambda trash, listwidget=commandkwargs,plwidget=totalwidget,plkeymap=keymap,pldictkey=key:self.addKwarg(listwidget,plwidget,plkeymap,pldictkey))
         nwidget.setLayout(toplevellayout)
         layout.addWidget(nwidget)
+    
+    def addPatch(self,keymap,key,layout,totalwidget):
+        patchtype = getSelectedItems(mplpatches)
+        toplevellayout = QGridLayout()
+        toplevellayout.addWidget(QLabel('Patch Type'),0,0)
+        toplevellayout.addWidget(QLabel('Args'),0,1)
+        toplevellayout.addWidget(QLabel('Kwargs'),0,2)
+        nwidget = QWidget()
+        commandname = QComboBox()
+        commandname.addItems(mplpatches)
+        index = commandname.findText(patchtype)
+        commandname.setCurrentIndex(index)
+        commandargs = QListWidget()
+        commandkwargs = QListWidget()
+        commandname.currentIndexChanged.connect(lambda trash, plkey=key,plkeymap=keymap,plcombo=commandname,pltotwidget=totalwidget,plarglist=commandargs,plkwarglist=commandkwargs:self.changePatch(plkey,plkeymap,plcombo,plarglist,plkwarglist,pltotwidget))
         
-    def removeCommand(self,keymap,key,layout):
+        if patchtype in ['Rectangle','Ellipse']:
+            self.addKwarg(commandkwargs,totalwidget,keymap,key,'xy','(0.0,0.0)')
+            self.addKwarg(commandkwargs,totalwidget,keymap,key,'width','1.0')
+            self.addKwarg(commandkwargs,totalwidget,keymap,key,'height','1.0')
+            self.addKwarg(commandkwargs,totalwidget,keymap,key,'angle','0.0')
+        elif patchtype == 'Circle':
+            self.addKwarg(commandkwargs,totalwidget,keymap,key,'xy','(0.0,0.0)')
+            self.addKwarg(commandkwargs,totalwidget,keymap,key,'radius','1.0')
+        elif patchtype == 'Polygon':
+            self.addKwarg(commandkwargs,totalwidget,keymap,key,'xy','(0.0,0.0)')
+            self.addKwarg(commandkwargs,totalwidget,keymap,key,'closed')
+        self.addKwarg(commandkwargs,totalwidget,keymap,key,'fill','True')
+        self.addKwarg(commandkwargs,totalwidget,keymap,key,'alpha','1.0')
+        self.addKwarg(commandkwargs,totalwidget,keymap,key,'color','black')
+        self.addKwarg(commandkwargs,totalwidget,keymap,key,'ls','--')
+        self.addKwarg(commandkwargs,totalwidget,keymap,key,'zorder','1')
+            
+        
+        toplevellayout.addWidget(commandname,1,0)
+        toplevellayout.addWidget(commandargs,1,1)
+        toplevellayout.addWidget(commandkwargs,1,2)
+        argpushbutton = QPushButton('Add Arg')
+        kwargpushbutton = QPushButton('Add Kwarg')
+        rargpushbutton = QPushButton('Remove Arg')
+        rkwargpushbutton=QPushButton('Remove Kwarg')
+        toplevellayout.addWidget(argpushbutton,2,1)
+        toplevellayout.addWidget(kwargpushbutton,2,2)
+        toplevellayout.addWidget(rargpushbutton,3,1)
+        toplevellayout.addWidget(rkwargpushbutton,3,2)
+        rargpushbutton.clicked.connect(lambda trash,listwidget=commandargs:self.removeArg(listwidget))
+        rkwargpushbutton.clicked.connect(lambda trash,listwidget=commandkwargs:self.removeKwarg(listwidget))
+        argpushbutton.clicked.connect(lambda trash,listwidget=commandargs,plwidget=totalwidget,plkeymap=keymap,pldictkey=key:self.addArg(listwidget,plwidget,plkeymap,pldictkey))
+        kwargpushbutton.clicked.connect(lambda trash, listwidget=commandkwargs,plwidget=totalwidget,plkeymap=keymap,pldictkey=key:self.addKwarg(listwidget,plwidget,plkeymap,pldictkey))
+        nwidget.setLayout(toplevellayout)
+        layout.addWidget(nwidget)
+        print key
+        self.rebuildCommands(keymap,totalwidget,key)
+        
+    def changePatch(self,key,keymap,patchcombo,arglist,kwarglist,totalwidget):
+        arglist.clear()
+        kwarglist.clear()
+        patchtype = patchcombo.currentText()
+        if patchtype in ['Rectangle','Ellipse']:
+            self.addKwarg(kwarglist,totalwidget,keymap,key,'xy','(0.0,0.0)')
+            self.addKwarg(kwarglist,totalwidget,keymap,key,'width','1.0')
+            self.addKwarg(kwarglist,totalwidget,keymap,key,'height','1.0')
+            self.addKwarg(kwarglist,totalwidget,keymap,key,'angle','0.0')
+        elif patchtype == 'Circle':
+            self.addKwarg(kwarglist,totalwidget,keymap,key,'xy','(0.0,0.0)')
+            self.addKwarg(kwarglist,totalwidget,keymap,key,'radius','1.0')
+        elif patchtype == 'Polygon':
+            self.addKwarg(kwarglist,totalwidget,keymap,key,'xy','(0.0,0.0)')
+            self.addKwarg(kwarglist,totalwidget,keymap,key,'closed')
+        self.addKwarg(kwarglist,totalwidget,keymap,key,'fill','True')
+        self.addKwarg(kwarglist,totalwidget,keymap,key,'alpha','1.0')
+        self.addKwarg(kwarglist,totalwidget,keymap,key,'color','black')
+        self.addKwarg(kwarglist,totalwidget,keymap,key,'ls','-')
+        self.addKwarg(kwarglist,totalwidget,keymap,key,'zorder','1')
+        self.rebuildCommands(keymap,totalwidget,key)
+        
+    def removeCommand(self,keymap,key,layout,totalwidget):
+        print key
         listofcommands = []
-        
         for i in range(layout.count()):
-            listofcommands.append(layout.itemAt(i).widget().layout().itemAt(3).widget().text())
+            thewidget = layout.itemAt(i).widget().layout().itemAt(3).widget()
+            if isinstance(thewidget,QLineEdit):
+                listofcommands.append(thewidget.text())
+            elif isinstance(thewidget,QComboBox):
+                listofcommands.append(thewidget.currentText())
         selected = getSelectedItems(listofcommands)
         if selected:
             index = listofcommands.index(selected)
             layout.itemAt(index).widget().deleteLater()
+            layout.itemAt(index).widget().setParent(None)
+        self.rebuildCommands(keymap,totalwidget,key)
         
         
     def updateDict(self,widget,key,dictkey,keymap,vtype):
@@ -563,15 +794,21 @@ class Pleditor(QMainWindow):
     def getFromDict(self,maplist):
         return reduce(operator.getitem,maplist,self.plotDict)
     
-    def rebuildCommands(self,keymap,widget):
+    def rebuildCommands(self,keymap,widget,plkey):
         commands = []
         for i in range(widget.layout().count()):
+            print 'in here?'
             contents = {}
             underlying = widget.layout().itemAt(i).widget().layout()
             commandle = underlying.itemAt(3).widget()
             arglw = underlying.itemAt(4).widget()
             kwarglw = underlying.itemAt(5).widget()
-            command = commandle.text()
+            if isinstance(commandle,QLineEdit):
+                command = commandle.text()
+            elif isinstance(commandle,QComboBox):
+                command = commandle.currentText()
+            else:
+                command = None
             if command:
                 args = []
                 kwargs = {}
@@ -580,19 +817,47 @@ class Pleditor(QMainWindow):
                     try:
                         arg = eval(arg)
                     except:
-                        self.Alert('Assuming '+'"'+str(arg)+'"'+' is a string.')
-                        arg = str(arg)
+                        if arg.startswith('['):
+                            self.Alert('Assuming '+'"'+str(arg)+'"'+' is a numpy array')
+                            arg = re.sub(r'\n',' ',arg)
+                            arg = re.sub(r' +',' ',arg)
+                            arg = re.sub(r'\[ +',r'[',arg)
+                            arg = re.sub(r' +\]',r']',arg)
+                            for bracketed in re.findall(r"\[(.+?)\]",arg):
+                                arg = arg.replace(bracketed,bracketed.replace(" ",","))
+                            arg = arg.replace('] [','],[')
+                            arg = arg.replace(' ','')
+                            arg = np.array(eval(arg))
+                        else:
+                            self.Alert('Assuming '+'"'+str(arg)+'"'+' is a string.')
+                            arg = str(arg)
                     if isinstance(arg,str):
                         arg = "'''{}'''".format(arg)
                     args.append(arg)
                 for j in range(kwarglw.count()):
                     key = kwarglw.itemWidget(kwarglw.item(j)).layout().itemAt(0).widget().text()
-                    kwarg = kwarglw.itemWidget(kwarglw.item(j)).layout().itemAt(1).widget().text()
+                    print key
+                    if isinstance(kwarglw.itemWidget(kwarglw.item(j)).layout().itemAt(1).widget(),QLineEdit):
+                        kwarg = kwarglw.itemWidget(kwarglw.item(j)).layout().itemAt(1).widget().text()
+                    elif isinstance(kwarglw.itemWidget(kwarglw.item(j)).layout().itemAt(1).widget(),QComboBox):
+                        kwarg = kwarglw.itemWidget(kwarglw.item(j)).layout().itemAt(1).widget().currentText()
                     try:
                         kwarg = eval(kwarg)
                     except:
-                        self.Alert('Assuming '+'"'+str(kwarg)+'"'+' is a string.')
-                        kwarg = str(kwarg)
+                        if kwarg.startswith('['):
+                            self.Alert('Assuming '+'"'+str(kwarg)+'"'+' is a numpy array')
+                            kwarg = re.sub(r'\n',' ',kwarg)
+                            kwarg = re.sub(r' +',' ',kwarg)
+                            kwarg = re.sub(r'\[ +',r'[',kwarg)
+                            kwarg = re.sub(r' +\]',r']',kwarg)
+                            for bracketed in re.findall(r"\[(.+?)\]",kwarg):
+                                kwarg = kwarg.replace(bracketed,bracketed.replace(" ",","))
+                            kwarg = kwarg.replace('] [','],[')
+                            kwarg = kwarg.replace(' ','')
+                            kwarg = np.array(eval(kwarg))
+                        else:
+                            self.Alert('Assuming '+'"'+str(kwarg)+'"'+' is a string.')
+                            kwarg = str(kwarg)
                     if isinstance(kwarg,str):
                         kwarg = "'''{}'''".format(kwarg)
                     kwargs[key]=kwarg
@@ -600,11 +865,11 @@ class Pleditor(QMainWindow):
                 contents['args'] = args
                 contents['kwargs'] = kwargs
                 commands.append(contents)
-        self.getFromDict(keymap)['commands'] = commands
+        self.getFromDict(keymap)[plkey] = commands
+        print self.getFromDict(keymap)['commands']
+        print self.getFromDict(keymap)['patches']
+        print plkey
         self.preview()
-
-        
-
 
 def main():
     app = QApplication(sys.argv)
