@@ -89,7 +89,7 @@ if not hasattr(sys,'frozen'):
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     sys.path.extend([_ for _ in glob.glob(os.path.join(RELATIVE_LIB_PATH,'*')) if os.path.isdir(_)])
 else:
-    RELATIVE_LIB_PATH = os.path.dirname(sys.eexecutable)
+    RELATIVE_LIB_PATH = os.path.dirname(sys.executable)
     
 if os.path.isfile(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy')):
     BLUEMARBLEHD = np.load(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy'))
@@ -417,10 +417,10 @@ class Plotter(object):
                         if not(command['cmd'].startswith('get_legend')) and not(command['cmd'] == 'legend'):
                             execString = "thisax."+self.buildExecString(command)
                             exec(execString,{"ccrs":ccrs},{"thisax":theaxes[rowcol]})
-                    if 'patches' in self.sub[rowcol] and self.sub[rowcol]['patches']:
-                        for patch in self.sub[rowcol]['patches']:
-                            execString ="thisax.add_patch(mpatches.{})".format(self.buildExecString(patch))
-                            exec(execString,{"ccrs":ccrs,"mpatches":mpatches},{"thisax":theaxes[rowcol]})
+                if 'patches' in self.sub[rowcol] and self.sub[rowcol]['patches']:
+                    for patch in self.sub[rowcol]['patches']:
+                        execString ="thisax.add_patch(mpatches.{})".format(self.buildExecString(patch))
+                        exec(execString,{"ccrs":ccrs,"mpatches":mpatches},{"thisax":theaxes[rowcol]})
                 for t in self.sub:
                     if len(t) == 3 and t[:2] == rowcol and not self.sub[t]['colorbar']:
                         for line in deepcopy(self.sub[t]['lines']):
