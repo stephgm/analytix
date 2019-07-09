@@ -43,6 +43,11 @@ $pcmd actdiag blockdiag nwdiag seqdiag arrow dill pathlib
 $pcmd -U ray
 $pcmd modin vega_datasets pdvega
 $pcmd ggplot pyggplot
+# for carpopy features
+$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data physical
+$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data cultural
+$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data cultural-extra
+$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data gshhs
 $PREFIX/conda update --all -y
 $PREFIX/conda clean -a -y
 fi

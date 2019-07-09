@@ -47,6 +47,10 @@ $pcmd actdiag blockdiag nwdiag seqdiag arrow dill pathlib
 $pcmd -U ray
 $pcmd modin vega_datasets pdvega
 $pcmd ggplot pyggplot
+$PREFIX/python feature_download.py --output /storage/data/local/lib/python2.7/site-packages/cartopy/data physical
+$PREFIX/python feature_download.py --output /storage/data/local/lib/python2.7/site-packages/cartopy/data cultural
+$PREFIX/python feature_download.py --output /storage/data/local/lib/python2.7/site-packages/cartopy/data cultural-extra
+$PREFIX/python feature_download.py --output /storage/data/local/lib/python2.7/site-packages/cartopy/data gshhs
 # python 3, pyrasite-gui and pygraphviz do not work, a dependency meliae does not appear to be python 3 compliant
 # upgrading
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"
