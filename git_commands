@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# to reset, equivalent to "hg update -C"
+# git reset --hard HEAD
