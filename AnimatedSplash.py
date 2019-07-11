@@ -43,7 +43,7 @@ class MovieSplashScreen(we.QSplashScreen):
 if __name__ == "__main__":
 
     app = we.QApplication(sys.argv)
-    movie = QMovie("Predator.gif")
+    movie = QMovie("PhobosLoading.gif")
     splash = MovieSplashScreen(movie)
     splash.show()
     
