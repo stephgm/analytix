@@ -21,7 +21,7 @@ def hexify(fname):
     with open(fname,'r') as fid:
         binry = hexlify(fid.read())
     fn,ext = os.path.splitext(fname)
-    with open('{}.txt'.format(fn),'w') as fid:
+    with open('{}_{}.txt'.format(fn,ext[1:]),'w') as fid:
         fid.write('{}{}{}'.format(binry,exthex,hexlify(ext)))
         
 def unhexify(fname):
@@ -29,7 +29,7 @@ def unhexify(fname):
         ascry = unhexlify(fid.read())
     extpos = ascry.rfind('EXTENSION')
     ext = ascry[extpos+9:]
-    with open('{}{}'.format(os.path.splitext(fname)[0],ext),'w') as fid:
+    with open('{}{}'.format(os.path.splitext(fname)[0].rsplit('_',1)[0],ext),'w') as fid:
         fid.write(ascry[:extpos])
     return ext
 
@@ -45,12 +45,13 @@ def hexifyall(dname):
         for thefile in thefiles:
             hexify(thefile)
             newsubdir = thefile[len(dname)+1:-(len(os.path.basename(thefile))+1)]
+            fn,ext = os.path.splitext(thefile)
             if newsubdir:
                 if not os.path.isdir(os.path.join(newdir,newsubdir)):
                     os.makedirs(os.path.join(newdir,newsubdir))
-                os.rename('{}.txt'.format(os.path.splitext(thefile)[0]),os.path.join(newdir,newsubdir,'{}.txt'.format(os.path.splitext(os.path.basename(thefile))[0])))
+                os.rename('{}_{}.txt'.format(fn,ext[1:]),os.path.join(newdir,newsubdir,'{}_{}.txt'.format(os.path.splitext(os.path.basename(thefile))[0],ext[1:])))
             else:
-                os.rename('{}.txt'.format(os.path.splitext(thefile)[0]),os.path.join(newdir,'{}.txt'.format(os.path.splitext(os.path.basename(thefile))[0])))
+                os.rename('{}_{}.txt'.format(fn,ext[1:]),os.path.join(newdir,'{}_{}.txt'.format(os.path.splitext(os.path.basename(thefile))[0],ext[1:])))
     
 def unhexifyall(dname):
     if os.path.isdir(dname):
@@ -67,9 +68,9 @@ def unhexifyall(dname):
             if newsubdir:
                 if not os.path.isdir(os.path.join(newdir,newsubdir)):
                     os.makedirs(os.path.join(newdir,newsubdir))
-                os.rename('{}{}'.format(os.path.splitext(thefile)[0],ext),os.path.join(newdir,newsubdir,'{}{}'.format(os.path.splitext(os.path.basename(thefile))[0],ext)))
+                os.rename('{}{}'.format(os.path.splitext(thefile)[0].rsplit('_',1)[0],ext),os.path.join(newdir,newsubdir,'{}{}'.format(os.path.splitext(os.path.basename(thefile))[0].rsplit('_',1)[0],ext)))
             else:
-                os.rename('{}{}'.format(os.path.splitext(thefile)[0],ext),os.path.join(newdir,'{}{}'.format(os.path.splitext(os.path.basename(thefile))[0],ext)))
+                os.rename('{}{}'.format(os.path.splitext(thefile)[0].rsplit('_',1)[0],ext),os.path.join(newdir,'{}{}'.format(os.path.splitext(os.path.basename(thefile))[0].rsplit('_',1)[0],ext)))
 
 if __name__ == '__main__':
     DUN = False
