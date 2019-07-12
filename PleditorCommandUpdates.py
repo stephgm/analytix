@@ -115,6 +115,8 @@ class Pleditor(QMainWindow):
         self.timer.start()
         self.timer.timeout.connect(lambda:self.Alert(''))
         self.TreeList = []
+        self.IUNDERSTAND = False
+        self.updateAnyways = False
     
     def warningBox(self,msg,detail):
         box = QMessageBox()
@@ -128,6 +130,27 @@ class Pleditor(QMainWindow):
         
         if box.clickedButton() == force:
             self.save(override=True)
+        
+    def warningBoxCommands(self,msg,detail):
+        box = QMessageBox()
+        box.setIcon(QMessageBox.Warning)
+        box.setText(msg)
+        box.setDetailedText(detail)
+        box.setWindowTitle('Warning')
+        box.setStandardButtons(QMessageBox.Ok)
+        igetit = box.addButton("Don't Show Again",QMessageBox.YesRole)
+        force = box.addButton("Update Anyways ALWAYS",QMessageBox.YesRole)
+        forcethisonce = box.addButton("Update Anywas JUST THIS ONCE",QMessageBox.YesRole)
+        
+        retval = box.exec_()
+        
+        if box.clickedButton() == igetit:
+            self.IUNDERSTAND = True
+        if box.clickedButton() == force:
+            self.IUNDERSTAND = True
+            self.updateAnyways = True
+        if box.clickedButton() == forcethisonce:
+            self.updateAnyways = True
         
     def Alert(self,msg):
         self.timer.setInterval(5000)
@@ -679,6 +702,7 @@ class Pleditor(QMainWindow):
         self.resizeTrees()
         
     def addKwarg(self,widget,totalwidget,dkeymap,key,index,labelName=None,value=None):
+        print 'kwarg one',index
         itemN = QListWidgetItem()
         if not labelName:
             labelName = getlabel()
@@ -761,7 +785,7 @@ class Pleditor(QMainWindow):
         commandargs = QListWidget()
         commandkwargs = QListWidget()
         commandname.currentIndexChanged.connect(lambda trash, plkey=key,plkeymap=keymap,plcombo=commandname,pltotwidget=totalwidget,plarglist=commandargs,plkwarglist=commandkwargs,plindex=len(self.getFromDict(keymap)[key]):self.changePatch(plkey,plkeymap,plcombo,plarglist,plkwarglist,pltotwidget,plindex))
-        
+        index = len(self.getFromDict(keymap)[key])
         if patchtype in ['Rectangle','Ellipse']:
             self.addKwarg(commandkwargs,totalwidget,keymap,key,index,'xy','(0.0,0.0)')
             self.addKwarg(commandkwargs,totalwidget,keymap,key,index,'width','1.0')
@@ -796,6 +820,8 @@ class Pleditor(QMainWindow):
         toplevellayout.addWidget(kwargpushbutton,2,2)
         toplevellayout.addWidget(rargpushbutton,3,1)
         toplevellayout.addWidget(rkwargpushbutton,3,2)
+        print len(self.getFromDict(keymap)[key])
+        print key
         rargpushbutton.clicked.connect(lambda trash,listwidget=commandargs,plwidget=totalwidget,plkeymap=keymap,pldictkey=key,index=len(self.getFromDict(keymap)[key]):self.removeArg(listwidget,plwidget,plkeymap,pldictkey,index))
         rkwargpushbutton.clicked.connect(lambda trash,listwidget=commandkwargs,plwidget=totalwidget,plkeymap=keymap,pldictkey=key,index=len(self.getFromDict(keymap)[key]):self.removeKwarg(listwidget,plwidget,plkeymap,pldictkey,index))
         argpushbutton.clicked.connect(lambda trash,listwidget=commandargs,plwidget=totalwidget,plkeymap=keymap,pldictkey=key,index=len(self.getFromDict(keymap)[key]):self.addArg(listwidget,plwidget,plkeymap,pldictkey,index))
@@ -804,8 +830,17 @@ class Pleditor(QMainWindow):
         layout.addWidget(nwidget)
 #        self.rebuildCommands(keymap,totalwidget,key)
         self.getFromDict(keymap)[key].append({'cmd':commandname.currentText(),'args':[],'kwargs':patchdict})
-        self.preview()
+        if not self.IUNDERSTAND and len(self.getFromDict(keymap)[key])>20:
+            self.warningBoxCommands('There are more than 20 Commands','Because there are more than 20 commands the plot may take a while to generate.\nTo save your sanity, the plot will not update immediately unless you check "Update Anyways".')
+        if self.IUNDERSTAND and self.updateAnyways and len(self.getFromDict(keymap)[key])>20:
+            self.preview()
+        elif self.updateAnyways and not self.IUNDERSTAND and len(self.getFromDict(keymap)[key])>20:
+            self.preview()
+            self.updateAnyways = False
+        else:
+            self.preview()
         self.resizeTrees()
+        
     def changePatch(self,key,keymap,patchcombo,arglist,kwarglist,totalwidget,index):
         arglist.clear()
         kwarglist.clear()
@@ -833,7 +868,15 @@ class Pleditor(QMainWindow):
         patchdict.update(alldict)
 #        self.rebuildCommands(keymap,totalwidget,key)
         self.getFromDict(keymap)[key][index] = {'cmd':patchtype,'args':[],'kwargs':patchdict}
-        self.preview()
+        if not self.IUNDERSTAND and len(self.getFromDict(keymap)[key])>20:
+            self.warningBoxCommands('There are more than 20 Commands','Because there are more than 20 commands the plot may take a while to generate.\nTo save your sanity, the plot will not update immediately unless you check "Update Anyways".')
+        if self.IUNDERSTAND and self.updateAnyways and len(self.getFromDict(keymap)[key])>20:
+            self.preview()
+        elif self.updateAnyways and not self.IUNDERSTAND and len(self.getFromDict(keymap)[key])>20:
+            self.preview()
+            self.updateAnyways = False
+        else:
+            self.preview()
         self.resizeTrees()
         
     def removeCommand(self,keymap,key,layout,totalwidget):
@@ -851,7 +894,15 @@ class Pleditor(QMainWindow):
             layout.itemAt(index).widget().setParent(None)
             self.getFromDict(keymap)[key].pop(index)
 #        self.rebuildCommands(keymap,totalwidget,key)
-        self.preview()
+        if not self.IUNDERSTAND and len(self.getFromDict(keymap)[key])>20:
+            self.warningBoxCommands('There are more than 20 Commands','Because there are more than 20 commands the plot may take a while to generate.\nTo save your sanity, the plot will not update immediately unless you check "Update Anyways".')
+        if self.IUNDERSTAND and self.updateAnyways and len(self.getFromDict(keymap)[key])>20:
+            self.preview()
+        elif self.updateAnyways and not self.IUNDERSTAND and len(self.getFromDict(keymap)[key])>20:
+            self.preview()
+            self.updateAnyways = False
+        else:
+            self.preview()
         self.resizeTrees()
         
     def updateDict(self,widget,key,dictkey,keymap,vtype):
@@ -860,7 +911,15 @@ class Pleditor(QMainWindow):
         elif isinstance(widget,QComboBox):
             text = widget.currentText()
         self.getFromDict(keymap)[dictkey] = vtype(text)
-        self.preview()
+        if not self.IUNDERSTAND and len(self.getFromDict(keymap)[dictkey])>20:
+            self.warningBoxCommands('There are more than 20 Commands','Because there are more than 20 commands the plot may take a while to generate.\nTo save your sanity, the plot will not update immediately unless you check "Update Anyways".')
+        if self.IUNDERSTAND and self.updateAnyways and len(self.getFromDict(keymap)[dictkey])>20:
+            self.preview()
+        elif self.updateAnyways and not self.IUNDERSTAND and len(self.getFromDict(keymap)[dictkey])>20:
+            self.preview()
+            self.updateAnyways = False
+        else:
+            self.preview()
         
     def handleList(self,widget,dictkey,keymap,index,vtype):
         if isinstance(widget,QComboBox):
@@ -868,7 +927,15 @@ class Pleditor(QMainWindow):
         else:
             txt = widget.text()
         self.getFromDict(keymap)[dictkey][index]=vtype(txt)
-        self.preview()
+        if not self.IUNDERSTAND and len(self.getFromDict(keymap)[dictkey])>20:
+            self.warningBoxCommands('There are more than 20 Commands','Because there are more than 20 commands the plot may take a while to generate.\nTo save your sanity, the plot will not update immediately unless you check "Update Anyways".')
+        if self.IUNDERSTAND and self.updateAnyways and len(self.getFromDict(keymap)[dictkey])>20:
+            self.preview()
+        elif self.updateAnyways and not self.IUNDERSTAND and len(self.getFromDict(keymap)[dictkey])>20:
+            self.preview()
+            self.updateAnyways = False
+        else:
+            self.preview()
         self.resizeTrees()
         
     def getFromDict(self,maplist):
@@ -876,6 +943,7 @@ class Pleditor(QMainWindow):
     
     def rebuildCommand(self,keymap,widget,plkey,index):
         contents = {}
+        print 'rebuild',index
         underlying = widget.layout().itemAt(index).widget().layout()
         commandle = underlying.itemAt(3).widget()
         arglw = underlying.itemAt(4).widget()
@@ -940,8 +1008,16 @@ class Pleditor(QMainWindow):
             contents['cmd'] = command
             contents['args'] = args
             contents['kwargs'] = kwargs
-            print contents
             self.getFromDict(keymap)[plkey][index] = contents
+            if not self.IUNDERSTAND and len(self.getFromDict(keymap)[plkey])>20:
+                self.warningBoxCommands('There are more than 20 Commands','Because there are more than 20 commands the plot may take a while to generate.\nTo save your sanity, the plot will not update immediately unless you check "Update Anyways".')
+            if self.IUNDERSTAND and self.updateAnyways and len(self.getFromDict(keymap)[plkey])>20:
+                self.preview()
+            elif self.updateAnyways and not self.IUNDERSTAND and len(self.getFromDict(keymap)[plkey])>20:
+                self.preview()
+                self.updateAnyways = False
+            else:
+                self.preview()
         pass
     
     def rebuildCommands(self,keymap,widget,plkey):
