@@ -5,76 +5,48 @@ Created on Fri Dec 21 16:12:00 2018
 @author: Jordan
 """
 
-"""IMPORTERATOR
-import matplotlib.font_manager as mplfm
 import os
 import sys
-import numpy as np
-import pandas as pd
-import h5py
-from glob import glob
-import copy
-import PyQt5.QtCore as QtCore
-import PyQt5.QtGui as QtGui
-import PyQt5.QtGui as QtWidgets
-from PyQt5.Qt import *
-from PyQt5 import QtSql
-from PyQt5.QtCore import QVariant
-from PyQt5 import QtSql, uic
-import operator
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.backends.qt_compat import QtCore, QtWidgets, is_pyqt5
-from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
-from matplotlib.figure import Figure
-from matplotlib import colors as mcolors
-import matplotlib.patches as mpatches
-import cartopy
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-from cartopy.io.shapereader import Reader
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'Importerator'))
+import Importerator
+Importerator.buildDepends('Plotter\Plotter')
+RELATIVE_LIB_PATH = Importerator.RELATIVE_LIB_PATH
+import AnimatedSplash
+import PyQt5.QtWidgets as we
+#app = we.QApplication(sys.argv)
+#movie = os.path.join(RELATIVE_LIB_PATH,"PhobosLoading.gif")
+#splash = AnimatedSplash.MovieSplashScreen(movie)
+#splash.show()
 import time
-import Queue as queue
-import LongFunc as lf
-import random
-import cPickle as pickle
-from mpl_toolkits.mplot3d import Axes3D
-import FilterClass
-import InternationalDateline as ID
-import Plotterator as Plotterator
-from collections import OrderedDict
-from matplotlib.lines import Line2D
-"""
+
 import matplotlib.font_manager as mplfm
 #
-import os
-import sys
 import numpy as np
 import pandas as pd
 import h5py
-from glob import glob
+#from glob import glob
 import copy
-import PyQt5.QtCore as QtCore
-import PyQt5.QtGui as QtGui
-import PyQt5.QtGui as QtWidgets
+#import PyQt5.QtCore as QtCore
+#import PyQt5.QtGui as QtGui
+#import PyQt5.QtGui as QtWidgets
 from PyQt5.Qt import *
-from PyQt5 import QtSql
-from PyQt5.QtCore import QVariant
-from PyQt5 import QtSql, uic#, QtOpenGL
-import operator
+#from PyQt5 import QtSql
+#from PyQt5.QtCore import QVariant
+from PyQt5 import uic
+#import operator
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.qt_compat import QtCore, QtWidgets, is_pyqt5
-from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib import colors as mcolors
 import matplotlib.patches as mpatches
 #import geopandas as gp
-import cartopy
+#import cartopy
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-from cartopy.io.shapereader import Reader
-import time
+#from cartopy.io.shapereader import Reader
 import Queue as queue
 import LongFunc as lf
 #import h5_traj_generator as trajgen
@@ -94,12 +66,9 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 
-import os
-import sys
-import time
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'Importerator'))
-import Importerator
-Importerator.buildDepends('Plotter\Plotter')
+#sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'Importerator'))
+#import Importerator
+#Importerator.buildDepends('Plotter\Plotter')
 RELATIVE_LIB_PATH = Importerator.RELATIVE_LIB_PATH
     
 #    for line in exports.splitlines():
@@ -224,6 +193,8 @@ class Plotter(QMainWindow):
         print msg
         
     def makeConnections(self):
+        
+        self.MultiTableFilter.clicked.connect(lambda:self.multiFilt())
         
         
         #The new ish
@@ -482,6 +453,20 @@ class Plotter(QMainWindow):
             self.removeHeaderData(md['SelH'][index])
 #        menu.destroy()
         
+    def multiFilt(self):
+        self.multiFilters = []
+        self.multiFilterKeys = []
+        self.dialog = MultiFilterWidget(self)
+        self.dialog.exec_()
+        if self.multiFilterKeys:
+            for key in self.multiFilterKeys:
+                for filt in self.multiFilters:
+                    self.MasterData[key]['Filters'].append(copy.deepcopy(filt))
+#                self.MasterData[key]['Filters'].extend(copy.deepcopy(self.multiFilters))
+                print self.MasterData[key]['Filters']
+                print key
+        self.addFilterTree()
+            
     def addFilters(self):
         if self.TableTab.count():
             index = self.TableTab.currentIndex()
@@ -528,6 +513,7 @@ class Plotter(QMainWindow):
             index = self.TableTab.currentIndex()
             keyID = self.tableIDList[index]
             md = self.MasterData[keyID]
+            print md['Filters']
             self.Filter.loadFilters(self.tableList[keyID],md['Filters'],md['SelH'])
 #            headers = copy.copy(md['SelH'])
 #            
@@ -562,6 +548,7 @@ class Plotter(QMainWindow):
             index = self.TableTab.currentIndex()
             keyID = self.tableIDList[index]
             md = self.MasterData[keyID]
+            print md['Filters']
             self.Filter.addFilterTree(self.tableList[keyID],md['Filters'],md['SelH'])
 #            filts = md['Filters']
 #            headers = copy.copy(md['SelH'])
@@ -824,6 +811,12 @@ class Plotter(QMainWindow):
                     linewidth = widget
                 if 'BarWidth' in widget.objectName() and 'Label' not in widget.objectName():
                     barwidth = widget
+                if 'BarStackedWidth' in widget.objectName() and 'Label' not in widget.objectName():
+                    barwidth = widget
+                if 'BarHorizontalWidth' in widget.objectName() and 'Label' not in widget.objectName():
+                    barwidth = widget
+                if 'BarHorizontalStackedWidth' in widget.objectName() and 'Label' not in widget.objectName():
+                    barwidth = widget
                 if 'BinNum' in widget.objectName() and 'Label' not in widget.objectName():
                     binnum = widget
                 if 'AlphaSize' in widget.objectName() and 'Label' not in widget.objectName():
@@ -831,6 +824,21 @@ class Plotter(QMainWindow):
                 widget.blockSignals(False)
             for widget in qslider:
                 if 'BarWidthSlider' in widget.objectName():
+                    barwidthslider = widget
+                    widget.sliderMoved.connect(barwidth.setNum)
+                    widget.sliderMoved.connect(lambda:self.updateCanvas())
+                    widget.sliderMoved.connect(lambda:self.Alert('barwidth'))
+                if 'BarStackedWidthSlider' in widget.objectName():
+                    barwidthslider = widget
+                    widget.sliderMoved.connect(barwidth.setNum)
+                    widget.sliderMoved.connect(lambda:self.updateCanvas())
+                    widget.sliderMoved.connect(lambda:self.Alert('barwidth'))
+                if 'BarHorizontalWidthSlider' in widget.objectName():
+                    barwidthslider = widget
+                    widget.sliderMoved.connect(barwidth.setNum)
+                    widget.sliderMoved.connect(lambda:self.updateCanvas())
+                    widget.sliderMoved.connect(lambda:self.Alert('barwidth'))
+                if 'BarHorizontalStackedWidthSlider' in widget.objectName():
                     barwidthslider = widget
                     widget.sliderMoved.connect(barwidth.setNum)
                     widget.sliderMoved.connect(lambda:self.updateCanvas())
@@ -983,6 +991,12 @@ class Plotter(QMainWindow):
                 self.LineWidth = widget
             if 'BarWidth' in widget.objectName() and not 'Label' in widget.objectName():
                 self.BarWidth = widget
+            if 'BarStackedWidth' in widget.objectName() and not 'Label' in widget.objectName():
+                self.BarWidth = widget
+            if 'BarHorizontalWidth' in widget.objectName() and not 'Label' in widget.objectName():
+                self.BarWidth = widget
+            if 'BarHorizontalStackedWidth' in widget.objectName() and not 'Label' in widget.objectName():
+                self.BarWidth = widget
             if 'BinNum' in widget.objectName() and not 'Label' in widget.objectName():
                 self.BinNum = widget
             if 'AlphaSize' in widget.objectName() and not 'Label' in widget.objectName():
@@ -1012,6 +1026,12 @@ class Plotter(QMainWindow):
             widget.blockSignals(False)
         for widget in qslider:
             if 'BarWidthSlider' in widget.objectName():
+                self.BarWidthSlider = widget
+            if 'BarStackedWidthSlider' in widget.objectName():
+                self.BarWidthSlider = widget
+            if 'BarHorizontalWidthSlider' in widget.objectName():
+                self.BarWidthSlider = widget
+            if 'BarHorizontalStackedWidthSlider' in widget.objectName():
                 self.BarWidthSlider = widget
             if 'MarkerSlider' in widget.objectName():
                 self.MarkerSlider = widget
@@ -1215,7 +1235,7 @@ class Plotter(QMainWindow):
                 self.handleBasemap()
                 
                 
-            if self.PlotType.currentText() in ['Bar','Basemap','3D Plot']:
+            if self.PlotType.currentText() in ['Basemap','3D Plot']:
                 for header in headers:
                     if header in TIMEFIELDS:
                         index = self.XAxisCombo.findText(header)
@@ -1402,6 +1422,7 @@ class Plotter(QMainWindow):
             plBmoaType = ''
             plLocationsFld = ''
             plPolyOrderFld = ''
+            plbarheight = []
 
             ptype = self.PlotType.currentText()
             if self.XAxisCombo.currentText():
@@ -1535,46 +1556,158 @@ class Plotter(QMainWindow):
                         dax.figure.legend(pllegends,prop=mplfm.FontProperties(size=6),loc='best',ncol=4).draggable()
 
                 if ptype =='Bar':
-                    xheads = []
                     if self.YAxisLabel.text():
                         plylabel = self.YAxisLabel.text()
                     else:
-                        plylabel = 'Number Of Occurences'
-                    
+                        plylabel = 'Values'
                     for i,index in enumerate(table.selectionModel().selectedColumns()):
-                        x = model.getColumnData(headers[index.column()])
                         plplottedheaders.append(headers[index.column()])
-                        if len(pd.unique(x)) < 50:
-                            plx.append(x)
-                            plspacing.append(np.arange(len(pd.unique(x))))
-                        else:
-                            self.Alert("Too many unique values in "+str(headers[index.column()]),True)
-                            return
-                        xheads.append(headers[index.column()])
+                        ply.append(model.getColumnData(headers[index.column()]))
+                    plx = model.getColumnData(self.XAxisCombo.currentText())
+                    plspacing = np.arange(plx.shape[0])
                     if self.XAxisLabel.text():
                         plxlabel = self.XAxisLabel.text()
                     else:
-                        plxlabel = '/'.join(xheads)
+                        plxlabel = self.XAxisCombo.currentText()
                     plxAxisDataHeader = plxlabel
-                    if plx:
-                        plbarwidth = float(self.BarWidth.text())/len(plx)
+                    if ply:
+                        plbarwidth = float(self.BarWidth.text())/(100.*len(ply))
                     else:
                         plbarwidth = 0
-                    ticklabels = []
-                    for i,ydat in enumerate(plx):
+                    for i,ydat in enumerate(ply):
                         item = self.PlotColorSymbol.topLevelItem(i)
                         pllegends.append(item.text(4))
                         plcolor.append(self.plotColor[i].currentText())
-                        if ydat.dtype.kind =='f':
-                            ticklabels.append([str(round(float(val),2)) for val in ydat.value_counts().index])
-                        else:
-                            ticklabels.append(ydat.value_counts().index)
                         plzorder.append(i+1)
-                        sc = dax.bar(plspacing[i] + i*plbarwidth, ydat.value_counts(),plbarwidth*.8,color = plcolor[i],label=pllegends[i],zorder=plzorder[-1])    
-                    if len(plx):
-                        dax.set_xticks(np.concatenate([space + i*plbarwidth for i,space in enumerate(plspacing)]))
-                        dax.set_xticklabels(np.concatenate([tick for tick in ticklabels]))
+                        sc = dax.bar(plspacing + i*plbarwidth, ydat.tolist(),plbarwidth,color = plcolor[i],label=pllegends[i],zorder=plzorder[-1])    
+                    if len(ply):
+                        ticklabels = map(str,plx.tolist())
+                        dax.set_xticks(plspacing+(len(ply)-1)*plbarwidth/2)
+                        dax.set_xticklabels(ticklabels)
                         dax.set_aspect('auto')
+                        
+                if ptype in ['Stacked Bar']:
+                    if self.YAxisLabel.text():
+                        plylabel = self.YAxisLabel.text()
+                    else:
+                        plylabel = 'Values'
+                    for i,index in enumerate(table.selectionModel().selectedColumns()):
+                        plplottedheaders.append(headers[index.column()])
+                        ply.append(model.getColumnData(headers[index.column()]))
+                    plx = model.getColumnData(self.XAxisCombo.currentText())
+                    plspacing = np.arange(plx.shape[0])
+                    if self.XAxisLabel.text():
+                        plxlabel = self.XAxisLabel.text()
+                    else:
+                        plxlabel = self.XAxisCombo.currentText()
+                    plxAxisDataHeader = plxlabel
+                    if ply:
+                        plbarwidth = float(self.BarWidth.text())/(100.*len(ply))
+                    else:
+                        plbarwidth = 0
+                    for i,ydat in enumerate(ply):
+                        item = self.PlotColorSymbol.topLevelItem(i)
+                        pllegends.append(item.text(4))
+                        plcolor.append(self.plotColor[i].currentText())
+                        plzorder.append(i+1)
+                        if i == 0:
+                            plbarheight.append(np.array([0]*plx.shape[0]))
+                        else:
+                            plbarheight.append(np.add(plbarheight[-1],np.array(ply[i-1].tolist())))
+                        sc = dax.bar(plspacing, ydat.tolist(),plbarwidth,color= plcolor[i],label=pllegends[i],zorder=plzorder[-1],bottom=plbarheight[i])
+                    if len(ply):
+                        ticklabels = map(str,plx.tolist())
+                        dax.set_xticks(plspacing)
+                        dax.set_xticklabels(ticklabels)
+                        dax.set_aspect('auto')
+                        
+                if ptype in ['Horizontal Bar']:
+                    if self.YAxisLabel.text():
+                        plylabel = self.YAxisLabel.text()
+                    else:
+                        plylabel = ''
+                    for i,index in enumerate(table.selectionModel().selectedColumns()):
+                        plplottedheaders.append(headers[index.column()])
+                        ply.append(model.getColumnData(headers[index.column()]))
+                    plx = model.getColumnData(self.XAxisCombo.currentText())
+                    plspacing = np.arange(plx.shape[0])
+                    if self.XAxisLabel.text():
+                        plxlabel = self.XAxisLabel.text()
+                    else:
+                        plxlabel = self.XAxisCombo.currentText()
+                    plxAxisDataHeader = plxlabel
+                    if ply:
+                        plbarwidth = float(self.BarWidth.text())/(100.*len(ply))
+                    else:
+                        plbarwidth = 0
+                    for i,ydat in enumerate(ply):
+                        item = self.PlotColorSymbol.topLevelItem(i)
+                        pllegends.append(item.text(4))
+                        plcolor.append(self.plotColor[i].currentText())
+                        plzorder.append(i+1)
+                        sc = dax.barh(plspacing + i*plbarwidth, ydat.tolist(),plbarwidth,color = plcolor[i],label=pllegends[i],zorder=plzorder[-1])    
+                    if len(ply):
+                        ticklabels = map(str,plx.tolist())
+                        dax.set_yticks(plspacing+(len(ply)-1)*plbarwidth/2)
+                        dax.set_yticklabels(ticklabels)
+                        dax.set_aspect('auto')
+                    
+                if ptype in ['Stacked Horizontal Bar']:
+                    if self.YAxisLabel.text():
+                        plylabel = self.YAxisLabel.text()
+                    else:
+                        plylabel = ''
+                    for i,index in enumerate(table.selectionModel().selectedColumns()):
+                        plplottedheaders.append(headers[index.column()])
+                        ply.append(model.getColumnData(headers[index.column()]))
+                    plx = model.getColumnData(self.XAxisCombo.currentText())
+                    plspacing = np.arange(plx.shape[0])
+                    if self.XAxisLabel.text():
+                        plxlabel = self.XAxisLabel.text()
+                    else:
+                        plxlabel = self.XAxisCombo.currentText()
+                    plxAxisDataHeader = plxlabel
+                    if ply:
+                        plbarwidth = float(self.BarWidth.text())/(100.*len(ply))
+                    else:
+                        plbarwidth = 0
+                    for i,ydat in enumerate(ply):
+                        item = self.PlotColorSymbol.topLevelItem(i)
+                        pllegends.append(item.text(4))
+                        plcolor.append(self.plotColor[i].currentText())
+                        plzorder.append(i+1)
+                        if i == 0:
+                            plbarheight.append(np.array([0]*plx.shape[0]))
+                        else:
+                            plbarheight.append(np.add(plbarheight[-1],np.array(ply[i-1].tolist())))
+                        sc = dax.barh(plspacing, ydat.tolist(),plbarwidth,color= plcolor[i],label=pllegends[i],zorder=plzorder[-1],left=plbarheight[i])
+                    if len(ply):
+                        ticklabels = map(str,plx.tolist())
+                        dax.set_yticks(plspacing)
+                        dax.set_yticklabels(ticklabels)
+                        dax.set_aspect('auto')
+                        
+                if ptype in ['Histogram']:
+                    if self.YAxisLabel.text():
+                        plylabel = self.YAxisLabel.text()
+                    else:
+                        if self.HistogramPercentages.isChecked():
+                            plylabel = 'Percentage'
+                        else:
+                            plylabel = 'Counts'
+                    plbinnum = int(self.BinNum.text())
+                    plplottedheaders.append(self.XAxisCombo.currentText())
+                    plx = model.getColumnData(self.XAxisCombo.currentText())
+                    if self.XAxisLabel.text():
+                        plxlabel = self.XAxisLabel.text()
+                    else:
+                        plxlabel = self.XAxisCombo.currentText()
+                    plxAxisDataHeader = plxlabel
+                    sc = dax.hist(plx,bins=plbinnum,color=plotcolor[0],normed=self.HistogramPercentages.isChecked())
+                    if self.HistogramPercentages.isChecked():
+                        from matplotlib.ticker import PercentFormatter
+                        dax.yaxis.set_major_formatter(PercentFormatter(100))
+                    dax.set_aspect('auto')
                     
                 if ptype in ['Basemap']:
                     Type = 'Point'
@@ -2873,16 +3006,13 @@ class Plotter(QMainWindow):
                             pltr.plot(pl['x data'][i],ydat,c=pl['color'][i],label=pl['legend'][i],marker=pl['marker'][i],ms=pl['marker size']/LinePlotMarkerNormalize,ls=pl['line style'][i],lw=pl['line width']/LinePlotLineWidthNormalize,zorder=int(pl['z order'][i]))
                     if pl['plot type'] in ['Stacked']:
                         pltr.stackplot(pl['x data'][0],pl['y data'][0],colors=[colorss for colorss in pl['color']],labels=[labelss for labelss in pl['legend']])
-                    if pl['plot type'] in ['Bar']:
+                    if pl['plot type'] in ['Bar']:                        
                         ticklabels = []
-                        for i,ydat in enumerate(pl['x data']):
-                            if ydat.dtype.kind =='f':
-                                ticklabels.append([str(round(float(val),2)) for val in ydat.value_counts().index])
-                            else:
-                                ticklabels.append(ydat.value_counts().index)
-                            pltr.bar(pl['spacing'][i]+i*pl['bar width'],ydat.value_counts(),width=pl['bar width']*.8,color=pl['color'][i],label=pl['legend'][i],zorder=int(pl['z order'][i]))
-                            pltr.parseCommand(pax,'set_xticks',[[np.concatenate([space + i*pl['bar width'] for i,space in enumerate(pl['spacing'])])]])
-                            pltr.parseCommand(pax,'set_xticklabels',[[np.concatenate([tick for tick in ticklabels])]])
+                        for i,ydat in enumerate(pl['y data']):
+                            pltr.bar(pl['spacing']+i*pl['bar width'],ydat.tolist(),width=pl['bar width'],color=pl['color'][i],label=pl['legend'][i],zorder=int(pl['z order'][i]))
+                        ticklabels = map(str,pl['x data'].tolist())
+                        pltr.parseCommand(pax,'set_xticks',[[pl['spacing']+(len(pl['y data'])-1)*pl['bar width']/2]])
+                        pltr.parseCommand(pax,'set_xticklabels',[[ticklabels]])
                     if pl['plot type'] in ['Pie']:
                         pltr.pie(pl['x data'], autopct='%.2f%%',colors=pl['color'])
                         pltr.parseCommand(pax,'set_aspect',[['equal']])
@@ -3182,6 +3312,82 @@ class Plotter(QMainWindow):
                 
         
         return
+    
+class MultiFilterWidget(QDialog):
+    def __init__(self,parent=None):
+        super(MultiFilterWidget,self).__init__(parent)
+        uic.loadUi('MultipleDsetFilterUI.ui', self)
+        self.parent = parent
+        self.populateTableList()
+        self.makeConnections()
+        self.common = []
+        self.FilterList = []
+        self.fc = FilterClass.FilterClass(self,self.MultiFilterTree,connect=False)
+        
+    def makeConnections(self):
+        self.TableContents.itemSelectionChanged.connect(lambda:self.populateCommonHeads())
+        self.MultiAddFilter.clicked.connect(lambda:self.addFilter())
+        self.MultiFilterTree.itemChanged.connect(lambda:self.loadFilters())
+        self.buttonBox.accepted.connect(lambda:self.Accept())
+        
+    def populateTableList(self):
+        if self.parent.TableTab.count():
+            index = self.parent.TableTab.currentIndex()
+            keyID = self.parent.tableIDList[index]
+            md = self.parent.MasterData[keyID]
+            model = self.parent.tableList[keyID].model()
+            for key in self.parent.MasterData.keys():
+                if keyID != key:
+                    newmd = self.parent.MasterData[key]
+                    #Change to newmd['Label']?
+                    self.TableContents.addItem(os.path.join(newmd['Path'],newmd['Grp'],newmd['Dset']))
+                    
+    def populateCommonHeads(self):
+        if self.parent.TableTab.count():
+            index = self.parent.TableTab.currentIndex()
+            keyID = self.parent.tableIDList[index]
+        if self.TableContents.currentIndex():
+            selectedItems = [item.text() for item in self.TableContents.selectedItems()]
+            keyIDMap = [(key,os.path.join(self.parent.MasterData[key]['Path'],self.parent.MasterData[key]['Grp'],self.parent.MasterData[key]['Dset'])) for key in self.parent.MasterData.keys()]
+            self.keyIDList = []
+            for item in selectedItems:
+                for key in keyIDMap:
+                    if item == key[1]:
+                        self.keyIDList.append(key[0])
+            mytableheads = set(self.parent.tableList[keyID].model().getHeaderNames())
+            heads = []
+            for key in self.keyIDList:
+                heads.append(set(self.parent.tableList[key].model().getHeaderNames()))
+            if heads:
+                commonheads = mytableheads.intersection(*heads)
+#                self.CommonFields.addItems(commonheads)
+                self.common = list(commonheads)
+                
+    def addFilter(self):
+        if self.TableContents.currentIndex() and self.common:
+            self.fc.addFilters(None,self.FilterList,self.common)
+        if not self.common:
+            print 'There are no common headers'
+    
+    def loadFilters(self):
+        if self.TableContents.currentIndex() and self.common:
+            self.fc.loadFilters(None,self.FilterList,self.common)
+        if not self.common:
+            print 'There are no common headers'
+        
+    def Accept(self):
+        if self.TableContents.currentIndex() and self.common:
+            print self.FilterList
+            index = self.parent.TableTab.currentIndex()
+            keyID = self.parent.tableIDList[index]
+            self.keyIDList.append(keyID)
+            self.parent.multiFilterKeys = copy.copy(self.keyIDList)
+            self.parent.multiFilters = self.FilterList
+            
+            
+                    
+            
+    
 class PopOutWidget(QWidget):
     """
     Tested working with QVBoxLayout, QHBoxLayout, QGridLayout, and QSlpitter
@@ -3908,16 +4114,13 @@ class AdvancedPlot(QDialog):
                         pltr.stackplot(pl['x data'][0],pl['y data'][0],axid=pax,colors=[colorss for colorss in pl['color']],labels=[labelss for labelss in pl['legend']])
                         if not widget.HideLegendChk.isChecked():
                             pltr.parseCommand(pax,'legend',[dict(loc='best')])
-                    if pl['plot type'] in ['Bar']:
+                    if pl['plot type'] in ['Bar']:                        
                         ticklabels = []
-                        for i,ydat in enumerate(pl['x data']):
-                            if ydat.dtype.kind =='f':
-                                ticklabels.append([str(round(float(val),2)) for val in ydat.value_counts().index])
-                            else:
-                                ticklabels.append(ydat.value_counts().index)
-                            pltr.bar(pl['spacing'][i]+i*pl['bar width'],ydat.value_counts(),axid=pax,width=pl['bar width']*.8,color=pl['color'][i],label=pl['legend'][i],zorder=int(pl['z order'][i])+zorderfixer)
-                            pltr.parseCommand(pax,'set_xticks',[[np.concatenate([space + i*pl['bar width'] for i,space in enumerate(pl['spacing'])])]])
-                            pltr.parseCommand(pax,'set_xticklabels',[[np.concatenate([tick for tick in ticklabels])]])
+                        for i,ydat in enumerate(pl['y data']):
+                            pltr.bar(pl['spacing']+i*pl['bar width'],ydat.tolist(),width=pl['bar width'],color=pl['color'][i],label=pl['legend'][i],zorder=int(pl['z order'][i]))
+                        ticklabels = map(str,pl['x data'].tolist())
+                        pltr.parseCommand(pax,'set_xticks',[[pl['spacing']+(len(pl['y data'])-1)*pl['bar width']/2]])
+                        pltr.parseCommand(pax,'set_xticklabels',[[ticklabels]])
                         if not widget.HideLegendChk.isChecked():
                             pltr.parseCommand(pax,'legend',[dict(loc='best')])
                     if pl['plot type'] in ['Pie']:
@@ -3994,166 +4197,166 @@ class AdvancedPlot(QDialog):
         
                 
     
-class TreeModel(QtCore.QAbstractItemModel):  
-   def __init__(self, data, parent=None):  
-        super(TreeModel, self).__init__(parent)  
-        self.parents=[]  
-        self.dbdata = data  
-        self.rootItem = TreeItem([u"NameOfColumn"])  
-        self.setupModelData(self.dbdata, self.rootItem)  
-  
-   def setData(self, index, value, role):  
-       if index.isValid() and role == QtCore.Qt.EditRole:  
- 
-           prev_value = self.getValue(index)  
- 
-           item = index.internalPointer()  
- 
-           item.setData(unicode(value.toString()))  
- 
-           return True  
-       else:  
-           return False  
- 
-   def removeRows(self, position=0, count=1,  parent=QtCore.QModelIndex()):  
- 
-       node = self.nodeFromIndex(parent)  
-       self.beginRemoveRows(parent, position, position + count - 1)  
-       node.childItems.pop(position)  
-       self.endRemoveRows()  
- 
-   def nodeFromIndex(self, index):  
-       if index.isValid():  
-           return index.internalPointer()  
-       else:  
-           return self.rootItem  
- 
-   def getValue(self, index):  
-       item = index.internalPointer()  
-       return item.data(index.column())  
- 
-   def columnCount(self, parent):  
-       if parent.isValid():  
-           return parent.internalPointer().columnCount()  
-       else:  
-           return self.rootItem.columnCount()  
- 
-   def data(self, index, role):  
-       if not index.isValid():  
-           return None  
-       if role != QtCore.Qt.DisplayRole:  
-           return None  
- 
-       item = index.internalPointer()  
-       return QtCore.QVariant(item.data(index.column()))  
- 
-   def flags(self, index):  
-       if not index.isValid():  
-           return QtCore.Qt.NoItemFlags  
- 
-       return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable  
- 
-   def headerData(self, section, orientation, role):  
-       if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:  
-           return QtCore.QVariant(self.rootItem.data(section)[0])  
- 
-       return None  
- 
-   def index(self, row, column, parent):  
- 
-       if row < 0 or column < 0 or row >= self.rowCount(parent) or column >= self.columnCount(parent):  
-           return QtCore.QModelIndex()  
- 
-       if not parent.isValid():  
-           parentItem = self.rootItem  
-       else:  
-           parentItem = parent.internalPointer()  
- 
-       childItem = parentItem.child(row)  
-       if childItem:  
-           return self.createIndex(row, column, childItem)  
-       else:  
-           return QtCore.QModelIndex()  
- 
-   def parent(self, index):  
-       if not index.isValid():  
-           return QtCore.QModelIndex()  
- 
-       childItem = index.internalPointer()  
-       parentItem = childItem.parent()  
- 
-       if parentItem == self.rootItem:  
-           return QtCore.QModelIndex()  
- 
-       return self.createIndex(parentItem.row(), 0, parentItem)  
- 
-   def rowCount(self, parent):  
-       if parent.column() > 0:  
-           return 0  
- 
-       if not parent.isValid():  
-           parentItem = self.rootItem  
-       else:  
-           parentItem = parent.internalPointer()  
-
-       return parentItem.childCount()  
- 
-   def setupModelData(self, lines, parent):  
-       ind = []  
-       self.parents.append(parent)  
-       ind.append(0)  
-       col_numb=parent.columnCount()  
-       numb = 0  
- 
-       for line in lines:  
-           numb+=1  
-           lineData=line[0]  
-           self.parents[-1].appendChild(TreeItem(lineData, self.parents[-1]))  
- 
-           columnData = line[1]  
-
-           self.parents.append(self.parents[-1].child(self.parents[-1].childCount() - 1))  
-
-           for j in columnData:  
-                self.parents[-1].appendChild(TreeItem(j, self.parents[-1]))  
-           if len(self.parents) > 0:  
-                self.parents.pop()  
-    
-class TreeItem(object):  
-    def __init__(self, data, parent=None):  
-        self.parentItem = parent  
-        self.itemData = data  
-        self.childItems = []  
-        
-    def appendChild(self, item):  
-        self.childItems.append(item)  
-        
-    def child(self, row):  
-        return self.childItems[row]  
-    
-    def childCount(self):  
-        return len(self.childItems)  
-    
-    def columnCount(self):  
-        return len(self.itemData)  
-    
-    def data(self, column):  
-        try:  
-            return self.itemData  
-       
-        except IndexError:  
-            return None  
-    
-    def parent(self):  
-        return self.parentItem  
-    
-    def row(self):  
-        if self.parentItem:  
-            return self.parentItem.childItems.index(self)  
-    
-        return 0  
-    def setData(self, data):  
-        self.itemData = data
+#class TreeModel(QtCore.QAbstractItemModel):  
+#   def __init__(self, data, parent=None):  
+#        super(TreeModel, self).__init__(parent)  
+#        self.parents=[]  
+#        self.dbdata = data  
+#        self.rootItem = TreeItem([u"NameOfColumn"])  
+#        self.setupModelData(self.dbdata, self.rootItem)  
+#  
+#   def setData(self, index, value, role):  
+#       if index.isValid() and role == QtCore.Qt.EditRole:  
+# 
+#           prev_value = self.getValue(index)  
+# 
+#           item = index.internalPointer()  
+# 
+#           item.setData(unicode(value.toString()))  
+# 
+#           return True  
+#       else:  
+#           return False  
+# 
+#   def removeRows(self, position=0, count=1,  parent=QtCore.QModelIndex()):  
+# 
+#       node = self.nodeFromIndex(parent)  
+#       self.beginRemoveRows(parent, position, position + count - 1)  
+#       node.childItems.pop(position)  
+#       self.endRemoveRows()  
+# 
+#   def nodeFromIndex(self, index):  
+#       if index.isValid():  
+#           return index.internalPointer()  
+#       else:  
+#           return self.rootItem  
+# 
+#   def getValue(self, index):  
+#       item = index.internalPointer()  
+#       return item.data(index.column())  
+# 
+#   def columnCount(self, parent):  
+#       if parent.isValid():  
+#           return parent.internalPointer().columnCount()  
+#       else:  
+#           return self.rootItem.columnCount()  
+# 
+#   def data(self, index, role):  
+#       if not index.isValid():  
+#           return None  
+#       if role != QtCore.Qt.DisplayRole:  
+#           return None  
+# 
+#       item = index.internalPointer()  
+#       return QtCore.QVariant(item.data(index.column()))  
+# 
+#   def flags(self, index):  
+#       if not index.isValid():  
+#           return QtCore.Qt.NoItemFlags  
+# 
+#       return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable  
+# 
+#   def headerData(self, section, orientation, role):  
+#       if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:  
+#           return QtCore.QVariant(self.rootItem.data(section)[0])  
+# 
+#       return None  
+# 
+#   def index(self, row, column, parent):  
+# 
+#       if row < 0 or column < 0 or row >= self.rowCount(parent) or column >= self.columnCount(parent):  
+#           return QtCore.QModelIndex()  
+# 
+#       if not parent.isValid():  
+#           parentItem = self.rootItem  
+#       else:  
+#           parentItem = parent.internalPointer()  
+# 
+#       childItem = parentItem.child(row)  
+#       if childItem:  
+#           return self.createIndex(row, column, childItem)  
+#       else:  
+#           return QtCore.QModelIndex()  
+# 
+#   def parent(self, index):  
+#       if not index.isValid():  
+#           return QtCore.QModelIndex()  
+# 
+#       childItem = index.internalPointer()  
+#       parentItem = childItem.parent()  
+# 
+#       if parentItem == self.rootItem:  
+#           return QtCore.QModelIndex()  
+# 
+#       return self.createIndex(parentItem.row(), 0, parentItem)  
+# 
+#   def rowCount(self, parent):  
+#       if parent.column() > 0:  
+#           return 0  
+# 
+#       if not parent.isValid():  
+#           parentItem = self.rootItem  
+#       else:  
+#           parentItem = parent.internalPointer()  
+#
+#       return parentItem.childCount()  
+# 
+#   def setupModelData(self, lines, parent):  
+#       ind = []  
+#       self.parents.append(parent)  
+#       ind.append(0)  
+#       col_numb=parent.columnCount()  
+#       numb = 0  
+# 
+#       for line in lines:  
+#           numb+=1  
+#           lineData=line[0]  
+#           self.parents[-1].appendChild(TreeItem(lineData, self.parents[-1]))  
+# 
+#           columnData = line[1]  
+#
+#           self.parents.append(self.parents[-1].child(self.parents[-1].childCount() - 1))  
+#
+#           for j in columnData:  
+#                self.parents[-1].appendChild(TreeItem(j, self.parents[-1]))  
+#           if len(self.parents) > 0:  
+#                self.parents.pop()  
+#    
+#class TreeItem(object):  
+#    def __init__(self, data, parent=None):  
+#        self.parentItem = parent  
+#        self.itemData = data  
+#        self.childItems = []  
+#        
+#    def appendChild(self, item):  
+#        self.childItems.append(item)  
+#        
+#    def child(self, row):  
+#        return self.childItems[row]  
+#    
+#    def childCount(self):  
+#        return len(self.childItems)  
+#    
+#    def columnCount(self):  
+#        return len(self.itemData)  
+#    
+#    def data(self, column):  
+#        try:  
+#            return self.itemData  
+#       
+#        except IndexError:  
+#            return None  
+#    
+#    def parent(self):  
+#        return self.parentItem  
+#    
+#    def row(self):  
+#        if self.parentItem:  
+#            return self.parentItem.childItems.index(self)  
+#    
+#        return 0  
+#    def setData(self, data):  
+#        self.itemData = data
         
         
     
@@ -4195,9 +4398,13 @@ def main():
     app = QApplication(sys.argv)
     frame = Plotter()
     frame.show()
+#    splash.finish(frame)
     retval = app.exec_()
     sys.exit(retval)
 
 
 if __name__ == '__main__':
+    start = time.time()
+#    while time.time() < start+1:
+#        app.processEvents()
     main()

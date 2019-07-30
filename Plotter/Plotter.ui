@@ -354,13 +354,6 @@
                         </property>
                        </widget>
                       </item>
-                      <item row="1" column="0">
-                       <widget class="QPushButton" name="RemoveFilters">
-                        <property name="text">
-                         <string>Remove Selected</string>
-                        </property>
-                       </widget>
-                      </item>
                       <item row="0" column="0">
                        <widget class="QPushButton" name="ToggleFilters">
                         <property name="text">
@@ -372,6 +365,20 @@
                        <widget class="QPushButton" name="ExportFilters">
                         <property name="text">
                          <string>Export Filters</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="1" column="0">
+                       <widget class="QPushButton" name="RemoveFilters">
+                        <property name="text">
+                         <string>Remove Selected</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="2" column="0" colspan="2">
+                       <widget class="QPushButton" name="MultiTableFilter">
+                        <property name="text">
+                         <string>Multiple Table Filters</string>
                         </property>
                        </widget>
                       </item>
@@ -457,6 +464,26 @@
                            <item>
                             <property name="text">
                              <string>Bar</string>
+                            </property>
+                           </item>
+                           <item>
+                            <property name="text">
+                             <string>Stacked Bar</string>
+                            </property>
+                           </item>
+                           <item>
+                            <property name="text">
+                             <string>Horizontal Bar</string>
+                            </property>
+                           </item>
+                           <item>
+                            <property name="text">
+                             <string>Stacked Horizontal Bar</string>
+                            </property>
+                           </item>
+                           <item>
+                            <property name="text">
+                             <string>Histogram</string>
                             </property>
                            </item>
                            <item>
@@ -602,7 +629,7 @@
                      </widget>
                      <widget class="QStackedWidget" name="StackedPlotOptions">
                       <property name="currentIndex">
-                       <number>1</number>
+                       <number>8</number>
                       </property>
                       <widget class="QWidget" name="page">
                        <layout class="QGridLayout" name="gridLayout_6">
@@ -1207,6 +1234,385 @@
                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#0055ff;&quot;&gt;Bar Chart Plot Options&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                           </property>
                          </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                      <widget class="QWidget" name="page_12">
+                       <layout class="QGridLayout" name="gridLayout_29">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_6">
+                          <property name="text">
+                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#0055ff;&quot;&gt;Stacked Bar Chart Plot Options&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <layout class="QGridLayout" name="gridLayout_28">
+                          <item row="0" column="0">
+                           <layout class="QVBoxLayout" name="verticalLayout_24">
+                            <item>
+                             <widget class="QLabel" name="BarStackedXComboLabel">
+                              <property name="sizePolicy">
+                               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                               </sizepolicy>
+                              </property>
+                              <property name="text">
+                               <string>X Axis</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QComboBox" name="BarStackedXAxis"/>
+                            </item>
+                            <item>
+                             <layout class="QHBoxLayout" name="horizontalLayout_22">
+                              <item>
+                               <widget class="QLabel" name="BarBarStackedWidthLabel">
+                                <property name="text">
+                                 <string>Bar Width</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="BarStackedWidth">
+                                <property name="text">
+                                 <string>1</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </item>
+                            <item>
+                             <widget class="QSlider" name="BarStackedWidthSlider">
+                              <property name="minimum">
+                               <number>1</number>
+                              </property>
+                              <property name="orientation">
+                               <enum>Qt::Horizontal</enum>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <spacer name="verticalSpacer_21">
+                              <property name="orientation">
+                               <enum>Qt::Vertical</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>20</width>
+                                <height>40</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                           </layout>
+                          </item>
+                          <item row="0" column="1">
+                           <layout class="QVBoxLayout" name="verticalLayout_25">
+                            <item>
+                             <spacer name="verticalSpacer_22">
+                              <property name="orientation">
+                               <enum>Qt::Vertical</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>20</width>
+                                <height>40</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                           </layout>
+                          </item>
+                         </layout>
+                        </item>
+                       </layout>
+                      </widget>
+                      <widget class="QWidget" name="page_13">
+                       <layout class="QGridLayout" name="gridLayout_31">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_7">
+                          <property name="text">
+                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#0055ff;&quot;&gt;Horizontal Bar Chart Plot Options&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <layout class="QGridLayout" name="gridLayout_30">
+                          <item row="0" column="0">
+                           <layout class="QVBoxLayout" name="verticalLayout_26">
+                            <item>
+                             <widget class="QLabel" name="BarHorizontalXComboLabel">
+                              <property name="sizePolicy">
+                               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                               </sizepolicy>
+                              </property>
+                              <property name="text">
+                               <string>X Axis</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QComboBox" name="BarHorizontalXAxis"/>
+                            </item>
+                            <item>
+                             <layout class="QHBoxLayout" name="horizontalLayout_23">
+                              <item>
+                               <widget class="QLabel" name="BarBarHorizontalWidthLabel">
+                                <property name="text">
+                                 <string>Bar Width</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="BarHorizontalWidth">
+                                <property name="text">
+                                 <string>1</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </item>
+                            <item>
+                             <widget class="QSlider" name="BarHorizontalWidthSlider">
+                              <property name="minimum">
+                               <number>1</number>
+                              </property>
+                              <property name="orientation">
+                               <enum>Qt::Horizontal</enum>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <spacer name="verticalSpacer_23">
+                              <property name="orientation">
+                               <enum>Qt::Vertical</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>20</width>
+                                <height>40</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                           </layout>
+                          </item>
+                          <item row="0" column="1">
+                           <layout class="QVBoxLayout" name="verticalLayout_27">
+                            <item>
+                             <spacer name="verticalSpacer_24">
+                              <property name="orientation">
+                               <enum>Qt::Vertical</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>20</width>
+                                <height>40</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                           </layout>
+                          </item>
+                         </layout>
+                        </item>
+                       </layout>
+                      </widget>
+                      <widget class="QWidget" name="page_14">
+                       <layout class="QGridLayout" name="gridLayout_33">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_8">
+                          <property name="text">
+                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#0055ff;&quot;&gt;Stacked Horizontal Bar Chart Plot Options&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <layout class="QGridLayout" name="gridLayout_32">
+                          <item row="0" column="0">
+                           <layout class="QVBoxLayout" name="verticalLayout_28">
+                            <item>
+                             <widget class="QLabel" name="BarHorizontalStackedXComboLabel">
+                              <property name="sizePolicy">
+                               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                               </sizepolicy>
+                              </property>
+                              <property name="text">
+                               <string>X Axis</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QComboBox" name="BarHorizontalStackedXAxis"/>
+                            </item>
+                            <item>
+                             <layout class="QHBoxLayout" name="horizontalLayout_25">
+                              <item>
+                               <widget class="QLabel" name="BarBarHorizontalStackedWidthLabel">
+                                <property name="text">
+                                 <string>Bar Width</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="BarHorizontalStackedWidth">
+                                <property name="text">
+                                 <string>1</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </item>
+                            <item>
+                             <widget class="QSlider" name="BarHorizontalStackedWidthSlider">
+                              <property name="minimum">
+                               <number>1</number>
+                              </property>
+                              <property name="orientation">
+                               <enum>Qt::Horizontal</enum>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <spacer name="verticalSpacer_25">
+                              <property name="orientation">
+                               <enum>Qt::Vertical</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>20</width>
+                                <height>40</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                           </layout>
+                          </item>
+                          <item row="0" column="1">
+                           <layout class="QVBoxLayout" name="verticalLayout_29">
+                            <item>
+                             <spacer name="verticalSpacer_26">
+                              <property name="orientation">
+                               <enum>Qt::Vertical</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>20</width>
+                                <height>40</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                           </layout>
+                          </item>
+                         </layout>
+                        </item>
+                       </layout>
+                      </widget>
+                      <widget class="QWidget" name="page_15">
+                       <layout class="QGridLayout" name="gridLayout_35">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_9">
+                          <property name="text">
+                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#0055ff;&quot;&gt;Histogram Plot Options&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <layout class="QGridLayout" name="gridLayout_34">
+                          <item row="0" column="0">
+                           <layout class="QVBoxLayout" name="verticalLayout_30">
+                            <item>
+                             <widget class="QLabel" name="HistogramXComboLabel">
+                              <property name="sizePolicy">
+                               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                               </sizepolicy>
+                              </property>
+                              <property name="text">
+                               <string>X Axis</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QComboBox" name="HistogramXAxis"/>
+                            </item>
+                            <item>
+                             <layout class="QHBoxLayout" name="horizontalLayout_26">
+                              <item>
+                               <widget class="QLabel" name="HistogramBinNumLabel">
+                                <property name="text">
+                                 <string>Bin Number</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="HistogramBinNum">
+                                <property name="text">
+                                 <string>1</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </item>
+                            <item>
+                             <widget class="QSlider" name="HistogramBinNumSlider">
+                              <property name="minimum">
+                               <number>1</number>
+                              </property>
+                              <property name="orientation">
+                               <enum>Qt::Horizontal</enum>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QCheckBox" name="HistogramPercentages">
+                              <property name="text">
+                               <string>Show Percentages</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <spacer name="verticalSpacer_27">
+                              <property name="orientation">
+                               <enum>Qt::Vertical</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>20</width>
+                                <height>40</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                           </layout>
+                          </item>
+                          <item row="0" column="1">
+                           <layout class="QVBoxLayout" name="verticalLayout_31">
+                            <item>
+                             <spacer name="verticalSpacer_28">
+                              <property name="orientation">
+                               <enum>Qt::Vertical</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>20</width>
+                                <height>40</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                           </layout>
+                          </item>
+                         </layout>
                         </item>
                        </layout>
                       </widget>
@@ -2104,7 +2510,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>1341</x>
-     <y>357</y>
+     <y>459</y>
     </hint>
     <hint type="destinationlabel">
      <x>1239</x>
@@ -2120,7 +2526,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>1422</x>
-     <y>357</y>
+     <y>459</y>
     </hint>
     <hint type="destinationlabel">
      <x>1282</x>
