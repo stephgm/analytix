@@ -27,13 +27,14 @@ export PYTHONHTTPSVERIFY=0
 # check certificates may comment the next 2 out
 if [ 1 == 1 ];then
 $PREFIX/conda config --set ssl_verify false
-$PREFIX/conda update -n base conda -y
+#$PREFIX/conda update -n base conda -y
 pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
 $pcmd --upgrade pip
 ccmd="$PREFIX/conda install -y"
 # no R, no cuda stuff cuz it regresses python
 $ccmd gcc_impl_linux-64 gcc_linux-64 gfortran_impl_linux-64 gfortran_linux-64 binutils_linux-64 binutils_impl_linux-64 gsl gxx_impl_linux-64 gxx_linux-64 make cartopy swig line_profiler vispy boost cmake autopep8 hdf4 glib pyqtgraph pyopengl pyopengl-accelerate gobject-introspection pymssql autopep8 geopandas selenium mock nodejs holoviews datashader hvplot graphviz panel param
-$pcmd msgpack argparse urwid pdfminer
+$pcmd msgpack argparse urwid
+# pdfminer
 # PyGObject, veusz DNW, spyder-memory-profiler?
 $pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx orderedset objgraph pandastable # cx-Freeze
 # upgrading
@@ -44,12 +45,12 @@ $pcmd -U ray
 $pcmd modin vega_datasets pdvega
 $pcmd ggplot pyggplot
 # for carpopy features
-$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data physical
-$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data cultural
-$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data cultural-extra
-$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data gshhs
 $PREFIX/conda update --all -y
 $PREFIX/conda clean -a -y
+#$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data physical
+#$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data cultural
+#$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data cultural-extra
+#$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data gshhs
 fi
 # scrubbed 7zip
 #tar -zxvf uza.tgz
@@ -95,6 +96,12 @@ cp ~/Downloads/NE1_HR_LC_SR_W_DR.png $PREFIX/../lib/python3.7/site-packages/cart
 cd $PREFIX/..
 
 ./bin/python -m compileall . 
+
+cd bin
+
+ln -s x86_64-conda_cos6-linux-gnu-gcc ./gcc
+
+cd ..
 
 chmod -R 755 *
 
