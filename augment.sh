@@ -38,7 +38,7 @@ $ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit py
 #$PREFIX/conda install -c conda-forge plotnine -y
 # does not work yet
 #$PREFIX/conda install -c conda-forge vitables
-$pcmd msgpack argparse urwid
+$pcmd msgpack argparse urwid pdfminer
 #$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
 $pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph PyGObject cx-Freeze
 $pcmd pandastable
