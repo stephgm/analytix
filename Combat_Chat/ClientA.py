@@ -132,6 +132,8 @@ class ChatGUI(Widgets.QMainWindow):
         self.actionTo_txt.triggered.connect(self.exportChat)
     
     def setupSocket(self):
+        if self.Client:
+            self.stopThreads()
         self.Alert('Connecting to {} as {}.'.format(self.ServerCombo.currentText(),self.username))
         self.Client = ChatClient(self.username,self.ServerCombo.currentText(),self)
         if self.ServerCombo.currentText():
