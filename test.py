@@ -19,7 +19,8 @@ import numpy
 import numba
 import zmq
 import scipy
-import actdiag, blockdiag, nwdiag, seqdiag, arrow, colorcet, dill, pathlib
+import actdiag, blockdiag, nwdiag, seqdiag, arrow, colorcet, dill, pathlib, seaborn
+#import scandir
 print('numpy  : '+numpy.__version__)
 print('scipy  : '+scipy.__version__)
 print('pandas : '+pandas.__version__)
