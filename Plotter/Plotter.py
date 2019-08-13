@@ -1375,12 +1375,13 @@ class Plotter(QMainWindow):
     def closeAllPlots(self):
         plt.close('all')
         
-    def updateCanvas(self):
+    def updateCanvas(self,showPlot=True):
         if self.TableTab.count():
-            dax = self._dynamic_ax
-            dax.clear()
-            dax.figure.legends=[]
-            dax.set_aspect('auto')
+            if showPlot:
+                dax = self._dynamic_ax
+                dax.clear()
+                dax.figure.legends=[]
+                dax.set_aspect('auto')
             plotBmoa = False
             plxlabel = ''
             plylabel = ''
@@ -1423,6 +1424,7 @@ class Plotter(QMainWindow):
             plLocationsFld = ''
             plPolyOrderFld = ''
             plbarheight = []
+            lltext = ''
 
             ptype = self.PlotType.currentText()
             if self.XAxisCombo.currentText():
@@ -1504,31 +1506,37 @@ class Plotter(QMainWindow):
                         if ptype in ['Scatter','Timeline']:
                             plzorder.append(i+1)
                             print plcolor[i]
-                            sc = dax.scatter(plx[i],ydat,s = plmarkersize, c = plcolor[i], cmap = plcm, marker = plmarker[i], label = pllegends[i],zorder=plzorder[-1])
+                            if showPlot:
+                                sc = dax.scatter(plx[i],ydat,s = plmarkersize, c = plcolor[i], cmap = plcm, marker = plmarker[i], label = pllegends[i],zorder=plzorder[-1])
                         if ptype in ['Line']:
                             plzorder.append(i+1)
                             pllinewidth = int(self.LineWidth.text())
                             pllinestyle.append(self.plotLine[i].currentText())
                             sorteddata = pd.DataFrame({'x':plx[i],'y':ydat})
                             sorteddata.sort_values('x',inplace=True)
-                            sc = dax.plot(sorteddata['x'],sorteddata['y'],ms = plmarkersize/LinePlotMarkerNormalize, color = plcolor[i], marker = plmarker[i],label = pllegends[i],linestyle = pllinestyle[i], linewidth = pllinewidth/LinePlotLineWidthNormalize,zorder=plzorder[-1])
+                            if showPlot:
+                                sc = dax.plot(sorteddata['x'],sorteddata['y'],ms = plmarkersize/LinePlotMarkerNormalize, color = plcolor[i], marker = plmarker[i],label = pllegends[i],linestyle = pllinestyle[i], linewidth = pllinewidth/LinePlotLineWidthNormalize,zorder=plzorder[-1])
                     if ptype in ['Stacked']:
                         plzorder.append(1)
                         ply = [np.row_stack(ply)]
-                        sc = dax.stackplot(plx[0],ply[0],colors=[colorss for colorss in plcolor],labels=[labelss for labelss in pllegends],zorder=plzorder[-1])
+                        if showPlot:
+                            sc = dax.stackplot(plx[0],ply[0],colors=[colorss for colorss in plcolor],labels=[labelss for labelss in pllegends],zorder=plzorder[-1])
                     if ptype in cbartypes:
                         if self.ColorbarHeaderCombo.currentText() and not self.SymbolCodeChk.isChecked():
                             addedcolorbar = True
-                            self.colorbar = dax.figure.colorbar(sc)
+                            if showPlot:
+                                self.colorbar = dax.figure.colorbar(sc)
                             if self.ColorbarLabel.text():
                                 plcolorbarlabel = self.ColorbarLabel.text()
                             else:
                                 plcolorbarlabel = self.ColorbarHeaderCombo.currentText()
-                            self.colorbar.set_label(plcolorbarlabel)
+                            if showPlot:
+                                self.colorbar.set_label(plcolorbarlabel)
                     plxAxisDataHeader = self.XAxisCombo.currentText()
                     
                 if ptype == 'Pie':
-                    dax.set_aspect(1)
+                    if showPlot:
+                        dax.set_aspect(1)
                     plbinnum = int(self.BinNum.text())
                     x = model.getColumnData(self.XAxisCombo.currentText())
                     cmap = plt.cm.jet
@@ -1551,9 +1559,10 @@ class Plotter(QMainWindow):
                     pllegends = map(str,plx.index.tolist())
                     plxAxisDataHeader = self.XAxisCombo.currentText()
                     plzorder.append(1)
-                    sc = dax.pie(plx,autopct = '%.2f%%',colors=plcolor)
-                    if not self.HideLegend.isChecked():
-                        dax.figure.legend(pllegends,prop=mplfm.FontProperties(size=6),loc='best',ncol=4).draggable()
+                    if showPlot:
+                        sc = dax.pie(plx,autopct = '%.2f%%',colors=plcolor)
+                        if not self.HideLegend.isChecked():
+                            dax.figure.legend(pllegends,prop=mplfm.FontProperties(size=6),loc='best',ncol=4).draggable()
 
                 if ptype =='Bar':
                     if self.YAxisLabel.text():
@@ -1579,12 +1588,14 @@ class Plotter(QMainWindow):
                         pllegends.append(item.text(4))
                         plcolor.append(self.plotColor[i].currentText())
                         plzorder.append(i+1)
-                        sc = dax.bar(plspacing + i*plbarwidth, ydat.tolist(),plbarwidth,color = plcolor[i],label=pllegends[i],zorder=plzorder[-1])    
+                        if showPlot:
+                            sc = dax.bar(plspacing + i*plbarwidth, ydat.tolist(),plbarwidth,color = plcolor[i],label=pllegends[i],zorder=plzorder[-1])    
                     if len(ply):
                         ticklabels = map(str,plx.tolist())
-                        dax.set_xticks(plspacing+(len(ply)-1)*plbarwidth/2)
-                        dax.set_xticklabels(ticklabels)
-                        dax.set_aspect('auto')
+                        if showPlot:
+                            dax.set_xticks(plspacing+(len(ply)-1)*plbarwidth/2)
+                            dax.set_xticklabels(ticklabels)
+                            dax.set_aspect('auto')
                         
                 if ptype in ['Stacked Bar']:
                     if self.YAxisLabel.text():
@@ -1614,12 +1625,14 @@ class Plotter(QMainWindow):
                             plbarheight.append(np.array([0]*plx.shape[0]))
                         else:
                             plbarheight.append(np.add(plbarheight[-1],np.array(ply[i-1].tolist())))
-                        sc = dax.bar(plspacing, ydat.tolist(),plbarwidth,color= plcolor[i],label=pllegends[i],zorder=plzorder[-1],bottom=plbarheight[i])
+                        if showPlot:
+                            sc = dax.bar(plspacing, ydat.tolist(),plbarwidth,color= plcolor[i],label=pllegends[i],zorder=plzorder[-1],bottom=plbarheight[i])
                     if len(ply):
                         ticklabels = map(str,plx.tolist())
-                        dax.set_xticks(plspacing)
-                        dax.set_xticklabels(ticklabels)
-                        dax.set_aspect('auto')
+                        if showPlot:
+                            dax.set_xticks(plspacing)
+                            dax.set_xticklabels(ticklabels)
+                            dax.set_aspect('auto')
                         
                 if ptype in ['Horizontal Bar']:
                     if self.YAxisLabel.text():
@@ -1645,12 +1658,14 @@ class Plotter(QMainWindow):
                         pllegends.append(item.text(4))
                         plcolor.append(self.plotColor[i].currentText())
                         plzorder.append(i+1)
-                        sc = dax.barh(plspacing + i*plbarwidth, ydat.tolist(),plbarwidth,color = plcolor[i],label=pllegends[i],zorder=plzorder[-1])    
+                        if showPlot:
+                            sc = dax.barh(plspacing + i*plbarwidth, ydat.tolist(),plbarwidth,color = plcolor[i],label=pllegends[i],zorder=plzorder[-1])    
                     if len(ply):
                         ticklabels = map(str,plx.tolist())
-                        dax.set_yticks(plspacing+(len(ply)-1)*plbarwidth/2)
-                        dax.set_yticklabels(ticklabels)
-                        dax.set_aspect('auto')
+                        if showPlot:
+                            dax.set_yticks(plspacing+(len(ply)-1)*plbarwidth/2)
+                            dax.set_yticklabels(ticklabels)
+                            dax.set_aspect('auto')
                     
                 if ptype in ['Stacked Horizontal Bar']:
                     if self.YAxisLabel.text():
@@ -1680,12 +1695,14 @@ class Plotter(QMainWindow):
                             plbarheight.append(np.array([0]*plx.shape[0]))
                         else:
                             plbarheight.append(np.add(plbarheight[-1],np.array(ply[i-1].tolist())))
-                        sc = dax.barh(plspacing, ydat.tolist(),plbarwidth,color= plcolor[i],label=pllegends[i],zorder=plzorder[-1],left=plbarheight[i])
+                        if showPlot:
+                            sc = dax.barh(plspacing, ydat.tolist(),plbarwidth,color= plcolor[i],label=pllegends[i],zorder=plzorder[-1],left=plbarheight[i])
                     if len(ply):
                         ticklabels = map(str,plx.tolist())
-                        dax.set_yticks(plspacing)
-                        dax.set_yticklabels(ticklabels)
-                        dax.set_aspect('auto')
+                        if showPlot:
+                            dax.set_yticks(plspacing)
+                            dax.set_yticklabels(ticklabels)
+                            dax.set_aspect('auto')
                         
                 if ptype in ['Histogram']:
                     if self.YAxisLabel.text():
@@ -1703,11 +1720,12 @@ class Plotter(QMainWindow):
                     else:
                         plxlabel = self.XAxisCombo.currentText()
                     plxAxisDataHeader = plxlabel
-                    sc = dax.hist(plx,bins=plbinnum,color=plotcolor[0],normed=self.HistogramPercentages.isChecked())
-                    if self.HistogramPercentages.isChecked():
-                        from matplotlib.ticker import PercentFormatter
-                        dax.yaxis.set_major_formatter(PercentFormatter(100))
-                    dax.set_aspect('auto')
+                    if showPlot:
+                        sc = dax.hist(plx,bins=plbinnum,color=plotcolor[0],normed=self.HistogramPercentages.isChecked())
+                        if self.HistogramPercentages.isChecked():
+                            from matplotlib.ticker import PercentFormatter
+                            dax.yaxis.set_major_formatter(PercentFormatter(100))
+                        dax.set_aspect('auto')
                     
                 if ptype in ['Basemap']:
                     Type = 'Point'
@@ -1916,11 +1934,12 @@ class Plotter(QMainWindow):
                     plmarkersize = int(self.MarkerSize.text())
                     #CHECK
                     plprojection = self.tformMapper()
-#                    dax.add_feature(COUNTRY_BOUNDS)    
-                    dax.add_feature(cfeature.BORDERS)
-                    dax.add_feature(cfeature.LAND)
-                    dax.add_feature(cfeature.COASTLINE)
-                    dax.add_feature(cfeature.OCEAN)
+                    if showPlot:
+    #                    dax.add_feature(COUNTRY_BOUNDS)    
+                        dax.add_feature(cfeature.BORDERS)
+                        dax.add_feature(cfeature.LAND)
+                        dax.add_feature(cfeature.COASTLINE)
+                        dax.add_feature(cfeature.OCEAN)
                     handles = []
                     for i,ydat in enumerate(ply):
                         item = self.PlotColorSymbol.topLevelItem(i)
@@ -1936,43 +1955,50 @@ class Plotter(QMainWindow):
                             plcm = None
                         if not plotBmoa:
                             plzorder.append(i+1)
-                            sc = dax.scatter(plx[i],ydat,s = plmarkersize, c = plcolor[i], cmap = plcm, marker = plmarker[i], label = pllegends[i], transform = ccrs.PlateCarree(),zorder=plzorder[-1])
+                            if showPlot:
+                                sc = dax.scatter(plx[i],ydat,s = plmarkersize, c = plcolor[i], cmap = plcm, marker = plmarker[i], label = pllegends[i], transform = ccrs.PlateCarree(),zorder=plzorder[-1])
                         elif plotBmoa and Type == 'Circle':
                             plzorder.append(i+1)
-                            for j,r in enumerate(plradii[i]):
-                                if r > 0:
-                                    lats,lons = ID.circleLatLons(ply[i][j],plx[i][j],r)
-                                    lats,lons = ID.handle_InternationalDateline(lats,lons)
-                                else:
-                                    lats,lons = ID.handle_InternationalDateline(ply[i][j],plx[i][j])
-                                for ii in range(len(lats)):
-                                    dax.add_patch(mpatches.Polygon(xy=np.array([lons[ii],lats[ii]]).T,closed = True,fill = plfillDA,color=plcolor[i],alpha=plalpha/100.,transform=ccrs.PlateCarree(),ls=pldalinestyle,zorder=plzorder[-1]))
-                            if not self.HideLegend.isChecked():
-                                handles.append(Line2D([0],[0],color=plcolor[i]))
+                            if showPlot:
+                                for j,r in enumerate(plradii[i]):
+                                    if r > 0:
+                                        lats,lons = ID.circleLatLons(ply[i][j],plx[i][j],r)
+                                        lats,lons = ID.handle_InternationalDateline(lats,lons)
+                                    else:
+                                        lats,lons = ID.handle_InternationalDateline(ply[i][j],plx[i][j])
+                                    for ii in range(len(lats)):
+                                        dax.add_patch(mpatches.Polygon(xy=np.array([lons[ii],lats[ii]]).T,closed = True,fill = plfillDA,color=plcolor[i],alpha=plalpha/100.,transform=ccrs.PlateCarree(),ls=pldalinestyle,zorder=plzorder[-1]))
+                                if not self.HideLegend.isChecked():
+                                    handles.append(Line2D([0],[0],color=plcolor[i]))
                         elif plotBmoa and Type == 'Ellipse':
                             plzorder.append(i+1)
-                            for j,(major,minor,ori) in enumerate(zip(plmajor[i],plminor[i],plori[i])):
-                                if major >= 0. and minor >= 0.:
-                                    lats,lons = ID.ellipseLatLons(ply[i][j],plx[i][j],major,minor,ori)
-                                    lats,lons = ID.handle_InternationalDateline(lats,lons)
-                                for ii in range(len(lats)):
-                                    dax.add_patch(mpatches.Polygon(xy=np.array([lons[ii],lats[ii]]).T,closed = True,fill = plfillDA,color=plcolor[i],alpha=plalpha/100.,transform=ccrs.PlateCarree(),ls=pldalinestyle,zorder=plzorder[-1]))
-                            if not self.HideLegend.isChecked():
-                                handles.append(Line2D([0],[0],color=plcolor[i]))
-                    if not self.HideLegend.isChecked() and plotBmoa:
-                        dax.figure.legend(handles=handles,labels = pllegends,prop=mplfm.FontProperties(size=6),loc='best',ncol=4).draggable()
+                            if showPlot:
+                                for j,(major,minor,ori) in enumerate(zip(plmajor[i],plminor[i],plori[i])):
+                                    if major >= 0. and minor >= 0.:
+                                        lats,lons = ID.ellipseLatLons(ply[i][j],plx[i][j],major,minor,ori)
+                                        lats,lons = ID.handle_InternationalDateline(lats,lons)
+                                    for ii in range(len(lats)):
+                                        dax.add_patch(mpatches.Polygon(xy=np.array([lons[ii],lats[ii]]).T,closed = True,fill = plfillDA,color=plcolor[i],alpha=plalpha/100.,transform=ccrs.PlateCarree(),ls=pldalinestyle,zorder=plzorder[-1]))
+                                if not self.HideLegend.isChecked():
+                                    handles.append(Line2D([0],[0],color=plcolor[i]))
+                    if showPlot:
+                        if not self.HideLegend.isChecked() and plotBmoa:
+                            dax.figure.legend(handles=handles,labels = pllegends,prop=mplfm.FontProperties(size=6),loc='best',ncol=4).draggable()
                     plxAxisDataHeader = Lon
                     if self.ColorbarHeaderCombo.currentText() and not self.SymbolCodeChk.isChecked() and not plotBmoa:
-                        self.colorbar = dax.figure.colorbar(sc)
+                        if showPlot:
+                            self.colorbar = dax.figure.colorbar(sc)
                         if self.ColorbarLabel.text():
                             plcolorbarlabel = self.ColorbarLabel.text()
                         else:
                             plcolorbarlabel = self.ColorbarHeaderCombo.currentText()
-                        self.colorbar.set_label(plcolorbarlabel)
+                        if showPlot:
+                            self.colorbar.set_label(plcolorbarlabel)
 #                    dax.set_adjustable('datalim')
-                    dax.set_aspect('equal')
-                    dax.set_global()
-                    dax.outline_patch.set_linewidth(0)
+                    if showPlot:
+                        dax.set_aspect('equal')
+                        dax.set_global()
+                        dax.outline_patch.set_linewidth(0)
             
                 if ptype == '3D Plot':
                     if 'PosX' in md['SelH']:
@@ -2030,31 +2056,38 @@ class Plotter(QMainWindow):
                             plcolor.append(self.plotColor[i].currentText())
                             plcm = None
                         plzorder.append(i+1)
-                        sc = dax.scatter(plx[i],ply[i],plz[i],zdir='z',s=plmarkersize,c=plcolor[i],cmap=plcm,marker=plmarker[i],label=pllegends[i])
+                        if showPlot:
+                            sc = dax.scatter(plx[i],ply[i],plz[i],zdir='z',s=plmarkersize,c=plcolor[i],cmap=plcm,marker=plmarker[i],label=pllegends[i])
                     if self.ColorbarHeaderCombo.currentText() and not self.SymbolCodeChk.isChecked():
-                        self.colorbar = dax.figure.colorbar(sc)
+                        if showPlot:
+                            self.colorbar = dax.figure.colorbar(sc)
                         if self.ColorbarLabel.text():
                             plcolorbarlabel = self.ColorbarLabel.text()
                         else:
                             plcolorbarlabel = self.ColorbarHeaderCombo.currentText()
                         self.colorbar.set_label(plcolorbarlabel)
-                    dax.set_zlabel(plzlabel)
+                    if showPlot:
+                        dax.set_zlabel(plzlabel)
                     plxAxisDataHeader = posx
 
                 if not self.HideLegend.isChecked() and ptype != 'Pie' and not plotBmoa:
-                    dax.figure.legend(prop=mplfm.FontProperties(size=6),loc='best',ncol=4).draggable()
+                    if showPlot:
+                        dax.figure.legend(prop=mplfm.FontProperties(size=6),loc='best',ncol=4).draggable()
                 if self.FigureBackGroundColor.text():
-                    dax.figure.set_facecolor(self.FigureBackGroundColor.text())
+                    if showPlot:
+                        dax.figure.set_facecolor(self.FigureBackGroundColor.text())
                 if self.AxisBackGroundColor.text():
-                    dax.set_facecolor(self.AxisBackGroundColor.text())
-                dax.set_title(pltitle)
-                dax.set_xlabel(plxlabel)
-                if len(plylabel) > 10:
-                    dax.set_ylabel('default')
-                else:
-                    dax.set_ylabel(plylabel)
-                dax.figure.tight_layout()
-                dax.figure.canvas.draw()
+                    if showPlot:
+                        dax.set_facecolor(self.AxisBackGroundColor.text())
+                if showPlot:
+                    dax.set_title(pltitle)
+                    dax.set_xlabel(plxlabel)
+                    if len(plylabel) > 10:
+                        dax.set_ylabel('default')
+                    else:
+                        dax.set_ylabel(plylabel)
+                    dax.figure.tight_layout()
+                    dax.figure.canvas.draw()
                 self.NewPlot = True
                 if plcolor != []:
 #                    if not isinstance(plxAxisDataHeader,list) and'time' in plxAxisDataHeader.lower():
@@ -2135,9 +2168,945 @@ class Plotter(QMainWindow):
                     self.plotList[-1]['z order']=plzorder
                     self.plotList[-1]['figure background color'] = self.FigureBackGroundColor.text()
                     self.plotList[-1]['axis background color'] = self.AxisBackGroundColor.text()
+                    self.plotList[-1]['LatLonChoice'] = lltext
+                    self.PlotType.setCurrentIndex(0)
+                    self.addToPlotList()
+                    self.plotList.pop()
+                    self.templatePloter(self.plotList[-1]['plot type'],self.plotList[-1]['x axis data header'],self.plotList[-1]['x label'],
+                                      self.plotList[-1]['y axis data header'],self.plotList[-1]['y label'],self.plotList[-1]['plot title'],
+                                      self.plotList[-1]['symbol code'],self.plotList[-1]['symbol code header'],self.plotList[-1]['marker size'],
+                                      self.plotList[-1]['color map header'],self.plotList[-1]['line width'],self.plotList[-1]['colorbar Label'],
+                                      self.plotList[-1]['color map name'],self.plotList[-1]['bin num'],self.plotList[-1]['bar width'],
+                                      self.plotList[-1]['z label'],self.plotList[-1]['orthographic center'],self.plotList[-1]['color'],
+                                      self.plotList[-1]['legend'],self.plotList[-1]['marker'],self.plotList[-1]['line style'],
+                                      self.plotList[-1]['fill DA'],self.plotList[-1]['alpha'],self.plotList[-1]['DA line style'],
+                                      self.plotList[-1]['figure background color'],self.plotList[-1]['axis background color'],
+                                      self.plotList[-1]['LatLonChoice'])
+                    print 'here'
+    def templatePloter(self,plottype,xaxiscombo,xlabel,yheaders,ylabel,plottitle,symbolcodechk,symbolcodeheader,markersize,colorbarheader,linewidth,colorbarlabel,colorbarname,binnum,barwidth,zaxislabel,orthocenter,plotcolors,plotlegends,plotmarkers,plotlinestyle,fillDAChk,alpha,DAlinestyle,figurebackground,axisbackground,lltext):
+        if self.TableTab.count():
+            self.plotList.append(OrderedDict())
+            plotBmoa = False
+            plxlabel = ''
+            plylabel = ''
+            plzlabel = ''
+            pltitle = ''
+            plx,ply,plz = [],[],[]
+            pllinestyle = []
+            pllinewidth = 0
+            plspacing = []
+            plbarwidth = 0
+            plbinnum = 0
+            plalpha = 0
+            plradii = []
+            plori = []
+            plmajor = []
+            plminor = []
+            plxAxisDataHeader = ''
+            plplottedheaders = []
+            plzAxisDataHeader = ''
+            plcolor = []
+            plcm = None
+            pluniquevals = []
+            plmarker = []
+            plmarkersize = 0
+            pllegends = []
+            plcolorbarlabel = ''
+            plprojection = ''
+            addedcolorbar = False
+            plnsheaders = []
+            pluniqueheaders = []
+            plfillDA = False
+            orthocenter = orthocenter
+            plzorder = []
+            pldalinestyle = None
+            plOriField = ''
+            plMajorField = ''
+            plMinorField = ''
+            plRadiusField = ''
+            plBmoaType = ''
+            plLocationsFld = ''
+            plPolyOrderFld = ''
+            plbarheight = []
 
-    
+            ptype = plottype
+            if xaxiscombo:
+                index = self.TableTab.currentIndex()
+                keyID = self.tableIDList[index]
+                table = self.tableList[keyID]
+                model = table.model()
+                headers = model.getHeaderNames()
+                md = self.MasterData[keyID]
+                pltitle = plottitle
+                if xlabel:
+                    plxlabel = xlabel
+                elif ptype not in ['Basemap','Bar']:
+                    plxlabel = xaxiscombo
+                    
+                if ptype in ['Scatter','Timeline','Stacked','Line']:
+                    for index in yheaders:
+                        if symbolcodechk:
+                            pluniquevals = pd.unique(model.getColumnData(symbolcodeheader))
+                            uniquedata = model.getColumnData(symbolcodeheader)
+                            xdata = model.getColumnData(xaxiscombo)
+                            if ptype in ['Scatter','Line']:
+                                ydata = model.getColumnData(index)
+                            elif ptype == 'Timeline':
+                                ydata = np.array([md['Dset']+index]*xdata.size)
+                            for i,val in enumerate(pluniquevals):
+                                idx = uniquedata == val
+                                if True in idx:
+                                    ply.append(ydata[idx])
+                                    plx.append(xdata[idx])
+                                pllegends.append('{} where {} = {}'.format(index,symbolcodeheader,val))
+                                    
+                        else:
+                            
+                            if ptype in ['Scatter','Stacked','Line']:
+                                if ptype == 'Stacked':
+                                    if ply:
+                                        if ply[0].dtype.kind != model.getDtype(index): 
+                                            continue
+                                sorteddata = pd.DataFrame({'x':model.getColumnData(xaxiscombo),'y':model.getColumnData(index)})
+                                sorteddata.sort_values('x',inplace=True)
+                                ply.append(sorteddata['y'])
+                                plx.append(sorteddata['x'])
+                            elif ptype in ['Timeline']:
+                                ply.append(np.array([md['Dset']+index]*model.getColumnData(xaxiscombo).size))
+                                plx.append(model.getColumnData(xaxiscombo))
+                            pluniquevals = [0]
+                            pllegends.append('{}'.format(index))
+                        plplottedheaders.append(index)
+                        if ylabel:
+                            plylabel = ylabel
+                        else:
+                            if plylabel == '':
+                                plylabel = index
+                            else:
+                                plylabel = plylabel + ' / ' + index
+                    if ptype not in ['Stacked']:
+                        plmarkersize = int(str(markersize))
+                    else:
+                        plmarkersize = None
+                    #Plot markers
+                    if len(plotmarkers) > len(ply):
+                        for i in range(len(ply)):
+                            plmarker.append(plotmarkers[i])
+                    elif len(plotmarkers) == len(ply):
+                        plmarker = plotmarkers
+                    elif len(plotmarkers) < len(ply):
+                        for marker in plotmarkers:
+                            plmarker.append(marker)
+                        for i in range((len(ply)-len(plotmarkers))):
+                            plmarker.append(self.plotSymbol[i+len(plotmarkers)%len(self.plotSymbol)])
+                            
+                    #Plot Colors
+                    if len(plotcolors) > len(ply):
+                        for i in range(len(ply)):
+                            plcolor.append(plotcolors[i])
+                    elif len(plotcolors) == len(ply):
+                        plcolor = plotcolors
+                    elif len(plotcolors) < len(ply):
+                        for color in plotcolors:
+                            plcolor.append(color)
+                        for i in range((len(ply)-len(plotcolors))):
+                            if not colorbarheader:
+                                plcolor.append(self.plotColor[i+len(plotcolors)%len(self.plotColor)])
+                            else:
+                                plcolor.append(model.getColumnData(colorbarheader))
+                                
+                    #Plot linestyle
+                    if plotlinestyle:
+                        if len(plotlinestyle) > len(ply):
+                            for i in range(len(ply)):
+                                pllinestyle.append(plotlinestyle[i])
+                        elif len(plotlinestyle) == len(ply):
+                            print 'linestyles are the same'
+                            print plotlinestyle
+                            pllinestyle = plotlinestyle
+                        elif len(plotlinestyle) < len(ply):
+                            for style in plotlinestyle:
+                                pllinestyle.append(style)
+                            for i in range((len(ply)-len(plotlinestyle))):
+                                pllinestyle.append(plotlinestyle[-1])
+                            
+                    for i,ydat in enumerate(ply):
+                        if ptype in ['Scatter','Timeline']:
+                            plzorder.append(i+1)
+                        if ptype in ['Line']:
+                            plzorder.append(i+1)
+                            sorteddata = pd.DataFrame({'x':plx[i],'y':ydat})
+                            sorteddata.sort_values('x',inplace=True)
+                    if ptype in ['Stacked']:
+                        plzorder.append(1)
+                        ply = [np.row_stack(ply)]
+                    if ptype in cbartypes:
+                        print colorbarheader
+                        print type(symbolcodechk)
+                        if colorbarheader and not symbolcodechk:
+                            print 'in here'
+                            addedcolorbar = True
+                            plcm = plt.cm.get_cmap(colorbarname)
+                            if colorbarlabel:
+                                plcolorbarlabel = colorbarlabel
+                            else:
+                                plcolorbarlabel = colorbarheader
+                                
+                    plxAxisDataHeader = xaxiscombo
+                    
+                if ptype == 'Pie':
+                    plbinnum = int(binnum)
+                    x = model.getColumnData(xaxiscombo)
+                    cmap = plt.cm.jet
+                    if len(pd.unique(x)) > 20 and x.dtype.kind != 'O':
+                        bins = np.linspace(x.min(),x.max(),plbinnum+1)
+                        y = pd.cut(x,bins)
+                        plx = y.value_counts().sort_index()
+                        plcolor = cmap(np.linspace(0.,1.,plbinnum))
+                    else:
+                        plbinnum = None
+                        u = len(pd.unique(x))
+                        plcolor = cmap(np.linspace(0.,1.,u))
+                        plx = x.value_counts().sort_index()
+                    pllegends = map(str,plx.index.tolist())
+                    plxAxisDataHeader = xaxiscombo
+                    plzorder.append(1)
+
+                if ptype =='Bar':
+                    if ylabel:
+                        plylabel = ylabel
+                    else:
+                        plylabel = 'Values'
+                    for i,index in enumerate(yheaders):
+                        plplottedheaders.append(index)
+                        ply.append(model.getColumnData(index))
+                        pllegends.append(index)
+                    plx = model.getColumnData(xaxiscombo)
+                    plspacing = np.arange(plx.shape[0])
+                    if xlabel:
+                        plxlabel = xlabel
+                    else:
+                        plxlabel = xaxiscombo
+                    plxAxisDataHeader = plxlabel
+                    if ply:
+                        plbarwidth = barwidth
+                    else:
+                        plbarwidth = 0
+                        
+                    #Plot markers
+                    if plotmarkers:
+                        if len(plotmarkers) > len(ply):
+                            for i in range(len(ply)):
+                                plmarker.append(plotmarkers[i])
+                        elif len(plotmarkers) == len(ply):
+                            plmarker = plotmarkers
+                        elif len(plotmarkers) < len(ply):
+                            for marker in plotmarkers:
+                                plmarker.append(marker)
+                            for i in range((len(ply)-len(plotmarkers))):
+                                plmarker.append(self.plotSymbol[i+len(plotmarkers)%len(self.plotSymbol)])
+                            
+                    #Plot Colors
+                    if plotcolors:
+                        if len(plotcolors) > len(ply):
+                            for i in range(len(ply)):
+                                plcolor.append(plotcolors[i])
+                        elif len(plotcolors) == len(ply):
+                            plcolor = plotcolors
+                        elif len(plotcolors) < len(ply):
+                            for color in plotcolors:
+                                plcolor.append(color)
+                            for i in range((len(ply)-len(plotcolors))):
+                                if not colorbarheader:
+                                    plcolor.append(self.plotColor[i+len(plotcolors)%len(self.plotColor)])
+                                else:
+                                    plcolor.append(model.getColumnData(colorbarheader))
+                                
+                    #Plot linestyle
+                    if plotlinestyle:
+                        if len(plotlinestyle) > len(ply):
+                            for i in range(len(ply)):
+                                pllinestyle.append(plotlinestyle[i])
+                        elif len(plotlinestyle) == len(ply):
+                            print 'linestyles are the same'
+                            print plotlinestyle
+                            pllinestyle = plotlinestyle
+                        elif len(plotlinestyle) < len(ply):
+                            for style in plotlinestyle:
+                                pllinestyle.append(style)
+                            for i in range((len(ply)-len(plotlinestyle))):
+                                pllinestyle.append(plotlinestyle[-1])
+                    
+                    for i,ydat in enumerate(ply):
+#                        item = self.PlotColorSymbol.topLevelItem(i)
+#                        pllegends.append(item.text(4))
+#                        plcolor.append(self.plotColor[i].currentText())
+                        plzorder.append(i+1)
+                        
+                if ptype in ['Stacked Bar']:
+                    if ylabel:
+                        plylabel = ylabel
+                    else:
+                        plylabel = 'Values'
+                    for i,index in enumerate(yheaders):
+                        plplottedheaders.append(index)
+                        ply.append(model.getColumnData(index))
+                        pllegends.append(index)
+                    plx = model.getColumnData(xaxiscombo)
+                    plspacing = np.arange(plx.shape[0])
+                    if xlabel:
+                        plxlabel = xlabel
+                    else:
+                        plxlabel = xaxiscombo
+                    plxAxisDataHeader = plxlabel
+                    if ply:
+                        plbarwidth = barwidth
+                    else:
+                        plbarwidth = 0
+                    
+                    #Plot markers
+                    if plotmarkers:
+                        if len(plotmarkers) > len(ply):
+                            for i in range(len(ply)):
+                                plmarker.append(plotmarkers[i])
+                        elif len(plotmarkers) == len(ply):
+                            plmarker = plotmarkers
+                        elif len(plotmarkers) < len(ply):
+                            for marker in plotmarkers:
+                                plmarker.append(marker)
+                            for i in range((len(ply)-len(plotmarkers))):
+                                plmarker.append(self.plotSymbol[i+len(plotmarkers)%len(self.plotSymbol)])
+                            
+                    #Plot Colors
+                    if plotcolors:
+                        if len(plotcolors) > len(ply):
+                            for i in range(len(ply)):
+                                plcolor.append(plotcolors[i])
+                        elif len(plotcolors) == len(ply):
+                            plcolor = plotcolors
+                        elif len(plotcolors) < len(ply):
+                            for color in plotcolors:
+                                plcolor.append(color)
+                            for i in range((len(ply)-len(plotcolors))):
+                                if not colorbarheader:
+                                    plcolor.append(self.plotColor[i+len(plotcolors)%len(self.plotColor)])
+                                else:
+                                    plcolor.append(model.getColumnData(colorbarheader))
+                                
+                    #Plot linestyle
+                    if plotlinestyle:
+                        if len(plotlinestyle) > len(ply):
+                            for i in range(len(ply)):
+                                pllinestyle.append(plotlinestyle[i])
+                        elif len(plotlinestyle) == len(ply):
+                            print 'linestyles are the same'
+                            print plotlinestyle
+                            pllinestyle = plotlinestyle
+                        elif len(plotlinestyle) < len(ply):
+                            for style in plotlinestyle:
+                                pllinestyle.append(style)
+                            for i in range((len(ply)-len(plotlinestyle))):
+                                pllinestyle.append(plotlinestyle[-1])
+                    
+                    for i,ydat in enumerate(ply):
+#                        item = self.PlotColorSymbol.topLevelItem(i)
+#                        pllegends.append(item.text(4))
+#                        plcolor.append(self.plotColor[i].currentText())
+                        plzorder.append(i+1)
+                        if i == 0:
+                            plbarheight.append(np.array([0]*plx.shape[0]))
+                        else:
+                            plbarheight.append(np.add(plbarheight[-1],np.array(ply[i-1].tolist())))
+                        
+                if ptype in ['Horizontal Bar']:
+                    if ylabel:
+                        plylabel = ylabel
+                    else:
+                        plylabel = ''
+                    for i,index in enumerate(yheaders):
+                        plplottedheaders.append(index)
+                        ply.append(model.getColumnData(index))
+                        pllegends.append(index)
+                    plx = model.getColumnData(xaxiscombo)
+                    plspacing = np.arange(plx.shape[0])
+                    if xlabel:
+                        plxlabel = xlabel
+                    else:
+                        plxlabel = xaxiscombo
+                    plxAxisDataHeader = plxlabel
+                    if ply:
+                        plbarwidth = barwidth
+                    else:
+                        plbarwidth = 0
+                        
+                    #Plot markers
+                    if plotmarkers:
+                        if len(plotmarkers) > len(ply):
+                            for i in range(len(ply)):
+                                plmarker.append(plotmarkers[i])
+                        elif len(plotmarkers) == len(ply):
+                            plmarker = plotmarkers
+                        elif len(plotmarkers) < len(ply):
+                            for marker in plotmarkers:
+                                plmarker.append(marker)
+                            for i in range((len(ply)-len(plotmarkers))):
+                                plmarker.append(self.plotSymbol[i+len(plotmarkers)%len(self.plotSymbol)])
+                            
+                    #Plot Colors
+                    if plotcolors:
+                        if len(plotcolors) > len(ply):
+                            for i in range(len(ply)):
+                                plcolor.append(plotcolors[i])
+                        elif len(plotcolors) == len(ply):
+                            plcolor = plotcolors
+                        elif len(plotcolors) < len(ply):
+                            for color in plotcolors:
+                                plcolor.append(color)
+                            for i in range((len(ply)-len(plotcolors))):
+                                if not colorbarheader:
+                                    plcolor.append(self.plotColor[i+len(plotcolors)%len(self.plotColor)])
+                                else:
+                                    plcolor.append(model.getColumnData(colorbarheader))
+                                
+                    #Plot linestyle
+                    if plotlinestyle:
+                        if len(plotlinestyle) > len(ply):
+                            for i in range(len(ply)):
+                                pllinestyle.append(plotlinestyle[i])
+                        elif len(plotlinestyle) == len(ply):
+                            print 'linestyles are the same'
+                            print plotlinestyle
+                            pllinestyle = plotlinestyle
+                        elif len(plotlinestyle) < len(ply):
+                            for style in plotlinestyle:
+                                pllinestyle.append(style)
+                            for i in range((len(ply)-len(plotlinestyle))):
+                                pllinestyle.append(plotlinestyle[-1])
+                        
+                    for i,ydat in enumerate(ply):
+#                        item = self.PlotColorSymbol.topLevelItem(i)
+#                        pllegends.append(item.text(4))
+#                        plcolor.append(self.plotColor[i].currentText())
+                        plzorder.append(i+1)
+                    
+                if ptype in ['Stacked Horizontal Bar']:
+                    if ylabel:
+                        plylabel = ylabel
+                    else:
+                        plylabel = ''
+                    for i,index in enumerate(yheaders):
+                        plplottedheaders.append(index)
+                        ply.append(model.getColumnData(index))
+                        pllegends.append(index)
+                    plx = model.getColumnData(xaxiscombo)
+                    plspacing = np.arange(plx.shape[0])
+                    if xlabel:
+                        plxlabel = xlabel
+                    else:
+                        plxlabel = xaxiscombo
+                    plxAxisDataHeader = plxlabel
+                    if ply:
+                        plbarwidth = barwidth
+                    else:
+                        plbarwidth = 0
+                        
+                    #Plot markers
+                    if plotmarkers:
+                        if len(plotmarkers) > len(ply):
+                            for i in range(len(ply)):
+                                plmarker.append(plotmarkers[i])
+                        elif len(plotmarkers) == len(ply):
+                            plmarker = plotmarkers
+                        elif len(plotmarkers) < len(ply):
+                            for marker in plotmarkers:
+                                plmarker.append(marker)
+                            for i in range((len(ply)-len(plotmarkers))):
+                                plmarker.append(self.plotSymbol[i+len(plotmarkers)%len(self.plotSymbol)])
+                            
+                    #Plot Colors
+                    if plotcolors:
+                        if len(plotcolors) > len(ply):
+                            for i in range(len(ply)):
+                                plcolor.append(plotcolors[i])
+                        elif len(plotcolors) == len(ply):
+                            plcolor = plotcolors
+                        elif len(plotcolors) < len(ply):
+                            for color in plotcolors:
+                                plcolor.append(color)
+                            for i in range((len(ply)-len(plotcolors))):
+                                if not colorbarheader:
+                                    plcolor.append(self.plotColor[i+len(plotcolors)%len(self.plotColor)])
+                                else:
+                                    plcolor.append(model.getColumnData(colorbarheader))
+                                
+                    #Plot linestyle
+                    if plotlinestyle:
+                        if len(plotlinestyle) > len(ply):
+                            for i in range(len(ply)):
+                                pllinestyle.append(plotlinestyle[i])
+                        elif len(plotlinestyle) == len(ply):
+                            print 'linestyles are the same'
+                            print plotlinestyle
+                            pllinestyle = plotlinestyle
+                        elif len(plotlinestyle) < len(ply):
+                            for style in plotlinestyle:
+                                pllinestyle.append(style)
+                            for i in range((len(ply)-len(plotlinestyle))):
+                                pllinestyle.append(plotlinestyle[-1])
+                        
+                    for i,ydat in enumerate(ply):
+#                        item = self.PlotColorSymbol.topLevelItem(i)
+#                        pllegends.append(item.text(4))
+#                        plcolor.append(self.plotColor[i].currentText())
+                        plzorder.append(i+1)
+                        if i == 0:
+                            plbarheight.append(np.array([0]*plx.shape[0]))
+                        else:
+                            plbarheight.append(np.add(plbarheight[-1],np.array(ply[i-1].tolist())))
+                        
+                if ptype in ['Histogram']:
+                    if ylabel:
+                        plylabel = ylabel
+                    else:
+                        if self.HistogramPercentages.isChecked():
+                            plylabel = 'Percentage'
+                        else:
+                            plylabel = 'Counts'
+                    plbinnum = int(binnum)
+                    plplottedheaders.append(xaxiscombo)
+                    plx = model.getColumnData(xaxiscombo)
+                    if xlabel:
+                        plxlabel = xlabel
+                    else:
+                        plxlabel = xaxiscombo
+                    plxAxisDataHeader = plxlabel
+                    
+                if ptype in ['Basemap']:
+                    Type = 'Point'
+                    lltext = lltext
+                    if lltext:
+                        if lltext == 'Lat/Lon':
+                            Lat = 'Lat'
+                            Lon = 'Lon'
+                        elif lltext == 'Impact Lat/Lon':
+                            Lat = 'ImpactLat'
+                            Lon = 'ImpactLon'
+                        elif lltext == 'impact Lat/Lon':
+                            Lat = 'impactLat'
+                            Lon = 'impactLon'
+                        elif lltext == 'Launch Lat/Lon':
+                            Lat = 'LaunchLat'
+                            Lon = 'LaunchLon'
+                        elif lltext == 'launch Lat/Lon':
+                            Lat = 'launchLat'
+                            Lon = 'launchLon'
+                        elif lltext == 'DA CR':
+                            Lat = 'Lat'
+                            Lon = 'Lon'
+                            Radius = 'Circle_Radius'
+                            Locations = 'INSERT'
+                            PolyOrder = 'PolyOrder'
+                            plotBmoa = True
+                            plRadiusField = Radius
+                            plLocationsFld = Locations
+                            plPolyOrderFld = PolyOrder
+                            Type = 'Circle'
+                        elif lltext == 'DA R':
+                            Lat = 'Lat'
+                            Lon = 'Lon'
+                            Radius = 'Radius'
+                            Locations = 'INSERT'
+                            PolyOrder = 'PolyOrder'
+                            plotBmoa = True
+                            plRadiusField = Radius
+                            plLocationsFld = Locations
+                            plPolyOrderFld = PolyOrder
+                            Type = 'Circle'
+                        elif lltext == 'DA Ellipse':
+                            Lat = 'Lat'
+                            Lon = 'Lon'
+                            Major = 'length'
+                            Minor = 'width'
+                            Ori = 'orientation'
+                            plotBmoa = True
+                            plOriField = Ori
+                            plMajorField = Major
+                            plMinorField = Minor
+                            Type = 'Ellipse'
+                        #Fix for ellipses
+                    else:
+                        return
+                    if plotBmoa:
+                        plBmoaType = Type
+                        plalpha = float(alpha)
+                        plfillDA = fillDAChk
+                        pldalinestyle = DAlinestyle
+                        if not pldalinestyle:
+                            pldalinestyle = None
+                    if plotBmoa and Type == 'Circle':
+                        bmoaradii = model.getColumnData(Radius)
+                        plradii.append(bmoaradii)
+                        
+                    elif plotBmoa and Type == 'Ellipse':
+                        bmoaMajor = model.getColumnData(Major)
+                        bmoaMinor = model.getColumnData(Minor)
+                        bmoaOri = model.getColumnData(Ori)
+                        plmajor.append(bmoaMajor)
+                        plminor.append(bmoaMinor)
+                        plori.append(bmoaOri)
+#                    elif plotBmoa and Type == 'Circle':
+#                        tabledat = model.getTableData()
+#                        idx = tabledat[Radius] > 0
+#                        circs = tabledat[idx]
+#                        polys = tabledat[~idx]
+#                        polygonsy = []
+#                        polygonsx = []
+#                        dfs = pd.DataFrame()
+#                        if polys.shape[0]:
+#                            locations = pd.unique(polys[locationfield].tolist())
+#                            dictionary = {k:[] for k in polys.columns}
+#                            for loc in locations:
+#                                
+#                                locidx = polys[locationfield] == loc
+#                                polyloc = polys.sort_values(polyorder)[locidx]
+#                                lats = polyloc[Lat].tolist()
+#                                lons = polyloc[Lon].tolist()
+#                                for key in dictionary:
+#                                    if key == Lat:
+#                                        dictionary[key].append(lats)
+#                                    elif key == Lon:
+#                                        dictionary[key].append(lons)
+#                                    else:
+#                                        dictionary[key].append(polyloc[key].iloc[0])
+#                            dfs = pd.DataFrame(dictionary)
+#                        tabledat = pd.concat([circs,dfs],ignore_index=True).reset_index(drop=True)
+#                        
+                            
+                        
+                    else:
+                        plradii = None
+#                        pass
+                    if symbolcodechk and not plotBmoa:
+                        ydata = model.getColumnData(Lat)
+                        pluniquevals = pd.unique(model.getColumnData(symbolcodeheader))
+                        uniquedata = model.getColumnData(symbolcodeheader)
+                        xdata = model.getColumnData(Lon)
+                        for i,val in enumerate(pluniquevals):
+                            idx = uniquedata == val
+                            if True in idx:
+                                ply.append(ydata[idx])
+                                plx.append(xdata[idx])
+                                pllegends.append('{} where {} = {}'.format(Lat,symbolcodeheader,val))
+                    elif symbolcodechk and plotBmoa and Type == 'Ellipse':
+                        plradii = []
+                        plori = []
+                        plmajor = []
+                        plminor = []
+                        ydata = model.getColumnData(Lat)
+                        pluniquevals = pd.unique(model.getColumnData(symbolcodeheader))
+                        uniquedata = model.getColumnData(symbolcodeheader)
+                        xdata = model.getColumnData(Lon)
+                        for i,val in enumerate(pluniquevals):
+                            idx = uniquedata == val
+                            if True in idx:
+                                ply.append(ydata[idx].reset_index(drop=True))
+                                plx.append(xdata[idx].reset_index(drop=True))
+                                if Type == 'Circle':
+                                    plradii.append(bmoaradii[idx].reset_index(drop=True))
+                                elif Type == 'Ellipse':
+                                    plori.append(bmoaOri[idx].reset_index(drop=True))
+                                    plmajor.append(bmoaMajor[idx].reset_index(drop=True))
+                                    plminor.append(bmoaMinor[idx].reset_index(drop=True))
+                                pllegends.append('{} where {} = {}'.format('DA',symbolcodeheader,val))
+                    elif symbolcodechk and plotBmoa and Type == 'Circle':
+                        plradii = []
+                        tdata = self.BasemapCirclePolyFolder(model.getTableData(),Locations,Radius,PolyOrder,Lat,Lon)
+                        ydata = tdata[Lat]
+                        xdata = tdata[Lon]
+                        bmoaradii = tdata[Radius]
+                        pluniquevals = pd.unique(model.getColumnData(symbolcodeheader))
+                        uniquedata = model.getColumnData(symbolcodeheader)
+                        for i,val in enumerate(pluniquevals):
+                            idx = uniquedata == val
+                            if True in idx:
+                                ply.append(ydata[idx].reset_index(drop=True))
+                                plx.append(xdata[idx].reset_index(drop=True))
+                                plradii.append(bmoaradii[idx].reset_index(drop=True))
+                                pllegends.append('{} where {} = {}'.format('DA',symbolcodeheader,val))
+                    elif not symbolcodechk and plotBmoa and Type == 'Circle':
+                        plradii = []
+                        tdata = self.BasemapCirclePolyFolder(model.getTableData(),Locations,Radius,PolyOrder,Lat,Lon)
+                        ydata = tdata[Lat]
+                        xdata = tdata[Lon]
+                        bmoaradii = tdata[Radius]
+                        ply.append(ydata)
+                        plx.append(xdata)
+                        plradii.append(bmoaradii)
+                        pllegends.append('{}'.format('DA'))
+                    else:
+                        ply.append(model.getColumnData(Lat))
+                        plx.append(model.getColumnData(Lon))
+                        pllegends.append('{}'.format(Lat))
+                        pluniquevals = [0]
+                    plplottedheaders.append(Lat)
+                    plmarkersize = int(markersize)
+                    #CHECK
+                    plprojection = self.tformMapper()
+                    
+                    #Plot markers
+                    if plotmarkers:
+                        if len(plotmarkers) > len(ply):
+                            for i in range(len(ply)):
+                                plmarker.append(plotmarkers[i])
+                        elif len(plotmarkers) == len(ply):
+                            plmarker = plotmarkers
+                        elif len(plotmarkers) < len(ply):
+                            for marker in plotmarkers:
+                                plmarker.append(marker)
+                            for i in range((len(ply)-len(plotmarkers))):
+                                plmarker.append(self.plotSymbol[i+len(plotmarkers)%len(self.plotSymbol)])
+                            
+                    #Plot Colors
+                    if plotcolors:
+                        if len(plotcolors) > len(ply):
+                            for i in range(len(ply)):
+                                plcolor.append(plotcolors[i])
+                        elif len(plotcolors) == len(ply):
+                            plcolor = plotcolors
+                        elif len(plotcolors) < len(ply):
+                            for color in plotcolors:
+                                plcolor.append(color)
+                            for i in range((len(ply)-len(plotcolors))):
+                                if not colorbarheader:
+                                    plcolor.append(self.plotColor[i+len(plotcolors)%len(self.plotColor)])
+                                else:
+                                    plcolor.append(model.getColumnData(colorbarheader))
+                                
+                    #Plot linestyle
+                    if plotlinestyle:
+                        if len(plotlinestyle) > len(ply):
+                            for i in range(len(ply)):
+                                pllinestyle.append(plotlinestyle[i])
+                        elif len(plotlinestyle) == len(ply):
+                            print 'linestyles are the same'
+                            print plotlinestyle
+                            pllinestyle = plotlinestyle
+                        elif len(plotlinestyle) < len(ply):
+                            for style in plotlinestyle:
+                                pllinestyle.append(style)
+                            for i in range((len(ply)-len(plotlinestyle))):
+                                pllinestyle.append(plotlinestyle[-1])
+                                
+                    for i,ydat in enumerate(ply):
+                        if colorbarheader and not symbolcodechk and not plotBmoa:
+                            addedcolorbar = True
+                            plcm = plt.cm.get_cmap(colorbarname)
+                        else:
+                            plcm = None
+                        if not plotBmoa:
+                            plzorder.append(i+1)
+                        elif plotBmoa and Type == 'Circle':
+                            plzorder.append(i+1)
+                        elif plotBmoa and Type == 'Ellipse':
+                            plzorder.append(i+1)
+                    plxAxisDataHeader = Lon
+                    if colorbarheader and not symbolcodechk and not plotBmoa:
+                        if colorbarlabel:
+                            plcolorbarlabel = colorbarlabel
+                        else:
+                            plcolorbarlabel = colorbarheader
+#                    dax.set_adjustable('datalim')
+            
+                if ptype == '3D Plot':
+                    if 'PosX' in md['SelH']:
+                        posy = 'PosY'
+                        posx = 'PosX'
+                        posz = 'PosZ'
+                    elif 'X' in md['SelH']:
+                        posy = 'Y'
+                        posx = 'X'
+                        posz = 'Z'
+                    else:
+                        return
+                    if symbolcodechk:
+                        ydata = model.getColumnData(posy)
+                        xdata = model.getColumnData(posx)
+                        zdata = model.getColumnData(posz)
+                        pluniquevals = pd.unique(model.getColumnData(symbolcodeheader))
+                        uniquedata = model.getColumnData(symbolcodeheader)
+                        for i,val in enumerate(pluniquevals):
+                            idx = uniquedata == val
+                            if True in idx:
+                                ply.append(ydata[idx])
+                                plx.append(xdata[idx])
+                                plz.append(zdata[idx])
+                                pllegends.append('{} where {} = {}'.format('XYZ',symbolcodeheader,val))
+                    else:
+                        ply.append(model.getColumnData(posy))
+                        plx.append(model.getColumnData(posx))
+                        plz.append(model.getColumnData(posz))
+                        pllegends.append('{}'.format('XYZ'))
+                        pluniquevals = [0]
+                    plplottedheaders.append(posy)
+                    plzAxisDataHeader = posz
+                    if xlabel:
+                        plxlabel = xlabel
+                    else:
+                        plxlabel = 'X'
+                    if ylabel:
+                        plylabel = ylabel
+                    else:
+                        plylabel = 'Y'
+                    if zaxislabel:
+                        plzlabel = zaxislabel
+                    else:
+                        plzlabel = 'Z'
+                        
+                    #Plot markers
+                    if plotmarkers:
+                        if len(plotmarkers) > len(ply):
+                            for i in range(len(ply)):
+                                plmarker.append(plotmarkers[i])
+                        elif len(plotmarkers) == len(ply):
+                            plmarker = plotmarkers
+                        elif len(plotmarkers) < len(ply):
+                            for marker in plotmarkers:
+                                plmarker.append(marker)
+                            for i in range((len(ply)-len(plotmarkers))):
+                                plmarker.append(self.plotSymbol[i+len(plotmarkers)%len(self.plotSymbol)])
+                            
+                    #Plot Colors
+                    if plotcolors:
+                        if len(plotcolors) > len(ply):
+                            for i in range(len(ply)):
+                                plcolor.append(plotcolors[i])
+                        elif len(plotcolors) == len(ply):
+                            plcolor = plotcolors
+                        elif len(plotcolors) < len(ply):
+                            for color in plotcolors:
+                                plcolor.append(color)
+                            for i in range((len(ply)-len(plotcolors))):
+                                if not colorbarheader:
+                                    plcolor.append(self.plotColor[i+len(plotcolors)%len(self.plotColor)])
+                                else:
+                                    plcolor.append(model.getColumnData(colorbarheader))
+                                
+                    #Plot linestyle
+                    if plotlinestyle:
+                        if len(plotlinestyle) > len(ply):
+                            for i in range(len(ply)):
+                                pllinestyle.append(plotlinestyle[i])
+                        elif len(plotlinestyle) == len(ply):
+                            print 'linestyles are the same'
+                            print plotlinestyle
+                            pllinestyle = plotlinestyle
+                        elif len(plotlinestyle) < len(ply):
+                            for style in plotlinestyle:
+                                pllinestyle.append(style)
+                            for i in range((len(ply)-len(plotlinestyle))):
+                                pllinestyle.append(plotlinestyle[-1])
+                                
+                    for i in range(len(ply)):
+                        if colorbarheader and not symbolcodechk:
+                            addedcolorbar = True
+                            plcm = plt.cm.get_cmap(colorbarname)
+                        else:
+                            plcm = None
+                        plzorder.append(i+1)
+                    if colorbarheader and not symbolcodechk:
+                        if colorbarlabel:
+                            plcolorbarlabel = colorbarlabel
+                        else:
+                            plcolorbarlabel = colorbarheader
+                    plxAxisDataHeader = posx
+
+                self.NewPlot = True
+                print plcolor
+                if plcolor != []:
+#                    if not isinstance(plxAxisDataHeader,list) and'time' in plxAxisDataHeader.lower():
+#                        plxAxisDataHeader = 'Time'
+#                    self.plotList[-1] = {'fig':pltr.fig,
+#                                         'sub':pltr.sub,
+#                                         'xaxis':plxAxisDataHeader,
+#                                         'yaxis':plplottedheaders,
+#                                         'colorbar':addedcolorbar,
+#                                         'index':len(self.plotList),
+#                                         'native':True,
+#                                         'keyID':keyID,
+#                                         'path':md['Path'],
+#                                         'filename':md['Filename'],
+#                                         'group':md['Grp'],
+#                                         'dset':md['Dset'],
+#                                         'plotType':ptype,
+#                                         }
+                    for header in headers:
+                        if model.getDtype(header) != 'O':
+                            plnsheaders.append(header)
+                        if len(pd.unique(model.getColumnData(header))) < (len(plotcolor)-1)*len(plotsymb):
+                            pluniqueheaders.append(header)
+                    self.plotList[-1]['x label']=plxlabel
+                    self.plotList[-1]['y label']=plylabel
+                    self.plotList[-1]['z label']=plzlabel
+                    self.plotList[-1]['plot title']=pltitle
+                    self.plotList[-1]['x data']=plx
+                    self.plotList[-1]['y data']=ply
+                    self.plotList[-1]['z data']=plz
+                    self.plotList[-1]['line style']=pllinestyle
+                    self.plotList[-1]['line width']=pllinewidth
+                    self.plotList[-1]['spacing']=plspacing
+                    self.plotList[-1]['bar width']=plbarwidth
+                    self.plotList[-1]['bin num']=plbinnum
+                    self.plotList[-1]['bmoa']=plotBmoa
+                    self.plotList[-1]['radii']=plradii
+                    self.plotList[-1]['orientations']=plori
+                    self.plotList[-1]['majors']=plmajor
+                    self.plotList[-1]['minors']=plminor
+                    self.plotList[-1]['x axis data header']=plxAxisDataHeader
+                    self.plotList[-1]['y axis data header']=plplottedheaders
+                    self.plotList[-1]['z axis data header']=plzAxisDataHeader
+                    self.plotList[-1]['symbol code']=symbolcodechk
+                    self.plotList[-1]['symbol code header']=symbolcodeheader
+                    self.plotList[-1]['color']=plcolor
+                    self.plotList[-1]['color map']=plcm
+                    self.plotList[-1]['colorbar']=addedcolorbar
+                    self.plotList[-1]['color map header']=colorbarheader
+                    self.plotList[-1]['color map name']=colorbarname
+                    self.plotList[-1]['alpha']=plalpha
+                    self.plotList[-1]['fill DA']=plfillDA
+                    self.plotList[-1]['DA line style'] = pldalinestyle
+                    self.plotList[-1]['unique values']=pluniquevals
+                    self.plotList[-1]['orientation'] = plOriField
+                    self.plotList[-1]['major'] = plMajorField
+                    self.plotList[-1]['minor'] = plMinorField
+                    self.plotList[-1]['radius'] = plRadiusField
+                    self.plotList[-1]['bmoalocation'] = plLocationsFld 
+                    self.plotList[-1]['bmoapolyorder'] = plPolyOrderFld
+                    self.plotList[-1]['bmoa Type'] = plBmoaType
+                    self.plotList[-1]['marker']=plmarker
+                    self.plotList[-1]['marker size']=plmarkersize
+                    self.plotList[-1]['legend']=pllegends
+                    self.plotList[-1]['colorbar Label']=plcolorbarlabel
+                    self.plotList[-1]['keyID']=keyID
+                    self.plotList[-1]['path']=md['Path']
+                    self.plotList[-1]['filename']=md['Filename']
+                    self.plotList[-1]['group']=md['Grp']
+                    self.plotList[-1]['dset']=md['Dset']
+                    self.plotList[-1]['plot type']=ptype
+                    self.plotList[-1]['index']=len(self.plotList)-1
+                    self.plotList[-1]['projection']=plprojection
+                    self.plotList[-1]['orthographic center'] = orthocenter
+                    self.plotList[-1]['filters']=self.MasterData[keyID]['Filters']
+                    self.plotList[-1]['non string headers']=plnsheaders
+                    self.plotList[-1]['unique headers']=pluniqueheaders
+                    self.plotList[-1]['z order']=plzorder
+                    self.plotList[-1]['figure background color'] = figurebackground
+                    self.plotList[-1]['axis background color'] = axisbackground
+                    self.plotList[-1]['lltext'] = lltext
+                    
+                    self.addToPlotList()
+                    
     def addToPlotList(self,addtomaster=True):
+        print len(self.plotList)
         if self.TableTab.count():
             index = self.TableTab.currentIndex()
             keyID = self.tableIDList[index]
@@ -2211,7 +3180,7 @@ class Plotter(QMainWindow):
                     includelist.extend(['plot title','x label','y label','marker size','marker','symbol code','color','colorbar','legend','figure background color','axis background color'])
                 if self.plotList[i]['plot type'] == 'Stacked':
                     includelist.extend(['plot title','x label','y label','color','legend','figure background color','axis background color'])
-                if self.plotList[i]['plot type'] == 'Bar':
+                if self.plotList[i]['plot type'] in ['Bar','Stacked Bar','Horizontal Bar','Stacked Horizontal Bar']:
                     #Add bar width and spacing? Not if i can help it
                     includelist.extend(['plot title','x label','y label','color','legend','figure background color','axis background color'])
                 if self.plotList[i]['plot type'] == 'Pie':
@@ -2508,6 +3477,7 @@ class Plotter(QMainWindow):
             child = QTreeWidgetItem(parent)
             childname = ', '
             cname = []
+            print self.nestedwidgets[key].keys()
             for i in range(len(self.nestedwidgets[key]['legend'])):
                 j = 0
                 if 'color' in self.nestedwidgets[key]:
@@ -3000,6 +3970,7 @@ class Plotter(QMainWindow):
                         for i,ydat in enumerate(pl['y data']):
                             pltr.scatter(pl['x data'][i],ydat,c=pl['color'][i],cmap=pl['color map name'],label=pl['legend'][i],marker=pl['marker'][i],s=pl['marker size'],zorder=int(pl['z order'][i]))
                         if pl['color map']:
+                            print 'in color map'
                             pltr.add_colorbar(pax,pl['color map name'],pl['colorbar Label'])
                     if pl['plot type'] in ['Line']:
                         for i,ydat in enumerate(pl['y data']):
@@ -3009,7 +3980,12 @@ class Plotter(QMainWindow):
                     if pl['plot type'] in ['Bar']:                        
                         ticklabels = []
                         for i,ydat in enumerate(pl['y data']):
-                            pltr.bar(pl['spacing']+i*pl['bar width'],ydat.tolist(),width=pl['bar width'],color=pl['color'][i],label=pl['legend'][i],zorder=int(pl['z order'][i]))
+                            pltr.bar(pl['spacing']+i*pl['bar width'],
+                                     ydat.tolist(),
+                                     width=pl['bar width'],
+                                     color=pl['color'][i],
+                                     label=pl['legend'][i],
+                                     zorder=int(pl['z order'][i]))
                         ticklabels = map(str,pl['x data'].tolist())
                         pltr.parseCommand(pax,'set_xticks',[[pl['spacing']+(len(pl['y data'])-1)*pl['bar width']/2]])
                         pltr.parseCommand(pax,'set_xticklabels',[[ticklabels]])
@@ -3076,8 +4052,63 @@ class Plotter(QMainWindow):
         if Advanced:
             self.dialog = AdvancedPlot(self.plotList,self)
             self.dialog.show()
-            
             pass
+        
+    def makeTemplate(self):
+        if self.TableTab.count():
+            index = self.TableTab.currentIndex()
+            keyID = self.tableIDList[index]
+            md = self.MasterData[keyID]
+            templatePlots = {}
+            for pl in md['PlotList']:
+                templatePlots['x label']=pl['x label']
+                templatePlots['y label']=pl['y label']
+                templatePlots['z label']=pl['z label']
+                templatePlots['plot title']=pl['plot title']
+                templatePlots['line style']=pl['line style']
+                templatePlots['line width']=pl['line width']
+                templatePlots['bar width']=pl['bar width']
+                templatePlots['bin num']=pl['bin num']
+                templatePlots['bmoa']=pl['bmoa']
+                templatePlots['radii']=pl['radii']
+                templatePlots['orientations']=pl['orientations']
+                templatePlots['majors']=pl['majors']
+                templatePlots['minors']=pl['minors']
+                templatePlots['x axis data header']=pl['x axis data header']
+                templatePlots['y axis data header']=pl['y axis data header']
+                templatePlots['z axis data header']=pl['z axis data header']
+                templatePlots['symbol code']=pl['symbol code']
+                templatePlots['symbol code header']=pl['symbol code header']
+                templatePlots['color']=pl['color']
+                templatePlots['color map']=pl['color map']
+                templatePlots['colorbar']=pl['colorbar']
+                templatePlots['color map header']=pl['color map header']
+                templatePlots['color map name']=pl['color map name']
+                templatePlots['alpha']=pl['alpha']
+                templatePlots['fill DA']=pl['fill DA']
+                templatePlots['DA line style']=pl['DA line style'] 
+                templatePlots['orientation']=pl['orientation']
+                templatePlots['major']=pl['major']
+                templatePlots['minor']=pl['minor']
+                templatePlots['radius']=pl['radius']
+                templatePlots['bmoalocation']=pl['bmoalocation'] 
+                templatePlots['bmoapolyorder']=pl['bmoapolyorder'] 
+                templatePlots['bmoa Type']=pl['bmoa Type']
+                templatePlots['marker']=pl['marker']
+                templatePlots['marker size']=pl['marker size']
+                templatePlots['colorbar Label']=pl['colorbar Label']
+                templatePlots['keyID']=pl['keyID']
+                templatePlots['path']=pl['path']
+                templatePlots['filename']=pl['filename']
+                templatePlots['group']=pl['group']
+                templatePlots['dset']=pl['dset']
+                templatePlots['plot type']=pl['plot type']
+                templatePlots['index']=pl['index']=len(self.plotList)-1
+                templatePlots['projection']=pl['projection']
+                templatePlots['orthographic center']=pl['orthographic center']
+                templatePlots['filters']=pl['filters']
+                templatePlots['figure background color']=pl['figure background color']
+                templatePlots['axis background color']=pl['axis background color']
     
     def updateSaveDirectory(self):
         sdir = QFileDialog.getExistingDirectory(self, "Select Directory")
@@ -3308,7 +4339,7 @@ class Plotter(QMainWindow):
                                      'filename':md['Filename'],
                                      'group':md['Grp'],
                                      'dset':md['Dset'],
-                                     'plotType':self.PlotType.currentText()}
+                                     'plotType':plottype}
                 
         
         return
