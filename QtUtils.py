@@ -37,7 +37,7 @@ def openSingleFile(**kwargs):
     if not isinstance(caption,str):
         print("The caption argument passed is not a string. Defaulting to 'Open File'")
         caption = 'Open File'
-    if not os.path.isdir(directory):
+    if not isinstance(directory,str) and not os.path.isdir(directory):
         print("The Directory argument passed is not a directory. Defaulting to working directory")
         directory = os.getcwd()
     if not isinstance(extensions,dict):
@@ -53,7 +53,11 @@ def openSingleFile(**kwargs):
                 ns = ns+' *'+str(string)
             ns = ns+');; '
         ns = ns
-    fname = Widgets.QFileDialog.getOpenFileName(None,caption,directory,ns)[0]
+    try:
+        fname = Widgets.QFileDialog.getOpenFileName(None,caption,directory,ns)[0]
+    except:
+        print("The format of the extensions was not correct\nAn example of correct usage would be {'All Files':[''],'Images':['.jpg','.png','.img']} \n")
+        fname = Widgets.QFileDialog.getOpenFileName(None,caption,directory,"All Files (*)")
     return fname
 
 def openMultipleFiles(**kwargs):
@@ -63,7 +67,7 @@ def openMultipleFiles(**kwargs):
     if not isinstance(caption,str):
         print("The caption argument passed is not a string. Defaulting to 'Open Files'")
         caption = 'Open File'
-    if not os.path.isdir(directory):
+    if not isinstance(directory,str) and not os.path.isdir(directory):
         print("The Directory argument passed is not a directory. Defaulting to working directory")
         directory = os.getcwd()
     if not isinstance(extensions,dict):
@@ -79,7 +83,11 @@ def openMultipleFiles(**kwargs):
                 ns = ns+' *'+str(string)
             ns = ns+');; '
         ns = ns
-    fname = Widgets.QFileDialog.getOpenFileNames(None,caption,directory,ns)[0]
+    try:
+        fname = Widgets.QFileDialog.getOpenFileNames(None,caption,directory,ns)[0]
+    except:
+        print("The format of the extensions was not correct\nAn example of correct usage would be {'All Files':[''],'Images':['.jpg','.png','.img']} \n")
+        fname = Widgets.QFileDialog.getOpenFileNames(None,caption,directory,"All Files (*)")
     return fname
 
 def openFileWithFunction(function,*args):
@@ -230,8 +238,8 @@ class Plotter(Widgets.QMainWindow):
         self.MyListWidget.addItems([str(i) for i in range(10)])
         self.makeConnections()
         Alert(self.statusbar,'Hey there',bold=True)
-#        files = openMultipleFiles(extensions={'Pictures':['.png'],'H5':['.h5'],'Jpeg':['.jpg']})
-#        print files
+        files = openMultipleFiles(extensions={'Pictures':['.png'],'H5':['.h5'],'Jpeg':['.jpg']})
+        print files
         
     def makeConnections(self):
         self.pushButton.clicked.connect(lambda:self.Printing())
