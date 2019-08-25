@@ -13,11 +13,12 @@ Created on Fri May 17 15:07:44 2019
 @author: Jordan
 """
 import numpy as np
+import pandas as pd
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon
 from shapely.ops import split,nearest_points
-import shapely.wkt
 from matplotlib import pyplot as plt
 import cartopy.crs as ccrs
+from itertools import combinations
 from pyproj import Geod
 
 geod = Geod(ellps='WGS84')
@@ -34,7 +35,7 @@ def circleLatLons(lat, lon, radiuskm,n_samples=180):
     """
     Return the coordinates of a geodetic circle of a given
     radius about a lon/lat point.
-    This uses pyproj, which come to find out is a little inaccurate
+
     Radius is in meters in the geodetic's coordinate system.
 
     """
@@ -53,7 +54,7 @@ def ellipseLatLons(lat,lon,major,minor,orientation,n_samples=180,units='km'):
     radius about a lon/lat point.  Radius is calculated using
     the polar coordinate equation for an ellipse, utilizing major
     and minor axis.
-    this uses pyproj which come to find out is a little inaccurate
+
     Radius is in meters in the geodetic's coordinate system.
 
     """
@@ -72,27 +73,6 @@ def ellipseLatLons(lat,lon,major,minor,orientation,n_samples=180,units='km'):
                                      )
     return lats,lons
 
-def ellipseLatLonsGeopy(lat,lon,major,minor,orientation,n_samples=180,units='km'):
-    if units == 'km':
-        major = major
-        minor = minor
-    else:
-        major = major*1000.
-        minor = minor*1000.
-    orientation = np.deg2rad(orientation)
-    bearing = np.linspace(0,2*np.pi,n_samples)
-    radius = np.true_divide(np.multiply(major,minor),np.sqrt(np.square(np.multiply(major,np.sin(bearing+orientation))) + np.square(np.multiply(minor,np.cos(bearing+orientation)))))
-    origin = geopy.Point(lat,lon)
-    bearing = np.rad2deg(bearing)
-    lats=[]
-    lons=[]
-    def getLocation(radius,bearing,origin):
-        lat,lon,_ = geopy.distance.distance(kilometers=radius).destination(origin,bearing)
-        return lat,lon
-    getpts = np.vectorize(getLocation)
-    lats,lons = getpts(radius,bearing,origin)
-    return lats,lons
-#    return np.array(lats),np.array(lons)
 def handle_InternationalDateline(iLat,iLon):
     '''
     iLat and iLon must be iterables
@@ -226,38 +206,168 @@ def LatLonDistance(p1,p2):
     lon1,lat1 = p1
     lon2,lat2 = p2
     azimuth1, azimuth2, distance = geod.inv(lon1, lat1, lon2, lat2)
-    return np.divide(distance,1000)
+    if isinstance(distance,float):
+        return np.divide(distance,1000.)
+    else:
+        return np.divide(distance,1000.)[0]
 
 def minDistancePolygons(poly1,poly2,**kwargs):
+    '''
+    Just a wrapper to get the minimun distance in km between two polygons
+    '''
+    show = kwargs.pop('show',False)
     p1,p2 = getClosesestPolygonPoints(poly1,poly2)
+    if show:
+        plt.plot([p1[0],p2[0]],[p1[1],p2[1]])
     return LatLonDistance(p1,p2)
 
+def BulkMinDistancePolygons(mpolys,**kwargs):
+    '''
+    This function wants a list or dict of multipolygons.  It will take the list
+    and find all possible unique combinations of 2 polygons that can be obtained and
+    find the minimum distance between then 2 polygons along with some other characteristics.
+
+    Input:  mpolys - A list or dictionary of Multipolygon objects
+
+    Output: if mpolys is a list- Returns a list of the following type
+                                [polygon1,polygon2,bool,bool]
+            if mpolys is a dict- Returns a list of the following type
+                                [Dict Key1, Dict Key2, bool, bool]
+            where the first bool value tells you if the distance is less than
+            the specified threshold
+
+            the second bool value tells you if the two polygons intersect
+
+    The dict version allows the user to keep track of named polygons, probably
+    the best way to use this function for record keeping.
+    '''
+    threshold = kwargs.get('thresh',50)
+    show = kwargs.pop('show',False)
+    if isinstance(mpolys,dict):
+        useID = True
+    elif isinstance(mpolys,list):
+        useID = False
+    else:
+        print("The mpolys should be either a list or dict, but you passed {}"
+              .format(type(mpolys)))
+        return 0
+    passfail = {'Poly1':[],'Poly2':[],'Within {} km'.format(threshold):[],'Intersect':[]}
+    if not useID:
+        combs = combinations(mpolys,2)
+        for comb in combs:
+            d = minDistancePolygons(comb[0],comb[1],show=show)
+            passfail['Poly1'].append(comb[0])
+            passfail['Poly2'].append(comb[1])
+            passfail['Within {} km'.format(threshold)].append(d<threshold)
+            passfail['Intersect'].append(d==0)
+    else:
+        combs = combinations(mpolys.keys(),2)
+        for comb in combs:
+            d = minDistancePolygons(mpolys[comb[0]],mpolys[comb[1]],show=show)
+            passfail['Poly1'].append(comb[0])
+            passfail['Poly2'].append(comb[1])
+            passfail['Within {} km'.format(threshold)].append(d<threshold)
+            passfail['Intersect'].append(d==0)
+    return pd.DataFrame(passfail)
+
+def unitTest(numpolys=10,**kwargs):
+    nri = np.random.randint
+    show = kwargs.pop('show',False)
+    dictopolys = {}
+    for i in xrange(numpolys):
+        lats,lons = ellipseLatLons(nri(-80,80),nri(-179,179),nri(500,2000),nri(500,2000),0)
+        y,x = handle_InternationalDateline(lats,lons)
+        poly = LatLon2MultiPolygon(y,x)
+        dictopolys['poly{}'.format(i)] = poly
+        if show:
+            for polygon in poly:
+                xx,yy = polygon.exterior.coords.xy
+                plt.plot(xx,yy)
+    result = BulkMinDistancePolygons(dictopolys,show=show)
+    return result
+
+
 if __name__ == '__main__':
-    ax = plt.axes(projection=ccrs.PlateCarree())
-    ax.stock_img()
-    #This will take the lats and lons from handle_internationalDateline
-    #and make it into a poly or multipolygon and find the coordinates
-    #of the shortest distance between the two polygons
-    lats,lons = ellipseLatLons(80,180,500,200,10)
-    y,x = handle_InternationalDateline(lats,lons)
-    poly1 = LatLon2MultiPolygon(y,x)
+#    ax = plt.axes(projection=ccrs.PlateCarree())
+#    ax.stock_img()
+#    #This will take the lats and lons from handle_internationalDateline
+#    #and make it into a poly or multipolygon and find the coordinates
+#    #of the shortest distance between the two polygons
+#    lats,lons = ellipseLatLons(80,180,500,200,10)
+#    y,x = handle_InternationalDateline(lats,lons)
+#    poly1 = LatLon2MultiPolygon(y,x)
+#
+#    lats1,lons1 = ellipseLatLons(0,180,600,3200,0)
+#    y,x = handle_InternationalDateline(lats1,lons1)
+#    poly2 = LatLon2MultiPolygon(y,x)
+#
+#    lats,lons = ellipseLatLons(80,20,500,500,0)
+#    y,x = handle_InternationalDateline(lats,lons)
+#    poly3 = LatLon2MultiPolygon(y,x)
+#
+#    lats,lons = ellipseLatLons(35,30,4500,6500,0)
+#    y,x = handle_InternationalDateline(lats,lons)
+#    poly4 = LatLon2MultiPolygon(y,x)
+#
+#    dictopolys = dict(ArcticPoly=poly1,PacificPoly=poly2,ArcticPoly2=poly3,AtlanticPoly=poly4)
+#
+#    results = BulkMinDistancePolygons(dictopolys)
+#    print results
+#    distance = minDistancePolygons(poly1,poly2)
+#    print distance
+#
+#    ##Just for plotting purposes
+#    p1,p2 = getClosesestPolygonPoints(poly1,poly2)
+#    for poly in poly1:
+#        x,y = poly.exterior.coords.xy
+#        plt.plot(x,y)
+#    for poly in poly2:
+#        x,y = poly.exterior.coords.xy
+#        plt.plot(x,y)
+#    for poly in poly3:
+#        x,y = poly.exterior.coords.xy
+#        plt.plot(x,y)
+#    for poly in poly4:
+#        x,y = poly.exterior.coords.xy
+#        plt.plot(x,y)
+#    result = unitTest(10,show=True)
 
-    lats1,lons1 = ellipseLatLons(0,180,600,3200,0)
-    y,x = handle_InternationalDateline(lats1,lons1)
-    poly2 = LatLon2MultiPolygon(y,x)
+    import timeit
+    import functools
+    rmins = []
+    rmaxs = []
+    maxpolys = 100
+    for i in xrange(maxpolys):
+        t = timeit.Timer(functools.partial(unitTest,i))
+        r = t.repeat(repeat=3,number=1)
+        rmins.append(min(r))
+        rmaxs.append(max(r))
+        plt.scatter(i,min(r),color='g')
+        plt.scatter(i,max(r),color='r')
+    from scipy.optimize import curve_fit
+    def poly_fit(x, a, b, c):
+#        return a*np.exp(-b*x) + c
+        return a*x**2 + b+c
+
+    x = np.arange(1,len(rmins))
+    y1 = np.array(rmins[:-1])
+    y2 = np.array(rmaxs[:-1])
+    fitting_parameters, covariance = curve_fit(poly_fit, x, y1,maxfev=10000)
+    fitting_parameters1,covariance1 = curve_fit(poly_fit, x, y2,maxfev=10000)
+    a, b, c = fitting_parameters
+    a1,b1,c1 = fitting_parameters1
+    print fitting_parameters
+    print fitting_parameters1
+
+    next_x = maxpolys
+    next_ymins = poly_fit(next_x, a, b, c)
+    next_ymaxs = poly_fit(next_x, a1,b1,c1)
+    npfit = np.vectorize(poly_fit)
+    fitys = npfit(x,a,b,c)
+    plt.plot(fitys,'purple')
+    plt.plot([maxpolys],[next_ymins], 'ro',ms=20)
+    plt.plot([maxpolys],[next_ymaxs],'g',ms=20)
 
 
-    distance = minDistancePolygons(poly1,poly2)
-    print distance[0]
-
-    ##Just for plotting purposes
-    p1,p2 = getClosesestPolygonPoints(poly1,poly2)
-    for poly in poly1:
-        x,y = poly.exterior.coords.xy
-        plt.plot(x,y)
-    for poly in poly2:
-        x,y = poly.exterior.coords.xy
-        plt.plot(x,y)
-    plt.plot([p1[0],p2[0]],[p1[1],p2[1]])
-    plt.gca().set_aspect('equal')
+#    plt.gca().set_aspect('equal')
     plt.show()
