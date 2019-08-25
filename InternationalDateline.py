@@ -105,7 +105,7 @@ def handle_InternationalDateline(iLat,iLon):
         alllons = np.append(poslons,neglons)
         alllats = np.append(poslats,neglats)
         alllons,alllats = orderPolygon(alllons,alllats)
-        poly = Polygon(zip(alllons,alllats))
+        poly = Polygon(list(zip(alllons,alllats)))
         line = LineString([(0,-5000),(0,5000)])
         spoly = split(poly,line)
         for polygon in spoly:
@@ -121,7 +121,7 @@ def handle_InternationalDateline(iLat,iLon):
         return rlats,rlons
     else:
         nlons,nlats = orderPolygon(nlons,nlats)
-        polygon = Polygon(zip(nlons,nlats))
+        polygon = Polygon(list(zip(nlons,nlats)))
         xx,yy = np.array(polygon.exterior.xy[0]),np.array(polygon.exterior.xy[1])
         rlats.append(yy)
         rlons.append(xx)
@@ -146,7 +146,7 @@ def LatLon2MultiPolygon(rlats,rlons):
     '''
     polylist = []
     for x,y in zip(rlons,rlats):
-        polylist.append(Polygon(zip(x,y)))
+        polylist.append(Polygon(list(zip(x,y))))
     return MultiPolygon(polylist)
 
 def Polygon2MultiPolygon(polylist):
@@ -248,8 +248,8 @@ def BulkMinDistancePolygons(mpolys,**kwargs):
     elif isinstance(mpolys,list):
         useID = False
     else:
-        print("The mpolys should be either a list or dict, but you passed {}"
-              .format(type(mpolys)))
+        print(("The mpolys should be either a list or dict, but you passed {}"
+              .format(type(mpolys))))
         return 0
     passfail = {'Poly1':[],'Poly2':[],'Within {} km'.format(threshold):[],'Intersect':[]}
     if not useID:
@@ -261,7 +261,7 @@ def BulkMinDistancePolygons(mpolys,**kwargs):
             passfail['Within {} km'.format(threshold)].append(d<threshold)
             passfail['Intersect'].append(d==0)
     else:
-        combs = combinations(mpolys.keys(),2)
+        combs = combinations(list(mpolys.keys()),2)
         for comb in combs:
             d = minDistancePolygons(mpolys[comb[0]],mpolys[comb[1]],show=show)
             passfail['Poly1'].append(comb[0])
@@ -274,7 +274,7 @@ def unitTest(numpolys=10,**kwargs):
     nri = np.random.randint
     show = kwargs.pop('show',False)
     dictopolys = {}
-    for i in xrange(numpolys):
+    for i in range(numpolys):
         lats,lons = ellipseLatLons(nri(-80,80),nri(-179,179),nri(500,2000),nri(500,2000),0)
         y,x = handle_InternationalDateline(lats,lons)
         poly = LatLon2MultiPolygon(y,x)
@@ -337,7 +337,7 @@ if __name__ == '__main__':
     rmins = []
     rmaxs = []
     maxpolys = 100
-    for i in xrange(maxpolys):
+    for i in range(maxpolys):
         t = timeit.Timer(functools.partial(unitTest,i))
         r = t.repeat(repeat=3,number=1)
         rmins.append(min(r))
@@ -356,8 +356,8 @@ if __name__ == '__main__':
     fitting_parameters1,covariance1 = curve_fit(poly_fit, x, y2,maxfev=10000)
     a, b, c = fitting_parameters
     a1,b1,c1 = fitting_parameters1
-    print fitting_parameters
-    print fitting_parameters1
+    print(fitting_parameters)
+    print(fitting_parameters1)
 
     next_x = maxpolys
     next_ymins = poly_fit(next_x, a, b, c)
