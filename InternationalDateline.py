@@ -1,3 +1,11 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Aug 24 10:54:08 2019
+
+@author: klinetry
+"""
+
 # -*- coding: utf-8 -*-
 """
 Created on Fri May 17 15:07:44 2019
@@ -5,16 +13,14 @@ Created on Fri May 17 15:07:44 2019
 @author: Jordan
 """
 import numpy as np
-from shapely.geometry import Point, LineString, Polygon
-from shapely.ops import split
+from shapely.geometry import Point, LineString, Polygon, MultiPolygon
+from shapely.ops import split,nearest_points
+import shapely.wkt
 from matplotlib import pyplot as plt
 import cartopy.crs as ccrs
 from pyproj import Geod
 
 geod = Geod(ellps='WGS84')
-
-
-
 
 def orderPolygon(xs,ys):
     xs = np.array(xs)
@@ -28,7 +34,7 @@ def circleLatLons(lat, lon, radiuskm,n_samples=180):
     """
     Return the coordinates of a geodetic circle of a given
     radius about a lon/lat point.
-
+    This uses pyproj, which come to find out is a little inaccurate
     Radius is in meters in the geodetic's coordinate system.
 
     """
@@ -47,7 +53,7 @@ def ellipseLatLons(lat,lon,major,minor,orientation,n_samples=180,units='km'):
     radius about a lon/lat point.  Radius is calculated using
     the polar coordinate equation for an ellipse, utilizing major
     and minor axis.
-
+    this uses pyproj which come to find out is a little inaccurate
     Radius is in meters in the geodetic's coordinate system.
 
     """
@@ -66,7 +72,27 @@ def ellipseLatLons(lat,lon,major,minor,orientation,n_samples=180,units='km'):
                                      )
     return lats,lons
 
-
+def ellipseLatLonsGeopy(lat,lon,major,minor,orientation,n_samples=180,units='km'):
+    if units == 'km':
+        major = major
+        minor = minor
+    else:
+        major = major*1000.
+        minor = minor*1000.
+    orientation = np.deg2rad(orientation)
+    bearing = np.linspace(0,2*np.pi,n_samples)
+    radius = np.true_divide(np.multiply(major,minor),np.sqrt(np.square(np.multiply(major,np.sin(bearing+orientation))) + np.square(np.multiply(minor,np.cos(bearing+orientation)))))
+    origin = geopy.Point(lat,lon)
+    bearing = np.rad2deg(bearing)
+    lats=[]
+    lons=[]
+    def getLocation(radius,bearing,origin):
+        lat,lon,_ = geopy.distance.distance(kilometers=radius).destination(origin,bearing)
+        return lat,lon
+    getpts = np.vectorize(getLocation)
+    lats,lons = getpts(radius,bearing,origin)
+    return lats,lons
+#    return np.array(lats),np.array(lons)
 def handle_InternationalDateline(iLat,iLon):
     '''
     iLat and iLon must be iterables
@@ -78,7 +104,7 @@ def handle_InternationalDateline(iLat,iLon):
     #Just convert to numpy arrays off the wiffle ball bat
     nlats = np.array(list(iLat))
     nlons = np.array(list(iLon))
-    
+
     #Correct the points
     nlons = np.where(nlons >= 0 ,nlons,nlons+360)
     nlons = np.where(nlons <= 360,nlons,nlons-360)
@@ -121,29 +147,117 @@ def handle_InternationalDateline(iLat,iLon):
         rlons.append(xx)
         return rlats,rlons
 
-    
+def LatLon2MultiPolygon(rlats,rlons):
+    '''
+    This takes the direct output of handle_InternationalDateline
+
+    This will just make sure that every polygon that gets split up by the handle_InternationalDateline
+    function will stay in a single collection because these should be identified
+    as single objects
+    Example:  Hawaii DA will be split into at least 2 parts, but it is considered
+    a single DA.
+
+    FAQ:  What if I have the polygons already made?  You can pass a list of
+    polygons that should be regarded as a single object into the
+
+    Polygon2MultiPolygon
+
+    function.
+    '''
+    polylist = []
+    for x,y in zip(rlons,rlats):
+        polylist.append(Polygon(zip(x,y)))
+    return MultiPolygon(polylist)
+
+def Polygon2MultiPolygon(polylist):
+    '''
+    This will take a list of polygons and just slap them into a multipolygon.
+    This is primarily used to find the closest points between different DAs.
+    For instance if you have a DA in Hawaii that is split into 2 or more sections
+    you don't want to compare the individual sections to each other, because they
+    are in essence considered a single DA.
+    '''
+    return MultiPolygon(polylist)
+
+def getClosesestPolygonPoints(poly1,poly2):
+    '''
+    This function will find the line that connects two polygon objects at minimum
+    distance between them.  After this line is found, the endpoints are returned.
+    The first endpoint is a point that lies on the first polygon's perimeter and the second
+    is the endpoint that lies on the second polygon's perimeter.
+
+    This function will take in either two single Polygon objects or two Multipolygon
+    objects.  If the object is a Polygon object it will be converted to a Multipolygon
+    for general purposes.
+
+    Input:  poly1 - Polygon or MultiPolygon object
+            poly2 - Polygon or MultiPolygon object
+
+    Output: p1,p2 - These are of the form ((x1,y1),(x2,y2)) and correspond
+                    to the endpoints of the shortest distance line that connects
+                    the two polygon objects.
+    '''
+    if isinstance(poly1,Polygon):
+        poly1 = MultiPolygon([poly1])
+    if isinstance(poly2,Polygon):
+        poly2 = MultiPolygon([poly2])
+    distances = []
+    coords = []
+    for poly in poly1:
+        for otherpoly in poly2:
+            distances.append(poly.distance(otherpoly))
+            coords.append(nearest_points(poly,otherpoly))
+    index = distances.index(min(distances))
+    p1 = coords[index][0].coords.xy
+    p2 = coords[index][1].coords.xy
+    return p1,p2
+
+def LatLonDistance(p1,p2):
+    '''
+    Uses WGS84 and pyproj
+
+    This function takes in two Lon,Lat points and returns the WGS84 distance
+    between them in km.
+
+    Input:  p1 (lon,lat) or in math terms (x,y)
+            p2 (lon,lat) or in math terms (x,y)
+    Output: distance in kilometers
+    '''
+    lon1,lat1 = p1
+    lon2,lat2 = p2
+    azimuth1, azimuth2, distance = geod.inv(lon1, lat1, lon2, lat2)
+    return np.divide(distance,1000)
+
+def minDistancePolygons(poly1,poly2,**kwargs):
+    p1,p2 = getClosesestPolygonPoints(poly1,poly2)
+    return LatLonDistance(p1,p2)
+
 if __name__ == '__main__':
-    #Some Crazy shape from silly numbers
-#    lats = np.array([0,1,2,3,4])
-#    lons = np.array([189.0,-179,160,165,180])
-    #Circle that doesn't cross the ID
-#    lons,lats = Point(130,88).buffer(30).exterior.xy
-    #Circle that crosses the ID
-#    lons,lats = Point(130,90).buffer(20).exterior.xy
-    #Rectangle that spans the ID
-#    lats = [-40,40,-40,40]
-#    lons = [-160,150,160,-150]
-    
-    #Circle made with stuff
     ax = plt.axes(projection=ccrs.PlateCarree())
     ax.stock_img()
-#    lats,lons = circleLatLons(80,-180,50)
-    
-#    lats, lons = circleLatLons(87,0,500,50000)
-    lats,lons = ellipseLatLons(0,12,3200,2000,3.0368)
-
+    #This will take the lats and lons from handle_internationalDateline
+    #and make it into a poly or multipolygon and find the coordinates
+    #of the shortest distance between the two polygons
+    lats,lons = ellipseLatLons(80,180,500,200,10)
     y,x = handle_InternationalDateline(lats,lons)
-    for x,y in zip(x,y):
+    poly1 = LatLon2MultiPolygon(y,x)
+
+    lats1,lons1 = ellipseLatLons(0,180,600,3200,0)
+    y,x = handle_InternationalDateline(lats1,lons1)
+    poly2 = LatLon2MultiPolygon(y,x)
+
+
+    distance = minDistancePolygons(poly1,poly2)
+    print distance[0]
+
+    ##Just for plotting purposes
+    p1,p2 = getClosesestPolygonPoints(poly1,poly2)
+    for poly in poly1:
+        x,y = poly.exterior.coords.xy
         plt.plot(x,y)
+    for poly in poly2:
+        x,y = poly.exterior.coords.xy
+        plt.plot(x,y)
+    plt.plot([p1[0],p2[0]],[p1[1],p2[1]])
     plt.gca().set_aspect('equal')
     plt.show()
