@@ -18,7 +18,7 @@ from shapely.geometry import Point, LineString, Polygon, MultiPolygon
 from shapely.ops import split,nearest_points
 from matplotlib import pyplot as plt
 import cartopy.crs as ccrs
-from itertools import combinations
+from itertools import combinations,product
 from pyproj import Geod
 
 geod = Geod(ellps='WGS84')
@@ -270,26 +270,90 @@ def BulkMinDistancePolygons(mpolys,**kwargs):
             passfail['Intersect'].append(d==0)
     return pd.DataFrame(passfail)
 
+def BulkMinDistancePolygonsCompare(mpolys,mpolys1,**kwargs):
+    '''
+    This function wants two lists or dicts of multipolygons.  It will take the list
+    and find all possible unique combinations of the 2 iterables that can be obtained and
+    find the minimum distance between then 2 polygons along with some other characteristics.
+    This essentially bypasses comparing polygons within the same dictionary with one another.
+
+    Input:  mpolys - A list or dictionary of Multipolygon objects
+            mpolys1 - A list or dictionary of Multipolygon objects
+
+    Output: if mpolys is a list- Returns a list of the following type
+                                [polygon1,polygon2,bool,bool]
+            if mpolys is a dict- Returns a list of the following type
+                                [Dict Key1, Dict Key2, bool, bool]
+            where the first bool value tells you if the distance is less than
+            the specified threshold
+
+            the second bool value tells you if the two polygons intersect
+
+    The dict version allows the user to keep track of named polygons, probably
+    the best way to use this function for record keeping.
+    '''
+    threshold = kwargs.get('thresh',50)
+    show = kwargs.pop('show',False)
+    if isinstance(mpolys,dict):
+        useID = True
+    elif isinstance(mpolys,list):
+        useID = False
+    else:
+        print(("The mpolys should be either a list or dict, but you passed {}"
+              .format(type(mpolys))))
+        return pd.DataFrame()
+    if isinstance(mpolys1,dict):
+        useID = True
+    elif isinstance(mpolys1,list):
+        useID = False
+    else:
+        print(("The mpolys should be either a list or dict, but you passed {}"
+              .format(type(mpolys1))))
+        return pd.DataFrame()
+    
+    passfail = {'Poly1':[],'Poly2':[],'Within {} km'.format(threshold):[],'Intersect':[]}
+    if not useID:
+        products = product(mpolys,mpolys1)
+        for prod in products:
+            d = minDistancePolygons(prod[0],prod[1],show=show)
+            passfail['Poly1'].append(prod[0])
+            passfail['Poly2'].append(prod[1])
+            passfail['Within {} km'.format(threshold)].append(d<threshold)
+            passfail['Intersect'].append(d==0)
+    else:
+        products = product(list(mpolys.keys()),list(mpolys1.keys()))
+        for prod in products:
+            d = minDistancePolygons(mpolys[prod[0]],mpolys1[prod[1]],show=show)
+            passfail['Poly1'].append(prod[0])
+            passfail['Poly2'].append(prod[1])
+            passfail['Within {} km'.format(threshold)].append(d<threshold)
+            passfail['Intersect'].append(d==0)
+    return pd.DataFrame(passfail)
+
 def unitTest(numpolys=10,**kwargs):
     nri = np.random.randint
     show = kwargs.pop('show',False)
     dictopolys = {}
+    dictopolys1 = {}
     for i in range(numpolys):
         lats,lons = ellipseLatLons(nri(-80,80),nri(-179,179),nri(500,2000),nri(500,2000),0)
         y,x = handle_InternationalDateline(lats,lons)
         poly = LatLon2MultiPolygon(y,x)
-        dictopolys['poly{}'.format(i)] = poly
+        if not i%2:
+            dictopolys['poly{}'.format(i)] = poly
+        if i % 2:
+            dictopolys1['poly{}'.format(i)] = poly
         if show:
             for polygon in poly:
                 xx,yy = polygon.exterior.coords.xy
                 plt.plot(xx,yy)
-    result = BulkMinDistancePolygons(dictopolys,show=show)
+    result = BulkMinDistancePolygonsCompare(dictopolys,dictopolys1,show=show)
     return result
 
 
 if __name__ == '__main__':
-#    ax = plt.axes(projection=ccrs.PlateCarree())
-#    ax.stock_img()
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.stock_img()
 #    #This will take the lats and lons from handle_internationalDateline
 #    #and make it into a poly or multipolygon and find the coordinates
 #    #of the shortest distance between the two polygons
@@ -331,42 +395,42 @@ if __name__ == '__main__':
 #        x,y = poly.exterior.coords.xy
 #        plt.plot(x,y)
 #    result = unitTest(10,show=True)
-
-    import timeit
-    import functools
-    rmins = []
-    rmaxs = []
-    maxpolys = 100
-    for i in range(maxpolys):
-        t = timeit.Timer(functools.partial(unitTest,i))
-        r = t.repeat(repeat=3,number=1)
-        rmins.append(min(r))
-        rmaxs.append(max(r))
-        plt.scatter(i,min(r),color='g')
-        plt.scatter(i,max(r),color='r')
-    from scipy.optimize import curve_fit
-    def poly_fit(x, a, b, c):
-#        return a*np.exp(-b*x) + c
-        return a*x**2 + b+c
-
-    x = np.arange(1,len(rmins))
-    y1 = np.array(rmins[:-1])
-    y2 = np.array(rmaxs[:-1])
-    fitting_parameters, covariance = curve_fit(poly_fit, x, y1,maxfev=10000)
-    fitting_parameters1,covariance1 = curve_fit(poly_fit, x, y2,maxfev=10000)
-    a, b, c = fitting_parameters
-    a1,b1,c1 = fitting_parameters1
-    print(fitting_parameters)
-    print(fitting_parameters1)
-
-    next_x = maxpolys
-    next_ymins = poly_fit(next_x, a, b, c)
-    next_ymaxs = poly_fit(next_x, a1,b1,c1)
-    npfit = np.vectorize(poly_fit)
-    fitys = npfit(x,a,b,c)
-    plt.plot(fitys,'purple')
-    plt.plot([maxpolys],[next_ymins], 'ro',ms=20)
-    plt.plot([maxpolys],[next_ymaxs],'g',ms=20)
+    results = unitTest(3,show=True)
+#    import timeit
+#    import functools
+#    rmins = []
+#    rmaxs = []
+#    maxpolys = 100
+#    for i in range(maxpolys):
+#        t = timeit.Timer(functools.partial(unitTest,i))
+#        r = t.repeat(repeat=3,number=1)
+#        rmins.append(min(r))
+#        rmaxs.append(max(r))
+#        plt.scatter(i,min(r),color='g')
+#        plt.scatter(i,max(r),color='r')
+#    from scipy.optimize import curve_fit
+#    def poly_fit(x, a, b, c):
+##        return a*np.exp(-b*x) + c
+#        return a*x**2 + b+c
+#
+#    x = np.arange(1,len(rmins))
+#    y1 = np.array(rmins[:-1])
+#    y2 = np.array(rmaxs[:-1])
+#    fitting_parameters, covariance = curve_fit(poly_fit, x, y1,maxfev=10000)
+#    fitting_parameters1,covariance1 = curve_fit(poly_fit, x, y2,maxfev=10000)
+#    a, b, c = fitting_parameters
+#    a1,b1,c1 = fitting_parameters1
+#    print(fitting_parameters)
+#    print(fitting_parameters1)
+#
+#    next_x = maxpolys
+#    next_ymins = poly_fit(next_x, a, b, c)
+#    next_ymaxs = poly_fit(next_x, a1,b1,c1)
+#    npfit = np.vectorize(poly_fit)
+#    fitys = npfit(x,a,b,c)
+#    plt.plot(fitys,'purple')
+#    plt.plot([maxpolys],[next_ymins], 'ro',ms=20)
+#    plt.plot([maxpolys],[next_ymaxs],'g',ms=20)
 
 
 #    plt.gca().set_aspect('equal')
