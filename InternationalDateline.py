@@ -42,7 +42,7 @@ def circleLatLons(lat, lon, radiuskm,n_samples=180):
     radius = radiuskm * 1000.
     lons, lats, back_azim = geod.fwd(np.repeat(lon, n_samples),
                                      np.repeat(lat, n_samples),
-                                     np.linspace(360, 0, n_samples),
+                                     np.linspace(0, 360, n_samples),
                                      np.repeat(radius, n_samples),
                                      radians=False,
                                      )
@@ -67,10 +67,41 @@ def ellipseLatLons(lat,lon,major,minor,orientation,n_samples=180,units='km'):
 
     lons, lats, back_azim = geod.fwd(np.repeat(lon, n_samples),
                                      np.repeat(lat, n_samples),
-                                     np.linspace(360, 0, n_samples),
+                                     np.rad2deg(bearing),
                                      radius,
                                      radians=False,
                                      )
+    return lats,lons
+
+def rectangleLatLons(lat,lon,height,width,orientation,**kwargs):
+    units = kwargs.get('units','km')
+    slave = kwargs.get('slave',False)
+    if units == 'km':
+        width = width*1000.
+        height = height*1000.
+#    orientation = np.deg2rad(orientation)
+    if slave:
+        TRangle = np.rad2deg(np.arctan2(height,width))
+        bearings = np.array([90.+TRangle,90.-TRangle,270.+TRangle,270.-TRangle])-orientation
+        distance = np.linalg.norm([height/2.,width/2.])
+        lons,lats,back_azim = geod.fwd(np.repeat(lon,4),
+                                       np.repeat(lat,4),
+                                       bearings,
+                                       np.repeat(distance,4),
+                                       radians=False,
+                                       )
+    else:
+        TRangle = np.rad2deg(np.arctan(2*width/(height)))
+        bearings = np.array([90.,90.-TRangle,270.+TRangle,270.])-orientation
+        outerD = np.linalg.norm([height,width/2.])
+        distance = np.array([width/2.,outerD,outerD,width/2.])
+        lons,lats,back_azim = geod.fwd(np.repeat(lon,4),
+                                       np.repeat(lat,4),
+                                       bearings,
+                                       distance,
+                                       radians=False,
+                                       )
+    print lats,lons
     return lats,lons
 
 def handle_InternationalDateline(iLat,iLon):
@@ -336,7 +367,10 @@ def unitTest(numpolys=10,**kwargs):
     dictopolys = {}
     dictopolys1 = {}
     for i in range(numpolys):
-        lats,lons = ellipseLatLons(nri(-80,80),nri(-179,179),nri(500,2000),nri(500,2000),0)
+#        lats,lons = ellipseLatLons(nri(-80,80),nri(-179,179),nri(500,2000),nri(500,2000),0)
+#        lats,lons = ellipseLatLons(0,0,1000,500,20)
+        lats,lons = rectangleLatLons(0.,0.,50.,50.,0,slave=False)
+        print LatLonDistance((lons[0],lats[0]),(lons[2],lats[2]))
         y,x = handle_InternationalDateline(lats,lons)
         poly = LatLon2MultiPolygon(y,x)
         if not i%2:
@@ -395,7 +429,7 @@ if __name__ == '__main__':
 #        x,y = poly.exterior.coords.xy
 #        plt.plot(x,y)
 #    result = unitTest(10,show=True)
-    results = unitTest(3,show=True)
+    results = unitTest(1,show=True)
 #    import timeit
 #    import functools
 #    rmins = []
