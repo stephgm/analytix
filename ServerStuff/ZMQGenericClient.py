@@ -27,6 +27,7 @@ class GenericClient(object):
         super(GenericClient,self).__init__()
         self.parent = parent
         self.ZMQBIND = kwargs.get('bind','tcp://127.0.0.1:2000')
+        self.ZMQBIND = 'tcp://192.168.0.13:6000'
 
         hostname = socket.gethostname()
         self.ip = socket.gethostbyname(hostname)
@@ -87,7 +88,7 @@ class GenericClient(object):
         '''
         This function uses the REP/REQ socket to poll the server to see if it
         is available for messaging.  It will try and poll the server for
-        0.1 seconds or 100 ms before it gives up.  If the server cannot be reached
+        x ms (The number inside the poll call) before it gives up.  If the server cannot be reached
         the function will try to close all of the threads. Then self.connected
         is set to False.
         '''
@@ -97,7 +98,7 @@ class GenericClient(object):
             self.sock.send_pyobj(sendDict)
 
             print 'sent the obj in test connection'
-            evt = self.poller.poll(100)
+            evt = self.poller.poll(1000)
             if evt:
                 msg = self.sock.recv_pyobj()
                 if msg:
@@ -171,7 +172,7 @@ class GenericClient(object):
         package = ''
         while not package:
             print package
-            env = self.poller.poll(100)
+            env = self.poller.poll(1000)
             if env:
                 package = self.sock.recv_pyobj()
                 print package
@@ -238,10 +239,15 @@ class GenericClient(object):
         '''
         nextupdate = wait
         start = time.time()
-        while time.time() - start < wait:
+        while time.time() - start <= wait:
             remaining = wait - (time.time()-start)
             if remaining <= nextupdate:
                 nextupdate = remaining - 1
                 remainmin = int(remaining)/60
                 remainsec = int(remaining)%60
                 self.parent.Alert('Server will be shutting down in {} minute(s) and {} second(s)'.format(remainmin,remainsec))
+
+		self.parent.Alert('Server has been shut down.')
+		#TODO add stuff here if I want to do any last minute pushes
+		self.stopThreads()
+				
