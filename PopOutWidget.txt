@@ -1,0 +1,38 @@
+class PopOutWidget(QMainWindow):
+    """
+    Tested working with QVBoxLayout, QHBoxLayout, QGridLayout, and QSlpitter
+    """
+    def __init__(self,widget,container,parent=None):
+        super(PopOutWidget,self).__init__(parent)
+        self.widget = widget
+        self.container = container
+        self.parent = parent
+
+        #find position and extent to reset the widget on replace
+        self.pos = self.container.indexOf(self.widget)
+        if isinstance(self.container,QGridLayout):
+            self.pos = self.container.getItemPosition(self.pos)
+        self.setWindowFlags(Qt.WindowStaysOnBottomHint)
+
+    def popwidget(self):
+        self.setWindowTitle('FUDGE')
+        centralWidget = QWidget(self)
+        self.setCentralWidget(centralWidget)
+
+        gridLayout = QGridLayout(self)
+        centralWidget.setLayout(gridLayout)
+        self.widget.setWindowFlags(Qt.Window)
+        gridLayout.addWidget(self.widget)
+        self.show()
+
+    def closeEvent(self,event):
+        self.replace()
+        event.accept()
+
+    def replace(self):
+        self.widget.setWindowFlags(Qt.Widget)
+        if isinstance(self.container,QGridLayout):
+            self.container.addWidget(self.widget,*self.pos)
+        else:
+            self.container.insertWidget(self.pos,self.widget)
+        self.close()
