@@ -36,7 +36,7 @@ def get_h5_data(fpath,group,dset,**kwargs):
                     if headers:
                         getheaders=headers
                     else:
-                        getheaders=hf[grp][dset].keys()
+                        getheaders=hf[grp][dset].dtype.fields.keys()
                     if not isinstance(maxrows,int):
                         data = {header:hf[grp][dset][header][...] for header in getheaders if header in hf[grp][dset].keys()}
                     else:
