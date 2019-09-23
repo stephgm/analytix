@@ -10,6 +10,7 @@ import os
 import sys
 import h5py
 import pandas as pd
+from collections import Iterable
 
 def get_h5_data(fpath,grp,dset,**kwargs):
     '''
@@ -29,11 +30,14 @@ def get_h5_data(fpath,grp,dset,**kwargs):
     headers = kwargs.get('headers',None)
     section = kwargs.get('section',None)
     if section:
-        if len(section) < 2:
+        if isinstance(section,Iterable) and len(section) < 2:
             print('The section kwarg you passed is not a correct length.')
             section = (0,200)
-        elif not isinstance(section[0],int) or not isinstance(section[1],int):
+        elif isinstance(section,Iterable) and (not isinstance(section[0],int) or not isinstance(section[1],int)):
             print('One or both of the indecies in the section kwarg you passed are not integers')
+            section = (0,200)
+        elif not isinstance(section,Iterable):
+            print('The section kwarg you passed is not an iterable')
             section = (0,200)
 
     if os.path.isfile(fpath):

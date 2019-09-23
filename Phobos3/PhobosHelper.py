@@ -168,6 +168,7 @@ class Phobos(Widgets.QMainWindow):
         self.SearchQWidgetLayout.addWidget(self.fileSearcher)
         self.SearchQWidgetLayout.addWidget(self.searchBar)
         self.FileOpenStackedSplitter.setSizes((200,10000))
+        self.setupToolbar()
         #Init variables that need to be reset on 'New Project'
         self.initialize()
 
@@ -199,16 +200,27 @@ class Phobos(Widgets.QMainWindow):
     def makeConnections(self):
         #This is where all GUI Widget signals and slots are stored
         self.Button1.clicked.connect(lambda trash:self.get_data())
-        self.Button2.clicked.connect(lambda trash:self.get_single_filename())
-        self.Button3.clicked.connect(lambda trash:self.get_multiple_filenames())
-        self.OpenMultipleIdaps.clicked.connect(lambda trash:self.open_multiple_idaps())
-
 
         self.FileNameCombo.currentIndexChanged.connect(lambda trash:self.populate_groups())
         self.GroupNameCombo.currentIndexChanged.connect(lambda trash:self.populate_datasets())
         self.DatasetList.itemSelectionChanged.connect(lambda:self.populate_headers())
 
 ### Core Gui Functions
+
+    def setupToolbar(self):
+        resourcedir = os.path.join(os.getcwd(),'resources')
+        opensinglefile = Widgets.QAction(Gui.QIcon(os.path.join(resourcedir,'open_file.png')),'Open Single File',self)
+        opensinglefile.triggered.connect(self.get_single_filename)
+        openmultifiles = Widgets.QAction(Gui.QIcon(os.path.join(resourcedir,'open_files.png')),'Open Multiple Files',self)
+        openmultifiles.triggered.connect(self.get_multiple_filenames)
+        openmultiidap = Widgets.QAction(Gui.QIcon(os.path.join(resourcedir,'open_multiple_idap.png')),'Open Multiple Idaps',self)
+        openmultiidap.triggered.connect(self.open_multiple_idaps)
+        standardquery = Widgets.QAction(Gui.QIcon(os.path.join(resourcedir,'open_standard_query.png')),'Standard Query',self)
+        standardquery.triggered.connect(self.open_multiple_idaps)
+        self.toolBar.addAction(opensinglefile)
+        self.toolBar.addAction(openmultifiles)
+        self.toolBar.addAction(openmultiidap)
+        self.toolBar.addAction(standardquery)
 
     def setSearchWidget(self,text):
         self.searchBar.searchLine.setText('')
