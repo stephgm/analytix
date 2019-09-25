@@ -277,7 +277,7 @@ if True:
             maxDepth = -1
         if maxDepth > 0:
             return sdir,[os.path.join(r,fname)[len(sdir):] for ext in extensions \
-                    for r,p,f in os.walk(sdir) \
+                    for r,p,f in os.walk(sdir,followlinks=False) \
                     if r[len(sdir):].count(os.sep) < maxDepth\
                     for fname in f \
                     if fnmatch.fnmatch(fname,ext)]
@@ -287,6 +287,6 @@ if True:
                     if fnmatch.fnmatch(f,ext)]
         else:
             return sdir,[os.path.join(r,fname)[len(sdir):] for ext in extensions \
-                for r,p,f in os.walk(sdir) \
+                for r,p,f in os.walk(sdir,followlinks=False) \
                 for fname in f \
                 if fnmatch.fnmatch(fname,ext)]
