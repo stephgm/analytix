@@ -104,11 +104,7 @@ class FileSearchSelector(Widgets.QWidget):
         self.layout = Widgets.QGridLayout()
         self.setLayout(self.layout)
         group = self.makeGroup()
-        self.Label = Widgets.QLabel('Select Search')
-        self.Label.setSizePolicy(Widgets.QSizePolicy.Expanding, Widgets.QSizePolicy.Expanding)
-        self.Label.setAlignment(Core.Qt.AlignCenter)
-        self.layout.addWidget(self.Label,0,0)
-        self.layout.addWidget(group,1,0)
+        self.layout.addWidget(group,0,0)
 
         self.makeConnections()
 
@@ -131,14 +127,18 @@ class FileSearchSelector(Widgets.QWidget):
     def makeGroup(self):
         group = Widgets.QGroupBox()
         grouplayout = Widgets.QGridLayout()
+        self.Label = Widgets.QLabel('Select Search')
+        self.Label.setSizePolicy(Widgets.QSizePolicy.Expanding, Widgets.QSizePolicy.Expanding)
+        self.Label.setAlignment(Core.Qt.AlignCenter)
         self.File = Widgets.QRadioButton('File')
         self.Group = Widgets.QRadioButton('Group')
         self.Dset = Widgets.QRadioButton('Dataset')
         self.Header = Widgets.QRadioButton('Header')
-        grouplayout.addWidget(self.File,0,0)
-        grouplayout.addWidget(self.Group,0,1)
-        grouplayout.addWidget(self.Dset,0,2)
-        grouplayout.addWidget(self.Header,0,3)
+        grouplayout.addWidget(self.Label,0,1,1,2)
+        grouplayout.addWidget(self.File,1,0)
+        grouplayout.addWidget(self.Group,1,1)
+        grouplayout.addWidget(self.Dset,1,2)
+        grouplayout.addWidget(self.Header,1,3)
         group.setLayout(grouplayout)
         self.File.setChecked(True)
         return group
@@ -228,7 +228,10 @@ class PhobosTableModel(Core.QAbstractTableModel):
         if not index.isValid():
             return None
         if role == Core.Qt.DisplayRole:
-            value = self.arraydata[self.header[index.column()]][index.row()]
+            if self.header[index.column()] in self.arraydata:
+                value = self.arraydata[self.header[index.column()]][index.row()]
+            else:
+                value = ''
             return str(value)
 
     def getTableData(self):
@@ -236,6 +239,19 @@ class PhobosTableModel(Core.QAbstractTableModel):
 
     def getHeaderNames(self):
         return self.header
+
+    def setCellValue(self,header,row,value):
+        if header in self.header:
+            if row in self.arraydata[header].index:
+                value = self.handleValue(header,value)
+                if value == None:
+                    print('Value entered could not be interpreted')
+                else:
+                    self.arraydata[header].iat[row] = value
+            else:
+                print('row was not in table!')
+        else:
+            print('{} was not in table headers'.format(header))
 
 class Phobos(Widgets.QMainWindow):
     def __init__(self,parent=None,**kwargs):
@@ -312,7 +328,7 @@ class Phobos(Widgets.QMainWindow):
         openmultifiles.triggered.connect(self.get_multiple_filenames)
         openmultiidap = Widgets.QAction(Gui.QIcon(os.path.join(resourcedir,'open_multiple_idap.png')),'Open Multiple Idaps',self)
         openmultiidap.triggered.connect(self.open_multiple_idaps)
-        standardquery = Widgets.QAction(Gui.QIcon(os.path.join(resourcedir,'open_standard_query.png')),'Standard Query',self)
+        standardquery = Widgets.QAction(Gui.QIcon(os.path.join(resourcedir,'standard_query.jpg')),'Standard Query',self)
         standardquery.triggered.connect(self.open_multiple_idaps)
         self.toolBar.addAction(opensinglefile)
         self.toolBar.addAction(openmultifiles)
