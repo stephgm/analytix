@@ -14,8 +14,9 @@ from PyQt5 import uic
 import os
 import sys
 import multiprocessing
-from collections import OrderedDict
+from collections import OrderedDict, Iterable
 import pandas as pd
+import copy
 import time
 import QtUtils
 import PhobosFunctions
@@ -90,6 +91,7 @@ class RetrieveData(Core.QThread):
 
     def run(self):
         data = self.target(*self.args,**self.kwargs)
+        print data
         self.EmitRetrievedData.emit(data)
         self.QueryFinished.emit(self.getThreadId())
         self.StatusPartner.emit(self.statusTID)
@@ -140,6 +142,100 @@ class FileSearchSelector(Widgets.QWidget):
         group.setLayout(grouplayout)
         self.File.setChecked(True)
         return group
+
+class PhobosTableModel(Core.QAbstractTableModel):
+    def __init__(self, datain=pd.DataFrame(), parent=None,**kwargs):
+        Core.QAbstractTableModel.__init__(self, parent)
+        self.parent = parent
+        self.edit = kwargs.get('editable',False)
+        self.rowLabels = kwargs.get('rowLabels',None)
+        if not isinstance(self.edit,bool):
+            self.edit = False
+        if not isinstance(datain,pd.DataFrame):
+            print('The data passed to Phobos table model is not a DataFrame.  Trying to convert')
+            try:
+                datain = pd.DataFrame(datain)
+                print('Conversion successful, but change that in your code')
+            except:
+                print('Conversion unsuccessful, making empty DataFrame.')
+                datain = pd.DataFrame()
+        if self.edit:
+            datain['Edited'] = pd.Series([0]*datain.shape[0])
+        self.header = list(datain)
+
+        self.arraydata = copy.deepcopy(datain)
+
+    def handleValue(self,header,value):
+        if header in self.arraydata:
+            dtype = self.arraydata[header].dtype.kind
+            if dtype in ['u','i']:
+                try:
+                    value = int(value)
+                except:
+                    return None
+            elif dtype in ['b']:
+                try:
+                    value = value == 'True'
+                except:
+                    return None
+            elif dtype in ['f']:
+                try:
+                    value = float(value)
+                except:
+                    return None
+        return value
+
+    def rowCount(self, parent):
+        return self.arraydata.shape[0]
+
+    def columnCount(self, parent):
+        return self.arraydata.shape[1]
+
+    def headerData(self, section, orientation, role):
+        if role == Core.Qt.DisplayRole:
+            if orientation == Core.Qt.Horizontal:
+                return self.header[section]
+            elif orientation == Core.Qt.Vertical:
+                if self.rowLabels:
+                    return self.rowLabels[section]
+                else:
+                    return section
+            else:
+                return section
+
+    def flags(self, index):
+        if self.edit:
+            return Core.Qt.ItemIsEnabled | Core.Qt.ItemIsEditable | Core.Qt.ItemIsSelectable
+        else:
+            return Core.Qt.ItemIsEnabled | Core.Qt.ItemIsSelectable
+
+    def setData(self, index, value, role):
+        if role == Core.Qt.EditRole:
+            row = index.row()
+            column = index.column()
+            dtype = self.arraydata[self.header[column]].dtype.kind
+            value = self.handleValue(self.header[column],value)
+            if value == None:
+                return False
+            self.arraydata[self.header[column]].iat[row] = value
+            self.arraydata['Edited'].iat[row] = 1
+            self.dataChanged.emit(index, index)
+            return True
+        else:
+            return False
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        if role == Core.Qt.DisplayRole:
+            value = self.arraydata[self.header[index.column()]][index.row()]
+            return str(value)
+
+    def getTableData(self):
+        return self.arraydata
+
+    def getHeaderNames(self):
+        return self.header
 
 class Phobos(Widgets.QMainWindow):
     def __init__(self,parent=None,**kwargs):
@@ -199,7 +295,8 @@ class Phobos(Widgets.QMainWindow):
 
     def makeConnections(self):
         #This is where all GUI Widget signals and slots are stored
-        self.Button1.clicked.connect(lambda trash:self.get_data())
+        self.Button1.clicked.connect(lambda trash:self.scan_directory())
+        self.CreateTable.clicked.connect(lambda trash:self.get_data())
 
         self.FileNameCombo.currentIndexChanged.connect(lambda trash:self.populate_groups())
         self.GroupNameCombo.currentIndexChanged.connect(lambda trash:self.populate_datasets())
@@ -365,6 +462,23 @@ class Phobos(Widgets.QMainWindow):
         else:
             self.Alert(self.statusbar,'None of the dropped files were supported',error=True)
 
+    def scan_directory(self,**kwargs):
+        showstatus = kwargs.get('status',True)
+        numthreads = 1
+        if showstatus:
+            numthreads = 2
+        if not self.checkThrottle(numthreads):
+            return
+        if showstatus:
+            tid = self.statusIndicatorStart()
+        thread = RetrieveData(target=PhobosFunctions.gather_files,args=('/home/klinetry/Desktop/analytix-master/',),kwargs=dict(ext = ['*{}'.format(k[0]) for k in self.DataFileExtensions.itervalues()]))
+        threadkey = thread.getThreadId()
+        self.threads[threadkey] = thread
+        self.threads[threadkey].statusTID = tid
+        self.threads[threadkey].EmitRetrievedData.connect(self.populate_files)
+        self.threads[threadkey].QueryFinished.connect(self.killThread)
+        self.threads[threadkey].StatusPartner.connect(self.stopUpdater)
+        self.threads[threadkey].start()
 
     def get_single_filename(self,**kwargs):
         fpath = QtUtils.openSingleFile(directory=self.LastDirectory,extensions=self.DataFileExtensions)
@@ -380,12 +494,11 @@ class Phobos(Widgets.QMainWindow):
     def get_multiple_filenames(self,**kwargs):
         #TODO gotta be careful here, because all files may not come from same dir.. gotta keep track of that
         fpaths = QtUtils.openMultipleFiles(directory = self.LastDirectory,extensions=self.DataFileExtensions)
-        print fpaths
         fpaths = [path for path in fpaths if self.check_file(path)]
         if fpaths:
             self.LastDirectory = os.path.dirname(fpaths[-1])
             self.reset_file_widgets('File')
-            self.FileNameCombo.addItems(fpaths)
+            self.FileNameCombo.addItems(os.path.basename(fpaths))
             self.FileNameCombo.setCurrentIndex(0)
         else:
             self.Alert(self.statusbar,'None of the selected files were supported',error=True)
@@ -395,7 +508,15 @@ class Phobos(Widgets.QMainWindow):
 
 
 
-### Group Dset and Header Population
+### File Group Dset and Header Population
+
+    def populate_files(self,data,**kwargs):
+        basedir = data[0]
+        fnames = data[1]
+        self.LastDirectory = basedir
+        self.reset_file_widgets('File')
+        self.FileNameCombo.addItems(fnames)
+        self.FileNameCombo.setCurrentIndex(-1)
 
     def populate_groups(self,**kwargs):
         #TODO modify this to read from dsdicts
@@ -463,14 +584,35 @@ class Phobos(Widgets.QMainWindow):
             return
         if showstatus:
             tid = self.statusIndicatorStart()
-        thread = RetrieveData(target=PhobosFunctions.get_h5_data,args=('haha','this','that',),kwargs=dict(headers=['fuck','you']))
+        #TODO look at this
+        fname = os.path.join(self.LastDirectory,self.FileNameCombo.currentText())
+        grp = self.GroupNameCombo.currentText()
+        dset = QtUtils.returnSelection(self.DatasetList,first=True)
+        headers = QtUtils.returnSelection(self.HeaderList)
+        print fname,grp,dset,headers
+        thread = RetrieveData(target=PhobosFunctions.get_h5_data,args=(fname,grp,dset,),kwargs=dict(headers=headers,addDset=True))
         threadkey = thread.getThreadId()
         self.threads[threadkey] = thread
         self.threads[threadkey].statusTID = tid
-        self.threads[threadkey].EmitRetrievedData.connect(self.showdata)
+        self.threads[threadkey].EmitRetrievedData.connect(self.make_table)
         self.threads[threadkey].QueryFinished.connect(self.killThread)
         self.threads[threadkey].StatusPartner.connect(self.stopUpdater)
         self.threads[threadkey].start()
+
+    def create_tableWidget(self,key,**kwargs):
+        self.tableWidget = Widgets.QWidget()
+        self.tableLayout = Widgets.QVBoxLayout()
+        self.tableList = Widgets.QTableView()
+        self.tableLayout.addWidget(self.tableList)
+        self.tableWidget.setLayout(self.tableLayout)
+        return self.tableWidget
+
+    def make_table(self,data,**kwargs):
+        print data
+        tablewidget = self.create_tableWidget('')
+        model = PhobosTableModel(data,self,editable=True)
+        self.tableList.setModel(model)
+        self.TableTabWidget.addTab(tablewidget,'NewTab')
 
     def showdata(self,data):
         print data

@@ -360,7 +360,7 @@ if True:
             Core.QAbstractTableModel.__init__(self, parent, *args)
 
             self.edit = kwargs.get('editable',False)
-            if not isinstance(edit,bool):
+            if not isinstance(self.edit,bool):
                 self.edit = False
             self.highlight = kwargs.get('highlight',False)
             if not isinstance(highlight,bool):
@@ -411,33 +411,10 @@ if True:
         def getHeaderNames(self):
             return self.header
 
-    class Plotter(Widgets.QMainWindow):
-        def __init__(self, parent=None):
-            super(Plotter,self).__init__(parent)
-            Widgets.QMainWindow.__init__(self, parent)
-            Qt5.loadUi('Test.ui', self)
-            self.MyListWidget.dragEnterEvent = dragEnterEvents
-            self.MyListWidget.dropEvent = self.ListDropEvent
-            self.MyListWidget.addItems([str(i) for i in range(10)])
-            self.makeConnections()
-            Alert(self.statusbar,'Hey there',bold=True)
-            files = openMultipleFiles(extensions={'Pictures':['.png'],'H5':['.h5'],'Jpeg':['.jpg']})
-            print files
-
-        def makeConnections(self):
-            self.pushButton.clicked.connect(lambda:self.Printing())
-
-        def Printing(self):
-            Alert(self.statusbar,'Yo',error=True,background='rgba(0,0,0,255)')
-            print returnSelection(self.MyListWidget)
-
-        def ListDropEvent(self,event):
-
-            self.MyListWidget.clear()
-            paths = dropFileDir(event)
-            self.MyListWidget.addItems(paths)
-            print paths
-
+class PlottingWidget(Widgets.QWidget):
+    def __init__(self,parent=None):
+        super(PlottingWidget,self).__init__(parent)
+        self.parent = parent
 #def main():
 #    app = Widgets.QApplication(sys.argv)
 #    frame = Plotter()
