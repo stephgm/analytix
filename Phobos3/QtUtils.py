@@ -131,10 +131,14 @@ if True:
         buttonBox = Widgets.QDialogButtonBox(widget)
         layout = Widgets.QGridLayout()
         listWidget = Widgets.QListWidget()
+        selectAll = Widgets.QPushButton('Select All')
+        selectAll.clicked.connect(listWidget.selectAll)
         if search:
             searchbar = SearchBar(listWidget,widget)
             layout.addWidget(searchbar)
         layout.addWidget(listWidget)
+
+        layout.addWidget(selectAll)
         layout.addWidget(buttonBox)
         widget.setLayout(layout)
 
@@ -411,17 +415,117 @@ if True:
         def getHeaderNames(self):
             return self.header
 
-class PlottingWidget(Widgets.QWidget):
-    def __init__(self,parent=None):
-        super(PlottingWidget,self).__init__(parent)
+class PandasCSVopener(Widgets.QWidget):
+    done = Core.pyqtSignal(object)
+    def __init__(self,fpath,parent=None,**kwargs):
+        super(PandasCSVopener,self).__init__(parent)
+        if not os.path.isfile(fpath):
+            print('{} is not a valid file'.format(fpath))
+            self.close()
         self.parent = parent
-#def main():
-#    app = Widgets.QApplication(sys.argv)
-#    frame = Plotter()
-#    frame.show()
-##    splash.finish(frame)
-#    retval = app.exec_()
-#    sys.exit(retval)
-#
-#if __name__ == '__main__':
-#    main()
+        self.fpath = fpath
+        self.setWindowTitle('CSV Open Previewer')
+        self.y = pd.DataFrame()
+
+        self.makeWidget()
+        self.makeConnections()
+        self.preview()
+
+    def makeConnections(self):
+        self.SepSelection.editingFinished.connect(lambda:self.preview())
+        self.changeHeaders.toggled.connect(self.addHeaderWidgets)
+        self.addHeaders.toggled.connect(self.addHeaderWidgets)
+        self.changeHeaders.toggled.connect(lambda:self.handleCheckBoxes('change'))
+        self.addHeaders.toggled.connect(lambda:self.handleCheckBoxes('add'))
+
+    def handleCheckBoxes(self,text):
+        if text == 'add':
+            if self.addHeaders.isChecked():
+                self.changeHeaders.blockSignals(True)
+                self.changeHeaders.setChecked(False)
+                self.changeHeaders.blockSignals(False)
+        elif text == 'change':
+            if self.changeHeaders.isChecked():
+                self.addHeaders.blockSignals(True)
+                self.addHeaders.setChecked(False)
+                self.addHeaders.blockSignals(False)
+        self.preview()
+
+    def makeWidget(self):
+        self.layout = Widgets.QGridLayout()
+        self.SepLabel = Widgets.QLabel('Separator:')
+        self.SepSelection = Widgets.QLineEdit(',')
+        self.changeHeaders = Widgets.QCheckBox('Change Headers')
+        self.addHeaders = Widgets.QCheckBox('Add Headers')
+        self.previewTable = Widgets.QTableWidget()
+        self.setLayout(self.layout)
+        self.layout.addWidget(self.SepLabel,0,0)
+        self.layout.addWidget(self.SepSelection,0,1)
+        self.layout.addWidget(self.changeHeaders,1,0)
+        self.layout.addWidget(self.addHeaders,1,1)
+
+        self.layout.addWidget(self.previewTable,1000,0,1,2)
+        self.buttonBox = Widgets.QDialogButtonBox()
+        self.buttonBox.setStandardButtons(Widgets.QDialogButtonBox.Ok | Widgets.QDialogButtonBox.Cancel)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+        self.layout.addWidget(self.buttonBox,1001,0)
+
+    def addHeaderWidgets(self,show):
+        try:
+            for i in range(len(self.newlabel)):
+                self.newlabel[i].deleteLater()
+                self.origlabel[i].deleteLater()
+            self.newlabel = []
+            self.origlabel = []
+        except:
+            pass
+        if show:
+            if self.y.shape[0]:
+                self.newlabel = []
+                self.origlabel = []
+                for i,header in enumerate(list(self.y)):
+                    self.origlabel.append(Widgets.QLabel(header))
+                    self.newlabel.append(Widgets.QLineEdit(header))
+                    self.newlabel[-1].editingFinished.connect(lambda:self.preview())
+                    self.layout.addWidget(self.origlabel[-1],i+2,0)
+                    self.layout.addWidget(self.newlabel[-1],i+2,1)
+        self.preview()
+
+    def preview(self):
+        sep = self.SepSelection.text()
+        if not sep:
+            sep = ' '
+        if not self.addHeaders.isChecked() and not self.changeHeaders.isChecked():
+            self.y = pd.read_csv(self.fpath,sep=sep)
+        elif self.addHeaders.isChecked() and not self.changeHeaders.isChecked():
+            self.y = pd.read_csv(self.fpath,sep=sep,names=[header.text() for header in self.newlabel])
+        elif self.changeHeaders.isChecked() and not self.addHeaders.isChecked():
+            self.y = pd.read_csv(self.fpath,sep=sep).rename(columns={oheader.text():header.text() for oheader,header in zip(self.origlabel,self.newlabel)})
+        self.previewTable.setRowCount(10)
+        self.previewTable.setColumnCount(self.y.shape[1])
+        self.previewTable.setHorizontalHeaderLabels(list(self.y))
+        for row in range (0, self.y.shape[0]):
+            for col in range (0, self.y.shape[1]):
+                    data = str(self.y.iloc[row, col] )
+                    self.previewTable.setItem(row, col, Widgets.QTableWidgetItem(str(data)))
+
+    def accept(self):
+        self.done.emit(self.y)
+        self.close()
+
+    def reject(self):
+        self.done.emit(None)
+        self.close()
+
+
+if __name__ == '__main__':
+    try:
+        def showdata(data):
+            print(data)
+        path = pathtocsv
+        x = PandasCSVopener(path)
+        x.done.connect(showdata)
+        x.show()
+    except:
+        pass

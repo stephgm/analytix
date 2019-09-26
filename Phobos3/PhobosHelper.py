@@ -414,6 +414,9 @@ class Phobos(Widgets.QMainWindow):
                 return QtUtils.MessageBox(Message,title=title,detail=detailed)
         return True
 
+    def getExtension(self,fpath):
+        return os.path.splitext(fpath)[1].strip().lower()
+
 ### DragNDrop
 
     def dropEvent(self,event):
@@ -453,7 +456,7 @@ class Phobos(Widgets.QMainWindow):
 ### File Opening
 
     def check_file(self,fpath,**kwargs):
-        extension = os.path.splitext(fpath)[1].strip().lower()
+        extension = self.getExtension(fpath)
         for dfe in self.DataFileExtensions.itervalues():
             if extension.lower().endswith(dfe[0]):
                 return True
@@ -523,7 +526,6 @@ class Phobos(Widgets.QMainWindow):
         runs = QtUtils.openRunListWidget(self.LastDirectory)
 
 
-
 ### File Group Dset and Header Population
 
     def populate_files(self,data,**kwargs):
@@ -565,7 +567,7 @@ class Phobos(Widgets.QMainWindow):
                 self.DatasetList.addItems(dsets)
                 if not len(dsets) > 1:
                     #Select the dataset if there is only 1 there
-                    self.DatasetList.setCurrentItem(dsets[0])
+                    self.DatasetList.setCurrentRow(0)
             else:
                 self.reset_file_widgets('File')
                 self.Alert(self.statusbar,'There are not datasets in {}/{}.'.format(fpath,grp),error=True)
@@ -601,12 +603,20 @@ class Phobos(Widgets.QMainWindow):
         if showstatus:
             tid = self.statusIndicatorStart()
         #TODO look at this
-        fname = os.path.join(self.LastDirectory,self.FileNameCombo.currentText())
+        fpath = os.path.join(self.LastDirectory,self.FileNameCombo.currentText())
         grp = self.GroupNameCombo.currentText()
         dset = QtUtils.returnSelection(self.DatasetList,first=True)
         headers = QtUtils.returnSelection(self.HeaderList)
-        print fname,grp,dset,headers
-        thread = RetrieveData(target=PhobosFunctions.get_h5_data,args=(fname,grp,dset,),kwargs=dict(headers=headers,addDset=True))
+        extension = self.getExtension(fpath)
+        if extension in ['h5','hdf5']:
+            func = PhobosFunctions.get_h5_data
+        elif extension in ['csv']:
+            func = PhobosFunctions.get_csv_data
+        elif extension in ['xlsx']:
+            func = PhobosFunctions.get_xlsx_data
+        elif extension in ['pkl']:
+            func = PhobosFunctions.get_pkl_data
+        thread = RetrieveData(target=PhobosFunctions.func,args=(fpath,grp,dset,),kwargs=dict(headers=headers,addDset=True))
         threadkey = thread.getThreadId()
         self.threads[threadkey] = thread
         self.threads[threadkey].statusTID = tid
@@ -615,12 +625,36 @@ class Phobos(Widgets.QMainWindow):
         self.threads[threadkey].StatusPartner.connect(self.stopUpdater)
         self.threads[threadkey].start()
 
+
+### Table Portion
+
+    def table_header_context(self,pos,**kwargs):
+        menu = Widgets.QMenu(self)
+        menu.addAction('stuff')
+        menu.addAction("Segunda opción")
+        menu.addAction(":)")
+        menu.exec_(Gui.QCursor.pos())
+
+    def table_row_context(self,pos,**kwargs):
+        #Make Keys for TableTabs with id() or with uuid
+        menu = QMenu(self)
+        HideRows = menu.addAction('Hide Row(s)')
+        action = menu.exec_(self.TableTab.mapToGlobal(pos))
+        if action == HideRows:
+            pass
+
     def create_tableWidget(self,key,**kwargs):
         self.tableWidget = Widgets.QWidget()
         self.tableLayout = Widgets.QVBoxLayout()
         self.tableList = Widgets.QTableView()
         self.tableLayout.addWidget(self.tableList)
         self.tableWidget.setLayout(self.tableLayout)
+        hheaders = self.tableList.horizontalHeader()
+        hheaders.setContextMenuPolicy(Core.Qt.CustomContextMenu)
+        hheaders.customContextMenuRequested.connect(self.table_menu)
+        vheaders = self.tableList.verticalHeader()
+        vheaders.setContextMenuPolicy(Core.Qt.CustomContextMenu)
+        vheaders.customContextMenuRequested.connect(self.table_row_context)
         return self.tableWidget
 
     def make_table(self,data,**kwargs):
