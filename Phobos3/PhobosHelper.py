@@ -18,8 +18,14 @@ from collections import OrderedDict, Iterable
 import pandas as pd
 import copy
 import time
+import uuid
+
 import QtUtils
 import PhobosFunctions
+import GeneralFilter
+
+
+EventDict = {'home':['056.1','092.1']}
 
 def stupid():
     print 'FUNNNN'
@@ -42,15 +48,16 @@ class ProgressIndicator(Widgets.QWidget):
 class ProgressIndicatorUpdater(Core.QThread):
     UpdateColor = Core.pyqtSignal(object)
     Stopped = Core.pyqtSignal(object)
-    def __init__(self,parent=None):
+    def __init__(self,layout,parent=None):
         super(ProgressIndicatorUpdater,self).__init__(parent)
         self.parent = parent
+        self.layout = layout
         self.running = True
         self.initWidget()
 
     def initWidget(self):
         self.widget = ProgressIndicator('This Thang',self.getThreadId())
-        self.parent.StatusLayout.addWidget(self.widget)
+        self.layout.addWidget(self.widget)
 
     def getThreadId(self):
         return id(self)
@@ -74,8 +81,219 @@ class ProgressIndicatorUpdater(Core.QThread):
         time.sleep(.1)
         self.Stopped.emit(self.getThreadId())
 
+class AddNativeHeadersWidget(Widgets.QWidget):
+    Selection = Core.pyqtSignal(object)
+    def __init__(self,headers,parent=None,**kwargs):
+        super(AddNativeHeadersWidget,self).__init__(parent)
+        self.parent = parent
+        self.headers = headers
+
+        self.makeWidget()
+
+    def makeWidget(self):
+        self.layout = Widgets.QGridLayout()
+        self.setLayout(self.layout)
+        self.HeaderListWidget = Widgets.QListWidget()
+        self.HeaderListWidget.addItems(self.headers)
+        self.SearchBar = QtUtils.SearchBar(self.HeaderListWidget,self,regex=False)
+        self.AddButton = Widgets.QPushButton('Add Selected')
+        self.AddButton.clicked.connect(lambda:self.addSelected())
+        self.layout.addWidget(self.SearchBar,0,0)
+        self.layout.addWidget(self.HeaderListWidget,1,0)
+        self.layout.addWidget(self.AddButton,2,0)
+
+    def setList(self,headers):
+        self.HeaderListWidget.clear()
+        self.headers = copy.copy(headers)
+        self.HeaderListWidget.addItems(self.headers)
+
+    def addSelected(self):
+        selectedHeaders = returnListSelection(self.HeaderListWidget)
+        if selectedHeaders:
+            self.Selection.emit(selectedHeaders)
+
+class StatTable(Widgets.QDockWidget):
+    Closing = Core.pyqtSignal(bool)
+    def __init__(self,parent,**kwargs):
+        super(StatTable,self).__init__(parent)
+        self.parent = parent
+        self.setFixedHeight(325)
+        self.setAttribute(Core.Qt.WA_DeleteOnClose, True)
+
+        self.makeWidget()
+
+    def makeWidget(self):
+        self.Table = Widgets.QTableView()
+        self.setWidget(self.Table)
+
+    def calcStats(self,data):
+        features = ['# of Unique Vals','Max','25%','50%','75%','Min','Mean','Std. Dev.','Most Frequent']
+        statdat = pd.DataFrame(index=features,columns=list(data))
+        for header in list(data):
+            statdat[header].iloc[0] = len(pd.unique(data[header]))
+            if data[header].dtype.kind not in ['O','b']:
+                statdat[header].iloc[1] = data[header].max()
+                statdat[header].iloc[2] = data[header].quantile(.25)
+                statdat[header].iloc[3] = data[header].quantile(.5)
+                statdat[header].iloc[4] = data[header].quantile(.75)
+                statdat[header].iloc[5] = data[header].min()
+                statdat[header].iloc[6] = data[header].mean()
+                statdat[header].iloc[7] = data[header].std()
+            else:
+                statdat[header].iloc[1] = 'N/A'
+                statdat[header].iloc[2] = 'N/A'
+                statdat[header].iloc[3] = 'N/A'
+                statdat[header].iloc[4] = 'N/A'
+                statdat[header].iloc[5] = 'N/A'
+                statdat[header].iloc[6] = 'N/A'
+                statdat[header].iloc[7] = 'N/A'
+            statdat[header].iloc[8] = data[header].astype(str).value_counts().idxmax()
+        self.model = PhobosTableModel(statdat,self,rowLabels=features)
+        self.Table.setModel(self.model)
+
+    def closeEvent(self,event):
+        self.Closing.emit(True)
+        event.accept()
+
+class TabTableWidget(Widgets.QWidget):
+    AddableChanged = Core.pyqtSignal(object)
+    def __init__(self,parent=None,data=None,**kwargs):
+        super(TabTableWidget,self).__init__(parent)
+        self.parent = parent
+        self.StatTable = None
+        #Items that will keep the attributes of each TabTableWidget
+        #Keep a list of file paths to get data from addNativeHeaders
+        #The order of these lists matter when it comes to concatenation
+        self.fpaths = kwargs.get('fpaths',[])
+        self.groups = kwargs.get('groups',[])
+        self.dsets = kwargs.get('dsets',[])
+        self.nativeheaders = kwargs.get('native',[])
+        self.addedHeaders = kwargs.get('added',pd.DataFrame())
+        self.currentHeaders = []
+        self.runs = []
+        self.events = []
+        self.filters = []
+
+        self.getEventandRun()
+#        self.proxySortFilt = PhobosTableModelProxyFilter(self).setModel(self.model)
+        self.makeWidget()
+        self.makeConnections()
+
+        self.model = PhobosTableModel(data,self.nativeheaders,self.Table)
+        self.numRows = self.model.rowCount()
+        self.currentHeaders = self.model.getHeaderNames()
+        self.updateCurrentHeaders()
+
+    def makeConnections(self):
+        self.ShowStatChk.toggled.connect(self.showStatTable)
+        self.model.DataChanged.connect(lambda:self.updateStatTable())
+        self.model.RowChanged.connect(lambda:self.getRowNum())
+        self.model.ColumnChanged.connect(lambda:self.updateCurrentHeaders())
+
+    def makeWidget(self):
+        self.layout = Widgets.QGridLayout()
+        self.IdLabel = Widgets.QLabel(str(self.fpaths))
+        self.NumRowWidget = Widgets.QWidget()
+        self.NumRowLayout = Widgets.QHBoxLayout()
+        self.NumRowWidget.setLayout(self.NumRowLayout)
+        self.NumRowLabel = Widgets.QLabel('Number of Rows')
+        self.NumRow = Widgets.QLabel(str(self.numRows))
+        self.NumRowSpacer = Widgets.QSpacerItem(10,10 , Widgets.QSizePolicy.Expanding, Widgets.QSizePolicy.Minimum)
+        self.NumRowLayout.addWidget(self.NumRowLabel)
+        self.NumRowLayout.addWidget(self.NumRow)
+        self.NumRowLayout.addItem(self.NumRowSpacer)
+        self.ShowStatChk = Widgets.QCheckBox()
+        self.ShowStatChk.setText('Show Statistics')
+        self.Table = Widgets.QTableView()
+        self.Table.setModel(self.model)
+        self.layout.addWidget(self.IdLabel,0,0)
+        self.layout.addWidget(self.NumRowWidget,1,0)
+        self.layout.addWidget(self.ShowStatChk,2,0)
+        self.layout.addWidget(self.Table,3,0)
+        self.setLayout(self.layout)
+        self.hheaders = self.Table.horizontalHeader()
+        self.hheaders.setContextMenuPolicy(Core.Qt.CustomContextMenu)
+        self.hheaders.customContextMenuRequested.connect(self.table_header_context)
+        self.vheaders = self.Table.verticalHeader()
+        self.vheaders.setContextMenuPolicy(Core.Qt.CustomContextMenu)
+        self.vheaders.customContextMenuRequested.connect(self.table_row_context)
+
+    def setModel(self,model):
+        self.model = model
+        self.Table.setModel(self.model)
+        self.getRowNum()
+        self.currentHeaders = self.model.getHeaderNames()
+        self.model.DataChanged.connect(lambda:self.updateStatTable())
+        self.model.RowChanged.connect(lambda:self.getRowNum())
+        self.model.ColumnChanged.connect(lambda:self.updateCurrentHeaders())
+
+    def getRowNum(self):
+        self.numRows = self.model.rowCount(self)
+        self.NumRow.setText(str(self.numRows))
+
+    def updateCurrentHeaders(self):
+        removed = set(self.currentHeaders) - set(self.model.getHeaderNames())
+        added = set(self.model.getHeaderNames()) - set(self.currentHeaders)
+        if added:
+            for new in added:
+                if new not in self.nativeheaders:
+                    self.addedHeaders[new] = self.model.getColumnData(new)
+        if removed:
+            self.addedHeaders.drop([header for header in removed if header in self.addedHeaders])
+        self.currentHeaders = self.model.getHeaderNames()
+        self.addableHeaders = set(self.nativeheaders) - set(self.currentHeaders)
+        self.AddableChanged.emit(self.addableHeaders)
+
+
+    def showStatTable(self,show):
+        if show:
+            self.StatTable = StatTable(self)
+            self.layout.addWidget(self.StatTable)
+            self.StatTable.calcStats(self.model.getTableData())
+            self.StatTable.Closing.connect(lambda check:self.ShowStatChk.setChecked(False))
+        else:
+            self.StatTable.deleteLater()
+            self.StatTable = None
+
+    def updateStatTable(self):
+        print 'in hereeee'
+        if self.StatTable:
+            print 'in here'
+            self.StatTable.calcStats(self.model.getTableData())
+
+    def table_header_context(self,pos,**kwargs):
+        menu = Widgets.QMenu(self)
+        menu.addAction('stuff')
+        menu.addAction("Segunda opción")
+        menu.addAction(":)")
+        menu.exec_(Gui.QCursor.pos())
+
+    def table_row_context(self,pos,**kwargs):
+        menu = Widgets.QMenu(self)
+        HideRows = menu.addAction('Hide Row(s)')
+        action = menu.exec_(self.Table.mapToGlobal(pos))
+        if action == HideRows:
+            selected = QtUtils.returnTableSelectedRows(self.Table)
+            if selected:
+                self.model.hideRows(selected)
+
+    def getEventandRun(self):
+        for path in self.fpaths:
+            splitpath = path.split(os.sep)
+            for event,runs in EventDict.iteritems():
+                if event in splitpath:
+                    self.events.append(event)
+                    for run in runs:
+                        if run in splitpath:
+                            self.runs.append(run)
+                            break
+                    break
+        print self.events
+        print self.runs
+
+
 class RetrieveData(Core.QThread):
-    EmitRetrievedData = Core.pyqtSignal(object)
+    EmitRetrievedData = Core.pyqtSignal(object,object)
     QueryFinished = Core.pyqtSignal(object)
     StatusPartner = Core.pyqtSignal(object)
     def __init__(self,target,args=(),kwargs={},parent=None):
@@ -91,8 +309,7 @@ class RetrieveData(Core.QThread):
 
     def run(self):
         data = self.target(*self.args,**self.kwargs)
-        print data
-        self.EmitRetrievedData.emit(data)
+        self.EmitRetrievedData.emit(data,list(data))
         self.QueryFinished.emit(self.getThreadId())
         self.StatusPartner.emit(self.statusTID)
 
@@ -144,7 +361,10 @@ class FileSearchSelector(Widgets.QWidget):
         return group
 
 class PhobosTableModel(Core.QAbstractTableModel):
-    def __init__(self, datain=pd.DataFrame(), parent=None,**kwargs):
+    DataChanged = Core.pyqtSignal()
+    ColumnChanged = Core.pyqtSignal()
+    RowChanged = Core.pyqtSignal()
+    def __init__(self, datain=pd.DataFrame(),nativeheaders = [], parent=None,**kwargs):
         Core.QAbstractTableModel.__init__(self, parent)
         self.parent = parent
         self.edit = kwargs.get('editable',False)
@@ -159,11 +379,19 @@ class PhobosTableModel(Core.QAbstractTableModel):
             except:
                 print('Conversion unsuccessful, making empty DataFrame.')
                 datain = pd.DataFrame()
+        if nativeheaders:
+            self.NativeHeaders = copy.copy(nativeheaders)
+        else:
+            self.NativeHeaders = list(datain)
         if self.edit:
-            datain['Edited'] = pd.Series([0]*datain.shape[0])
-        self.header = list(datain)
+            self.editHeader = 'Table Edited'
+            datain[self.editHeader] = pd.Series([0]*datain.shape[0])
+
+        self.FilterIdx = pd.Series([True]*datain.shape[0])
 
         self.arraydata = copy.deepcopy(datain)
+        #Need to figure out how to stop copying the datain a 2nd time.. gonna look into sortfilterproxymodel
+        self.origdata = copy.deepcopy(datain)
 
     def handleValue(self,header,value):
         if header in self.arraydata:
@@ -185,73 +413,155 @@ class PhobosTableModel(Core.QAbstractTableModel):
                     return None
         return value
 
-    def rowCount(self, parent):
+    def rowCount(self, parent=None):
         return self.arraydata.shape[0]
 
-    def columnCount(self, parent):
+    def columnCount(self, parent=None):
         return self.arraydata.shape[1]
 
-    def headerData(self, section, orientation, role):
+    def headerData(self, section, orientation = Core.Qt.Horizontal, role=Core.Qt.DisplayRole):
         if role == Core.Qt.DisplayRole:
             if orientation == Core.Qt.Horizontal:
-                return self.header[section]
+                return list(self.arraydata)[section]
             elif orientation == Core.Qt.Vertical:
-                if self.rowLabels:
-                    return self.rowLabels[section]
-                else:
-                    return section
+                return str(self.arraydata.index[section])
             else:
                 return section
 
     def flags(self, index):
-        if self.edit:
-            return Core.Qt.ItemIsEnabled | Core.Qt.ItemIsEditable | Core.Qt.ItemIsSelectable
-        else:
-            return Core.Qt.ItemIsEnabled | Core.Qt.ItemIsSelectable
+        if list(self.arraydata)[index.column()] not in self.NativeHeaders:
+                return Core.Qt.ItemIsEnabled | Core.Qt.ItemIsEditable | Core.Qt.ItemIsSelectable
+        elif self.edit:
+            if list(self.arraydata)[index.column()] != self.editHeader:
+                return Core.Qt.ItemIsEnabled | Core.Qt.ItemIsEditable | Core.Qt.ItemIsSelectable
 
-    def setData(self, index, value, role):
-        if role == Core.Qt.EditRole:
-            row = index.row()
-            column = index.column()
-            dtype = self.arraydata[self.header[column]].dtype.kind
-            value = self.handleValue(self.header[column],value)
-            if value == None:
-                return False
-            self.arraydata[self.header[column]].iat[row] = value
-            self.arraydata['Edited'].iat[row] = 1
-            self.dataChanged.emit(index, index)
-            return True
-        else:
-            return False
+        return Core.Qt.ItemIsEnabled | Core.Qt.ItemIsSelectable
 
     def data(self, index, role):
         if not index.isValid():
             return None
         if role == Core.Qt.DisplayRole:
-            if self.header[index.column()] in self.arraydata:
-                value = self.arraydata[self.header[index.column()]][index.row()]
+            if list(self.arraydata)[index.column()] in self.arraydata:
+                value = self.arraydata[list(self.arraydata)[index.column()]].iat[index.row()]
             else:
                 value = ''
             return str(value)
+### Get Data
 
     def getTableData(self):
         return self.arraydata
 
     def getHeaderNames(self):
-        return self.header
+        return list(self.arraydata)
+
+    def getColumnData(self,header):
+        if header in list(self.arraydata):
+            return self.arraydata[header]
+
+    def getOrigData(self):
+        return self.origdata
+
+    def getSaveData(self):
+        return self.origdata[self.NativeHeaders]
+
+### Add Data
+
+    def addColumnData(self,data):
+        headers = list(data)
+        addlist = []
+        for header in headers:
+            if header not in list(self.arraydata):
+                addlist.append(header)
+        if addlist:
+            #This is for when I no longer have to pair down arraydata for filtering
+#            self.arraydata = self.arraydata.join(data[addlist])
+            self.origdata = self.origdata.join(data[addlist])
+            print list(self.origdata)
+            self.updateTableData()
+            self.updateColumns()
+
+### Remove Data
+
+    def removeColumns(self,headers):
+        removelist = []
+        for header in headers:
+            if header in list(self.arraydata):
+                removelist.append(header)
+        if removelist:
+#            self.arraydata.drop(removelist,axis=1)
+            self.origdata.drop(removelist,axis=1)
+            self.updateTableData()
+            self.updateColumns()
+
+### Data Changing
+
+    def updateCell(self):
+        self.DataChanged.emit()
+        self.layoutChanged.emit()
+
+    def updateColumns(self):
+        self.ColumnChanged.emit()
+        self.DataChanged.emit()
+        self.layoutChanged.emit()
+
+    def updateRows(self):
+        self.RowChanged.emit()
+        self.DataChanged.emit()
+        self.layoutChanged.emit()
+
+    def updateTableData(self):
+        self.origdata = self.origdata.reindex(self.FilterIdx.index)
+        self.arraydata = copy.deepcopy(self.origdata[self.FilterIdx])
+        self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(self.rowCount(0), self.columnCount(0)))
+        self.layoutChanged.emit()
+
+    def setData(self, index, value, role):
+        if role == Core.Qt.EditRole:
+            row = index.row()
+            column = index.column()
+            dtype = self.arraydata[list(self.arraydata)[column]].dtype.kind
+            value = self.handleValue(list(self.arraydata)[column],value)
+            if value == None:
+                return False
+            print row
+            self.arraydata[list(self.arraydata)[column]].iat[row] = value
+            if self.edit:
+                if value == self.origdata[list(self.arraydata)[column]].iat[row]:
+                    self.arraydata[self.editHeader].iat[row] = 0
+                    self.origdata[self.editHeader].iat[row] = 0
+                else:
+                    self.arraydata[self.editHeader].iat[row] = 1
+                    self.origdata[self.editHeader].iat[row] = 1
+            self.dataChanged.emit(index, index)
+            self.updateCell()
+            return True
+        else:
+            return False
 
     def setCellValue(self,header,row,value):
-        if header in self.header:
+        if header in list(self.arraydata):
             if row in self.arraydata[header].index:
                 value = self.handleValue(header,value)
                 if value == None:
                     print('Value entered could not be interpreted')
                 else:
                     self.arraydata[header].iat[row] = value
+                    self.origdata[header].iat[row] = value
+                    self.updateCell()
             else:
                 print('row was not in table!')
         else:
             print('{} was not in table headers'.format(header))
+
+    def filterTable(self,procedures):
+        self.FilterIdx = GeneralFilter.generalFilter(self.origdata,[['inSearchPlan','Ascending Order','','','']],getidx=True)
+        self.updateTableData()
+        self.updateRows()
+
+class PhobosTableModelProxyFilter(Core.QSortFilterProxyModel):
+    def __init__(self,parent=None,**kwargs):
+        super(PhobosTableModelProxyFilter,self).__init(parent)
+
 
 class Phobos(Widgets.QMainWindow):
     def __init__(self,parent=None,**kwargs):
@@ -264,7 +574,7 @@ class Phobos(Widgets.QMainWindow):
         self.LastDirectory = os.getcwd()
         self.DataFileExtensions = OrderedDict()
         self.DataFileExtensions['HDF5 File'] = ['.h5']
-        self.DataFileExtensions['CSV File'] = ['.csv']
+#        self.DataFileExtensions['CSV File'] = ['.csv']
         self.DataFileExtensions['Excel File'] = ['.xlsx']
         self.DataFileExtensions['Pickle File'] = ['.pkl']
 
@@ -276,9 +586,10 @@ class Phobos(Widgets.QMainWindow):
         self.setAcceptDrops(True)
         self.fileSearcher = FileSearchSelector(self)
         self.searchBar = QtUtils.SearchBar(self.FileNameCombo,self)
-        self.fileSearcher.buttonChanged.connect(self.setSearchWidget)
         self.SearchQWidgetLayout.addWidget(self.fileSearcher)
         self.SearchQWidgetLayout.addWidget(self.searchBar)
+        self.AddNativeHeader = AddNativeHeadersWidget([],self)
+        self.NativeHeaderLayout.addWidget(self.AddNativeHeader)
         self.FileOpenStackedSplitter.setSizes((200,10000))
         self.setupToolbar()
         #Init variables that need to be reset on 'New Project'
@@ -307,15 +618,22 @@ class Phobos(Widgets.QMainWindow):
     def initialize(self):
         #This function is for variables that need to be set/reset on
         #open/new project.
+        self.tableDict = {}
         pass
 
     def makeConnections(self):
         #This is where all GUI Widget signals and slots are stored
-        self.Button1.clicked.connect(lambda trash:self.scan_directory())
-        self.CreateTable.clicked.connect(lambda trash:self.get_data())
+        self.Button1.clicked.connect(lambda:self.scan_directory())
+        self.GetSelection.clicked.connect(lambda:self.filterTable())
+        self.CreateTable.clicked.connect(lambda:self.get_data_from_file())
+        self.CreateTable.clicked.connect(lambda:self.GatherPct.setText('100'))
 
-        self.FileNameCombo.currentIndexChanged.connect(lambda trash:self.populate_groups())
-        self.GroupNameCombo.currentIndexChanged.connect(lambda trash:self.populate_datasets())
+
+        self.fileSearcher.buttonChanged.connect(self.setSearchWidget)
+        self.AddNativeHeader.Selection.connect(self.addNativeHeaders)
+
+        self.FileNameCombo.currentIndexChanged.connect(lambda:self.populate_groups())
+        self.GroupNameCombo.currentIndexChanged.connect(lambda:self.populate_datasets())
         self.DatasetList.itemSelectionChanged.connect(lambda:self.populate_headers())
 
 ### Core Gui Functions
@@ -391,7 +709,7 @@ class Phobos(Widgets.QMainWindow):
     def statusIndicatorStart(self):
         #Creates a thread to update a status indicator which is stored in
         #the layout self.StatusLayout
-        thread = ProgressIndicatorUpdater(self)
+        thread = ProgressIndicatorUpdater(self.StatusLayout,self)
         threadkey = thread.getThreadId()
         self.threads[threadkey] = thread
         self.threads[threadkey].Stopped.connect(self.killThread)
@@ -460,6 +778,11 @@ class Phobos(Widgets.QMainWindow):
         for dfe in self.DataFileExtensions.itervalues():
             if extension.lower().endswith(dfe[0]):
                 return True
+        if extension.lower().endswith('.csv'):
+            dialog = QtUtils.PandasCSVopener(fpath,self)
+            dialog.complete.connect(lambda data,native:self.make_table_from_file(data,fpaths=[fpath],native=native))
+            dialog.exec_()
+            return False
         else:
             self.Alert(self.statusbar,'Extension {} is not supported.'.format(extension),error=True)
             return False
@@ -579,7 +902,7 @@ class Phobos(Widgets.QMainWindow):
         if self.DatasetList.count():
             fname = self.FileNameCombo.currentText()
             grp = self.GroupNameCombo.currentText()
-            dset = QtUtils.returnSelection(self.DatasetList,first=True)
+            dset = QtUtils.returnListSelection(self.DatasetList,first=True)
             fpath = os.path.join(self.LastDirectory,fname)
             headers = PhobosFunctions.get_headers(fpath,grp,dset)
             if headers:
@@ -593,7 +916,7 @@ class Phobos(Widgets.QMainWindow):
 
 ### Data Getting
 
-    def get_data(self,**kwargs):
+    def get_data_from_file(self,**kwargs):
         showstatus = kwargs.get('status',True)
         numthreads = 1
         if showstatus:
@@ -605,64 +928,69 @@ class Phobos(Widgets.QMainWindow):
         #TODO look at this
         fpath = os.path.join(self.LastDirectory,self.FileNameCombo.currentText())
         grp = self.GroupNameCombo.currentText()
-        dset = QtUtils.returnSelection(self.DatasetList,first=True)
-        headers = QtUtils.returnSelection(self.HeaderList)
+        dset = QtUtils.returnListSelection(self.DatasetList,first=True)
+        headers = QtUtils.returnListSelection(self.HeaderList)
         extension = self.getExtension(fpath)
-        if extension in ['h5','hdf5']:
+        if extension in ['.h5','.hdf5']:
             func = PhobosFunctions.get_h5_data
-        elif extension in ['csv']:
-            func = PhobosFunctions.get_csv_data
-        elif extension in ['xlsx']:
+            args = (fpath,grp,dset,)
+            fpaths = [fpath]
+            grps = [grp]
+            dsets = [dset]
+#        elif extension in ['.csv']:
+#            func = PhobosFunctions.get_csv_data
+        elif extension in ['.xlsx']:
             func = PhobosFunctions.get_xlsx_data
-        elif extension in ['pkl']:
+            args = (fpath,dset,)
+            fpaths = [fpath]
+            grps = []
+            dsets = []
+        elif extension in ['.pkl']:
             func = PhobosFunctions.get_pkl_data
-        thread = RetrieveData(target=PhobosFunctions.func,args=(fpath,grp,dset,),kwargs=dict(headers=headers,addDset=True))
+            args = (fpath,)
+            grps = []
+            dsets = []
+        else:
+            self.Alert(self.statusbar,'The extension {} is not recognized in get_data_from_file.'.format(extension),error=True)
+            return
+        thread = RetrieveData(target=func,args=args,kwargs=dict(headers=headers,gatherpct=self.GatherPct.text()))
         threadkey = thread.getThreadId()
         self.threads[threadkey] = thread
         self.threads[threadkey].statusTID = tid
-        self.threads[threadkey].EmitRetrievedData.connect(self.make_table)
+        self.threads[threadkey].EmitRetrievedData.connect(lambda data,native:self.make_table_from_file(data,fpaths=fpaths,native=native,grps=grps,dsets=dsets))
         self.threads[threadkey].QueryFinished.connect(self.killThread)
         self.threads[threadkey].StatusPartner.connect(self.stopUpdater)
         self.threads[threadkey].start()
 
+    def get_native_header_data(self,headers,**kwargs):
+        if not isinstance(headers,list):
+            self.Alert('The headers to add to the table were not sent as a list',error=True)
+            return pd.DataFrame()
+        if self.TableTabWidget.count():
+            twidget = self.TableTabWidget.currentWidget()
 
 ### Table Portion
 
-    def table_header_context(self,pos,**kwargs):
-        menu = Widgets.QMenu(self)
-        menu.addAction('stuff')
-        menu.addAction("Segunda opción")
-        menu.addAction(":)")
-        menu.exec_(Gui.QCursor.pos())
+    def make_table_from_file(self,data,**kwargs):
+        #Assuming data is a dataframe
+        if data.shape[0]:
+            #Make fpaths a list, because in general we might have multiple files concated
+            uniqueKey = uuid.uuid4()
+            TableWidget = TabTableWidget(self,data,**kwargs)
+            self.TableTabWidget.addTab(TableWidget,'Test')
+            self.TableTabWidget.currentChanged.connect(self.AddNativeHeader.setList(self.TableTabWidget.currentWidget().addableHeaders))
+        else:
+            self.Alert(self.statusbar,'No Data was passed to make_table_from_file',error=True)
 
-    def table_row_context(self,pos,**kwargs):
-        #Make Keys for TableTabs with id() or with uuid
-        menu = QMenu(self)
-        HideRows = menu.addAction('Hide Row(s)')
-        action = menu.exec_(self.TableTab.mapToGlobal(pos))
-        if action == HideRows:
-            pass
+### Adding Data to Table
 
-    def create_tableWidget(self,key,**kwargs):
-        self.tableWidget = Widgets.QWidget()
-        self.tableLayout = Widgets.QVBoxLayout()
-        self.tableList = Widgets.QTableView()
-        self.tableLayout.addWidget(self.tableList)
-        self.tableWidget.setLayout(self.tableLayout)
-        hheaders = self.tableList.horizontalHeader()
-        hheaders.setContextMenuPolicy(Core.Qt.CustomContextMenu)
-        hheaders.customContextMenuRequested.connect(self.table_menu)
-        vheaders = self.tableList.verticalHeader()
-        vheaders.setContextMenuPolicy(Core.Qt.CustomContextMenu)
-        vheaders.customContextMenuRequested.connect(self.table_row_context)
-        return self.tableWidget
-
-    def make_table(self,data,**kwargs):
+    def addNativeHeaders(self,data):
+        #Need to search key of table
+        #get table model and call addColumn
+        if self.TableTabWidget.count() and data.shape[0]:
+            twidget = self.TableTabWidget.currentWidget()
+            twidget.model.addColumnData(data)
         print data
-        tablewidget = self.create_tableWidget('')
-        model = PhobosTableModel(data,self,editable=True)
-        self.tableList.setModel(model)
-        self.TableTabWidget.addTab(tablewidget,'NewTab')
 
     def showdata(self,data):
         print data
@@ -670,6 +998,18 @@ class Phobos(Widgets.QMainWindow):
     def done(self):
         print 'DONE'
         self.ready()
+
+    def printSelected(self):
+        if self.TableTabWidget.count():
+            twidget = self.TableTabWidget.currentWidget()
+            print 'IM HERE'
+            print QtUtils.returnTableSelectedColumns(twidget.Table)
+    def filterTable(self):
+        if self.TableTabWidget.count():
+            twidget = self.TableTabWidget.currentWidget()
+            lent = twidget.model.rowCount()
+            twidget.model.filterTable('')
+#            twidget.model.addColumnData(pd.DataFrame({'This':['True']*lent}))
 
 
 if __name__ == '__main__':

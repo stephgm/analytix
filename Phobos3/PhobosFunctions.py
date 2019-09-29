@@ -18,10 +18,118 @@ from collections import Iterable
 
 if True:
 ### Data Getting
+    def thin_data(array,pct,**kwargs):
+        '''
+        Returns a thinned version of what was passed in by leaving pct% of the
+        original array.
+
+        Input:
+                array - Can be list, tuple, single layer dictionary of lists or tuples,
+                        numpy array, or pandas DataFrame
+
+                pct -   The percent of data that you want to gather from array.
+                        If pct > 100 will be set to 100%
+                        If pct < X% where X% is the magic percentage that would give
+                        you only 1 row or column, then pct = X%
+
+                        Example:
+                            thin_data([0,1,2,3,5],10) = []
+                            if pct was left at 10% this return would be empty
+                            since the list has 5 elements. The minimum % that would return
+                            some value is 20%, thus pct will be made 20% and a message
+                            will be printed alerting you of this.  The return will
+                            actually be [0] in this example.
+
+        Kwargs:
+                how - either "row" or "column" for if you have sideways data.
+                        if how="column" and array is a DataFrame, it will return
+                        a subset of the columns!
+                minrows - The minimum number of rows to return
+        Return:
+                Returns the thinned array
+
+        '''
+
+        how = kwargs.get('how','row')
+        minrows = kwargs.get('minrows',1)
+        dtype = None
+        seconddtype = None
+        if not isinstance(array,pd.DataFrame) and not isinstance(array,np.ndarray):
+            print('The data you entered was not a dataframe nor a numpy array.  Trying to convert and pass back the type you gave me. Setting how="row"')
+            if isinstance(array,Iterable) and not isinstance(array,basestring):
+                dtype = type(array)
+                if isinstance(array,dict):
+                    print('You passed in a dictionary, attempting to make it a DataFrame.  If it is nested, then your guess is as good as mine as to how it will work.  Setting how="row"')
+                    try:
+                        seconddtype = type(array[array.keys()[0]])
+                        array = pd.DataFrame(array)
+                        how = 'row'
+                    except:
+                        print('The conversion of the dictionary to dataframe failed. Returning input')
+                        return array
+                else:
+                    try:
+                        array = np.array(array)
+                        how = 'row'
+                    except:
+                        print('The conversion to a numpy array was not possible! Returning input')
+                        return array
+            else:
+                print('The array that you passed is not Iterable or it is a string, which cannot be made into a numpy array. Returning input')
+                return array
+        if isinstance(pct,basestring):
+            try:
+                pct = float(pct)
+            except:
+                print('Could not convert pct:{} to a float. Returning input')
+                return array
+        if how == 'row':
+            direction = 0
+        elif how == 'column':
+            direction = 1
+        else:
+            print('How should either be "row" or "column", you entered {}.  Assuming you mean "row" because I can.'.format(how))
+            direction = 0
+        if not isinstance(minrows,int):
+            try:
+                minrows = int(minrows)
+            except:
+                print('Could not convert minrows kwarg to int.  Returning input')
+                return array
+        if pct >= 100:
+            print('The percent data you are trying to get is >= 100%, returning input')
+            return array
+        elif pct*.01*array.shape[direction] < minrows:
+            suggested = minrows*100./array.shape[direction]
+            print('The percent of data you are trying to get {}%, will likely make your returned data empty. Returning {}%, this should just be 1 {}.'.format(pct,suggested,how))
+            pct = suggested
+        newindex = np.linspace(0,array.shape[direction]-1,int(array.shape[direction]*.01*pct),dtype=int)
+        if dtype != None and isinstance(array,np.ndarray):
+            array = array[newindex]
+            array = dtype(array)
+            return array
+        elif dtype != None and isinstance(array,pd.DataFrame):
+            array = array.iloc[newindex].reset_index(drop=True)
+            array = array.to_dict(orient='list')
+            for key in array:
+                array[key] = seconddtype(array[key])
+            return array
+        elif isinstance(array,pd.DataFrame):
+            if how == 'row':
+                array = array.iloc[newindex].reset_index(drop=True)
+            else:
+                array = array.iloc[:,newindex].reset_index(drop=True)
+            return array
+        elif isinstance(array,np.ndarray):
+            array = array[newindex]
+            return array
+        else:
+            return array
 
     def get_h5_attributes(fpath,**kwargs):
         '''
-        Returns a dictionary of dataframes of attributes
+        Returns a dictionary of dataframes of attributes.  Will only return items in which
+        attributes are found.
         Input:
                 fpath - the absolute path to the .h5 file
         Kwargs:
@@ -33,6 +141,8 @@ if True:
         Return:
                 {file: file attribute Dataframe,
                 Kwargs: Kwarg attributes Dataframe}
+
+                Note:  This can be empty.
         '''
         data = {}
         grp = kwargs.get('grp',None)
@@ -48,6 +158,13 @@ if True:
                     data['grp'] = pd.DataFrame({k:v for k,v in hf[grp].attrs.iteritems()})
                     if dset and dset in hf[grp]:
                         data['dset'] = pd.DataFrame({k:v for k,v in hf[grp][dset].attrs.iteritems()})
+                    else:
+                        print('{} is not in the h5 file {}, ommiting'.format(dset,fpath))
+                else:
+                    print('{} is not in the h5 file {}, omitting'.format(grp,fpath))
+            for key in data.keys():
+                if data[key].shape[0] == 0:
+                    data.pop(key)
             if addDset and dset:
                 for key in data:
                     data[key]['Dset'] = np.array([dset]*data[key].shape[0])
@@ -57,6 +174,8 @@ if True:
             if addFile:
                 for key in data:
                     data[key]['File'] = np.array([os.path.basename(fpath)]*data[key].shape[0])
+        else:
+            print('{} is not a valid file'.format(fpath))
         return data
 
     def get_h5_data(fpath,grp,dset,**kwargs):
@@ -71,8 +190,9 @@ if True:
                 headers - a list of headers to extract from the h5 dataset
                 section - tuple indicating the slice of the data to return (0,10) -> [0:10]
                 addDset - adds a Dataset name column to the dataframe
-                thinpct - an integer X that will gather X% of the data
-            Note:  You can apply both a section and thinpct and will work as expected
+                gatherpct - a float X that will gather X% of the data
+                Phobos - Tells function to return fpath and dataframe
+            Note:  You can apply both a section and gatherpct and will work as expected
 
         Return:
                 Returns pandas dataframe of the data from the h5 file
@@ -81,9 +201,13 @@ if True:
         headers = kwargs.get('headers',None)
         section = kwargs.get('section',None)
         addDset = kwargs.get('addDset',False)
-        thinpct = kwargs.get('thinpct',None)
+        gatherpct = kwargs.get('gatherpct',None)
+        Phobos = kwargs.get('Phobos',False)
         if section:
-            if isinstance(section,Iterable) and len(section) < 2:
+            if isinstance(section,basestring):
+                print('The section kwarg you passed is a string.  Pass an iterable')
+                section = (0,200)
+            elif isinstance(section,Iterable) and len(section) < 2:
                 print('The section kwarg you passed is not a correct length.')
                 section = (0,200)
             elif isinstance(section,Iterable) and (not isinstance(section[0],int) or not isinstance(section[1],int)):
@@ -92,87 +216,115 @@ if True:
             elif not isinstance(section,Iterable):
                 print('The section kwarg you passed is not an iterable')
                 section = (0,200)
-        if thinpct:
-            if not isinstance(thinpct,int):
-                try:
-                    print('The thinpct kwarg passed is not an int.  Attempting to convert')
-                    thinpct = int(thinpct)
-                except:
-                    print('The conversion failed.  Setting thinpct = 5%')
-                    thinpct = 5
-            if thinpct > 100 or thinpct < 1:
-                thinpct = 100
+        if headers and not isinstance(headers,Iterable) and not isinstance(headers,basestring):
+            print('The headers Kwarg you passed is not iterable.  Gathering all data')
+            headers = None
+        elif headers:
+            if not isinstance(headers[0],basestring):
+                headers = None
+                print('The iteration items of the headers Kwarg are not strings. Gathering all Data')
 
-        if os.path.isfile(fpath):
-            with h5py.File(fpath,'r') as hf:
-                if grp in hf:
-                    if dset in hf[grp]:
-                        if headers:
-                            getheaders=headers
-                        else:
-                            getheaders=hf[grp][dset].dtype.fields.keys()
-                        if isinstance(section,tuple):
-                            data = {header:hf[grp][dset][header][section[0]:section[1]] for header in getheaders if header in hf[grp][dset].dtype.fields.keys()}
-                        else:
-                            data = {header:hf[grp][dset][header][...] for header in getheaders if header in hf[grp][dset].dtype.fields.keys()}
-
-                    else:
-                        print('{} dataset is not in {}'.format(dset,fpath))
-                else:
-                    print('{} group is not in {}'.format(grp,fpath))
-        else:
+        if not os.path.isfile(fpath):
             print('{} is not a valid file'.format(fpath))
+            return pd.DataFrame()
+        with h5py.File(fpath,'r') as hf:
+            if grp in hf:
+                if dset in hf[grp]:
+                    if headers:
+                        getheaders=headers
+                    else:
+                        getheaders=hf[grp][dset].dtype.fields.keys()
+                    if isinstance(section,tuple):
+                        data = {header:hf[grp][dset][header][section[0]:section[1]] for header in getheaders if header in hf[grp][dset].dtype.fields.keys()}
+                    else:
+                        data = {header:hf[grp][dset][header][...] for header in getheaders if header in hf[grp][dset].dtype.fields.keys()}
+
+                else:
+                    print('{} dataset is not in {}'.format(dset,fpath))
+                    return pd.DataFrame()
+            else:
+                print('{} group is not in {}'.format(grp,fpath))
+                return pd.DataFrame()
 
         if addDset:
             data['Dset'] = np.array([dset]*len(data[data.keys()[0]]))
-        y = pd.DataFrame(data)
-        if thinpct != None:
-            y = y.iloc[np.linspace(0,y.shape[0]-1,int(y.shape[0]*.01*thinpct),dtype=int)].reset_index(drop=True)
-        return y
+        return thin_data(pd.DataFrame(data),gatherpct)
 
-
-    def get_csv_data(fpath,**kwargs):
+    def get_xlsx_data(fpath,sheetname,**kwargs):
         '''
-        Given a filepath to a csv file, this function
-        returns the data in a pandas dataframe
+        Returns the xlsx dataframe from a particular sheet within the xlsx file given
+        the absolute file path of the excel file.
+
         Input:
-                fpath - the file path to the csv file
+                fpath - The absolute path to the xlsx file
+                sheetname - The sheetname of the data you want to read into a dataframe
+
         Kwargs:
-                headers - a list of headers to extract from the csv dataset
-                section - tuple indicating the slice of the data to return (0,10) -> [0:10]
-                thinpct - an integer X that will gather X% of the data
-            Note:  You can apply both a section and thinpct and will work as expected
+                headers - a list of headers that are wanted from the sheet in the file
+                gatherpct - a float X that will gather X% of the data
+                Phobos - This tells the function to return fpath and dataframe
 
         Return:
-                Returns pandas dataframe of the data from the h5 file
+                Returns a pandas Dataframe
         '''
+        if not os.path.isfile(fpath):
+            print('{} is not a valid file.'.format(fpath))
+            return pd.DataFrame()
+        gatherpct = kwargs.get('gatherpct',100)
         headers = kwargs.get('headers',None)
-        section = kwargs.get('section',None)
-        thinpct = kwargs.get('thinpct',None)
-        if section:
-            if isinstance(section,Iterable) and len(section) < 2:
-                print('The section kwarg you passed is not a correct length.')
-                section = (0,200)
-            elif isinstance(section,Iterable) and (not isinstance(section[0],int) or not isinstance(section[1],int)):
-                print('One or both of the indecies in the section kwarg you passed are not integers')
-                section = (0,200)
-            elif not isinstance(section,Iterable):
-                print('The section kwarg you passed is not an iterable')
-                section = (0,200)
-        if thinpct:
-            if not isinstance(thinpct,int):
-                try:
-                    print('The thinpct kwarg passed is not an int.  Attempting to convert')
-                    thinpct = int(thinpct)
-                except:
-                    print('The conversion failed.  Setting thinpct = 5%')
-                    thinpct = 5
-            if thinpct > 100 or thinpct < 1:
-                thinpct = 100
+        if headers and not isinstance(headers,Iterable) and not isinstance(headers,basestring):
+            print('The headers Kwarg you passed is not iterable.  Gathering all data')
+            headers = None
+        elif headers:
+            if not isinstance(headers[0],basestring):
+                headers = None
+                print('The iteration items of the headers Kwarg are not strings. Gathering all Data')
 
-        if os.path.isfile(fpath):
+        y = pd.read_excel(fpath,sheet_name=sheetname)
+        if headers:
+            y = y[headers]
 
+        try:
+            return thin_data(y,gatherpct)
+        except:
+            print('Something went wrong while trying to thin out the data, returning un-thinned')
+            return y
 
+    def get_pickle_data(fpath,**kwargs):
+        '''
+        Returns the pickled dataframe from absolute file path of the pkl file.
+
+        Input:
+                fpath - The absolute path to the pkl file
+
+        Kwargs:
+                headers - a list of headers that are wanted from the sheet in the file
+                gatherpct - a float X that will gather X% of the data
+
+        Return:
+                Returns a pandas Dataframe
+        '''
+        if not os.path.isfile(fpath):
+            print('{} is not a valid file.'.format(fpath))
+            return pd.DataFrame()
+        gatherpct = kwargs.get('gatherpct',100)
+        headers = kwargs.get('headers',None)
+        if headers and not isinstance(headers,Iterable) and not isinstance(headers,basestring):
+            print('The headers Kwarg you passed is not iterable.  Gathering all data')
+            headers = None
+        elif headers:
+            if not isinstance(headers[0],basestring):
+                headers = None
+                print('The iteration items of the headers Kwarg are not strings. Gathering all Data')
+
+        y = pickle.load(file(fpath,'rb'))
+        if headers:
+            y=y[headers]
+        try:
+            return thin_data(y,gatherpct)
+        except:
+            print('Something went wrong while trying to thin out the data, returning un-thinned')
+            return y
 
 ### Open File Attributes
 
@@ -251,7 +403,7 @@ if True:
             return ['Data']
         elif extension in ['xlsx']:
             df = pd.read_excel(fpath)
-            xls = pd.ExcelFile('excel_file_path.xls')
+            xls = pd.ExcelFile(fpath)
             return xls.sheet_names
         else:
             print('Extension {} not supported'.format(extension))
@@ -295,6 +447,8 @@ if True:
         elif extension in ['pkl']:
             #TODO I'm assuming the pickled object is a dataframe
             return list(pickle.load(file(fpath,'rb')))
+        elif extension in ['csv']:
+            return list(pd.read_csv(fpath))
         elif extension in ['xlsx']:
             return list(pd.read_excel(fpath,sheet_name=dset))
         else:
@@ -314,9 +468,9 @@ if True:
         Return:
                 Returns a list of all the gathered files referenced from sdir
         '''
-        extensions = kwargs.get('ext','*')
+        extensions = kwargs.get('ext',['*'])
         maxDepth = kwargs.get('maxDepth',-1)
-        if not isinstance(extensions,Iterable):
+        if not isinstance(extensions,Iterable) and not isinstance(extensions,basestring):
             print('The ext argument you passed is not an iterable returning')
             return sdir,[]
         if not isinstance(maxDepth,int):

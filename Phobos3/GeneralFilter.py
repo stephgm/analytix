@@ -40,20 +40,29 @@ def generalFilter(df,procedures,**kwargs):
                         [['header','Greater Than','value','OrKey','AndKey']]
     Kwargs:
             reset - Bool to reset index or not
+            getidx - Returns bool array so that sort on your own by keeping the original array
+                    this also ignores the reset kwarg
     Return:
             Returns the filtered dataframe
     '''
-    if not isinstance(df,pd.DataFrame):
-        print('The data passed is not a dataframe, returning what you gave me')
-        return df
-    if not isinstance(procedures,list):
-        print('The procedures passed were not a list, returning the original dataframe')
-        return df
-
+    getidx = kwargs.get('getidx',False)
     reset = kwargs.get('reset',True)
     if not isinstance(reset,bool):
         print('The reset kwarg passed is not True or False, setting to True')
         reset = True
+
+    if not isinstance(df,pd.DataFrame):
+        print('The data passed is not a dataframe, returning what you gave me')
+        if getidx:
+            return pd.Series([True]*len(df))
+        else:
+            return df
+    if not isinstance(procedures,list):
+        print('The procedures passed were not a list, returning the original dataframe')
+        if getidx:
+            return pd.Series([True]*df.shape[0])
+        else:
+            return df
 
     sorting = False
     orchecks = False
@@ -65,6 +74,9 @@ def generalFilter(df,procedures,**kwargs):
     andchecks = False
     andcheckdict = dict((akey,dict((okey,[])for okey in orkeys)) for akey in orkeys)
     orcheckdict = dict((key,[]) for key in orkeys)
+    idxs = []
+    MainIDX = pd.Series([True]*df.shape[0])
+
     for header,sortby,value,orcheck,andcheck in procedures:
         if header not in df:
             print('Skipping filter containing "{}", because it is not in a column name'.format(header))
@@ -124,20 +136,6 @@ def generalFilter(df,procedures,**kwargs):
             if value == None:
                 print ('Skipping the filter "{} {}" because "{}" cannot be made type {}'.format(header,sortby,value,dtype))
                 continue
-                #if 'With' in sortby and dtype not in ['O','b']:
-                #Dont think i need this, but its here if i do
-#                else:
-#                    if 'With' in sortby:
-#                        try:
-#                            value = int(value)
-#                        except:
-#                            print( value + ' cannot be of type int')
-#                    else:
-#                        try:
-#                            value = float(value)
-#                        except:
-#                            print( value + ' cannot be of type float')
-#                            continue
         if orcheck:
             or_grouping = True
             OrFilt = True
@@ -147,89 +145,89 @@ def generalFilter(df,procedures,**kwargs):
             AndFilt = True
             OrFilt = True
         if sortby == 'Less Than':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(df[header]<value)
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(df[header]<value)
             else:
-                df = df[df[header]<value]
+                MainIDX &= df[header]<value
         if sortby == 'Greater Than':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(df[header]>value)
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(df[header]>value)
             else:
-                df = df[df[header]>value]
+                MainIDX &= df[header]>value
         if sortby == 'Equal To':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(df[header]==value)
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(df[header]==value)
             else:
-                df = df[df[header]==value]
+                MainIDX &= df[header]==value
         if sortby == 'Not Equal To':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(df[header]!=value)
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(df[header]!=value)
             else:
-                df = df[df[header]!=value]
+                MainIDX &= df[header]!=value
         if sortby == 'In Range':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(df[header].between(valueLower,valueUpper))
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(df[header].between(valueLower,valueUpper))
             else:
-                df = df[df[header].between(valueLower,valueUpper)]
+                MainIDX &= df[header].between(valueLower,valueUpper)
         if sortby == 'Not In Range':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(~df[header].between(valueLower,valueUpper))
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(~df[header].between(valueLower,valueUpper))
             else:
-                df = df[~df[header].between(valueLower,valueUpper)]
+                MainIDX &= ~df[header].between(valueLower,valueUpper)
         if sortby == 'Starts With':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(df[header].astype(str).str.lower().str.startswith(str(value)))
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(df[header].astype(str).str.lower().str.startswith(str(value)))
             else:
-                df = df[df[header].astype(str).str.lower().str.startswith(str(value))]
+                MainIDX &= df[header].astype(str).str.lower().str.startswith(str(value))
         if sortby == 'Does Not Start With':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(~df[header].astype(str).str.lower().str.startswith(str(value)))
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(~df[header].astype(str).str.lower().str.startswith(str(value)))
             else:
-                df = df[~df[header].astype(str).str.lower().str.startswith(str(value))]
+                MainIDX &= ~df[header].astype(str).str.lower().str.startswith(str(value))
         if sortby == 'Ends With':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(df[header].astype(str).str.lower().str.endswith(str(value)))
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(df[header].astype(str).str.lower().str.endswith(str(value)))
             else:
-                df = df[df[header].astype(str).str.lower().str.endswith(str(value))]
+                MainIDX &= df[header].astype(str).str.lower().str.endswith(str(value))
         if sortby == 'Does Not End With':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(~df[header].astype(str).str.lower().str.endswith(str(value)))
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(~df[header].astype(str).str.lower().str.endswith(str(value)))
             else:
-                df = df[~df[header].astype(str).str.lower().str.endswith(str(value))]
+                MainIDX &= ~df[header].astype(str).str.lower().str.endswith(str(value))
         if sortby == 'Contains':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(df[header].astype(str).str.lower().str.contains(str(value),case=False))
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(df[header].astype(str).str.lower().str.contains(str(value),case=False))
             else:
-                df = df[df[header].astype(str).str.lower().str.contains(str(value),case=False)]
+                MainIDX &= df[header].astype(str).str.lower().str.contains(str(value),case=False)
         if sortby == 'Does Not Contain':
-            if orchecks and not andchecks:
+            if OrFilt and not AndFilt:
                 orcheckdict[orcheck].append(~df[header].astype(str).str.lower().str.contains(str(value),case=False))
-            elif orchecks and andchecks:
+            elif OrFilt and AndFilt:
                 andcheckdict[orcheck][andcheck].append(~df[header].astype(str).str.lower().str.contains(str(value),case=False))
             else:
-                df = df[~df[header].astype(str).str.lower().str.contains(str(value),case=False)]
+                MainIDX &= ~df[header].astype(str).str.lower().str.contains(str(value),case=False)
         if sortby == 'Ascending Order':
             sort = True
             sortType.append(True)
@@ -238,38 +236,46 @@ def generalFilter(df,procedures,**kwargs):
             sort = True
             sortType.append(False)
             sortHeader.append(header)
+
     if OrFilt and AndFilt:
         oidxs = []
         for okey in andcheckdict:
             idxs = []
             for akey in andcheckdict[okey]:
                 if andcheckdict[okey][akey]:
-                    idxs.append(pd.Series(np.array([True]*df.shape[0])))
+                    idxs.append(pd.Series([True]*df.shape[0]))
                     for idxa in andcheckdict[okey][akey]:
-                        idxs[-1] = idxs[-1] & idxa
+                        idxs[-1] &= idxa
                     orcheckdict[okey].append(idxs[-1])
         AndFilt = False
 
 
     if OrFilt and not AndFilt:
-        idxs = pd.Series(np.array([True]*df.shape[0]))
+        idxs = pd.Series([True]*df.shape[0])
         for key in orcheckdict:
             if orcheckdict[key]:
-                oridxs = pd.Series(np.array([False]*df.shape[0]))
+                oridxs = pd.Series([False]*df.shape[0])
                 for idxo in orcheckdict[key]:
-                    oridxs = oridxs | idxo
-                idxs = idxs & oridxs
-        if reset:
-            df.reset_index(inplace=True, drop=True)
-        df = df[idxs]
+                    oridxs |= idxo
+                idxs &= oridxs
+
     if sort:
         df = df.sort_values(by=sortHeader,ascending=sortType)
+    if len(idxs):
+        totalIDX = MainIDX&idxs
+    else:
+        totalIDX = MainIDX
+    totalIDX = totalIDX.reindex(df.index)
+    if getidx:
+        return totalIDX
+    else:
+        df = df[totalIDX]
     if reset:
-        df.reset_index(inplace=True, drop=True)
+        df.reset_index(drop=True)
     return df
 
 if __name__ == '__main__':
     y = pd.DataFrame(dict(this=[1,2,3,4],that=[5,6,4,3]))
-    y = generalFilter(y,[['this','Descending Order','','',''],
-                         ['this','Contains','4','','']],reset=False)
+    y = generalFilter(y,[['this','Ascending Order','','',''],
+                         ],getidx=True)
     print y

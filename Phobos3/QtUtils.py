@@ -18,19 +18,23 @@ import glob
 import re
 from collections import Iterable
 
+#TODO these need to be made like at work with file imports
+sys.path.append('/home/klinetry/Desktop/Phobos3')
+import PhobosFunctions as PF
+
 if True:
 ### Common List Widget Functions
 
-    def returnSelection(widget,**kwargs):
+    def returnListSelection(widget,**kwargs):
         sort = kwargs.pop('sort',False)
         getFirst = kwargs.pop('first',False)
         getLast = kwargs.pop('last',False)
         if isinstance(widget,Widgets.QListWidget) or isinstance(widget,Widgets.QTreeWidget):
-            selection = [item.text() for item in widget.selectedItems()]
+            selection = [str(item.text()) for item in widget.selectedItems()]
         else:
             return []
         if sort:
-            selection.sort()
+            selection = sorted(selection)
         if getFirst:
             if selection:
                 return selection[0]
@@ -44,15 +48,84 @@ if True:
         else:
             return selection
 
-    def returnAllItems(widget,**kwargs):
+    def returnAllListItems(widget,**kwargs):
         if not isinstance(widget,Widgets.QListWidget):
             return []
 
         getReadable = kwargs.get('readable',True)
         if getReadable:
-            return [widget.item(i).text() for i in widget.count()]
+            return [str(widget.item(i).text()) for i in widget.count()]
         else:
             return [widget.item(i) for i in widget.count()]
+
+### Common Table View/Widget Functions
+    def returnTableSelectedColumns(widget,**kwargs):
+        sort = kwargs.get('sort',False)
+        getFirst = kwargs.get('first',False)
+        getLast = kwargs.get('last',False)
+        indexOnly = kwargs.get('index',False)
+        if isinstance(widget,Widgets.QTableView) or isinstance(widget,Widgets.QTableWidget):
+            if isinstance(widget,Widgets.QTableWidget):
+                if not indexOnly:
+                    selection = [str(widget.horizontalHeaderItem(index.column()).text())\
+                                 for index in widget.selectionModel().selectedColumns()]
+                else:
+                    selection = [index.column() for index in widget.selectionModel().selectedColumns()]
+            else:
+                try:
+                    if not indexOnly:
+                        selection = [str(widget.model().headerData(index.column())) \
+                                     for index in widget.selectionModel().selectedColumns()]
+                    else:
+                        selection = [index.column() for index in widget.selectionModel().selectedColumns()]
+                except:
+                    print('Could not get selection from TableView.  Look at the headerData function there and set orientation and role to named arguments')
+                    return []
+            if selection:
+                if sort:
+                    selection = sorted(selection)
+                if getFirst:
+                    return selection[0]
+                elif getLast:
+                    return selection[-1]
+                else:
+                    return selection
+        else:
+            return []
+
+    def returnTableSelectedRows(widget,**kwargs):
+        sort = kwargs.get('sort',False)
+        getFirst = kwargs.get('first',False)
+        getLast = kwargs.get('last',False)
+        indexOnly = kwargs.get('index',False)
+        if isinstance(widget,Widgets.QTableView) or isinstance(widget,Widgets.QTableWidget):
+            if isinstance(widget,Widgets.QTableWidget):
+                if not indexOnly:
+                    selection = [str(widget.verticalHeaderItem(index.row()).text())\
+                                 for index in widget.selectionModel().selectedRows()]
+                else:
+                    selection = [index.row() for index in widget.selectionModel().selectedRows()]
+            else:
+                try:
+                    if not indexOnly:
+                        selection = [index.row() \
+                                     for index in widget.selectionModel().selectedRows()]
+                    else:
+                        selection = [index.row() for index in widget.selectionModel().selectedRows()]
+                except:
+                    print('Could not get selection from TableView.  Look at the headerData function there and set orientation and role to named arguments')
+                    return []
+            if selection:
+                if sort:
+                    selection = sorted(selection)
+                if getFirst:
+                    return selection[0]
+                elif getLast:
+                    return selection[-1]
+                else:
+                    return selection
+        else:
+            return []
 
 ### Search Bar
     class SearchBar(Widgets.QWidget):
@@ -61,6 +134,8 @@ if True:
             self.parent = parent
             self.widget = widget
 
+            self.addRegex = kwargs.get('regex',True)
+
             self.GroupRadials = self.makeGroup()
 
             self.searchLabel = Widgets.QLabel('Search')
@@ -68,7 +143,8 @@ if True:
             self.searchlayout = Widgets.QGridLayout()
             self.searchlayout.addWidget(self.searchLabel,0,0)
             self.searchlayout.addWidget(self.searchLine,0,1)
-            self.searchlayout.addWidget(self.GroupRadials,1,0,1,2)
+            if self.addRegex:
+                self.searchlayout.addWidget(self.GroupRadials,1,0,1,2)
             self.setLayout(self.searchlayout)
 
             self.makeConnections()
@@ -81,9 +157,10 @@ if True:
             grouplayout = Widgets.QGridLayout()
             self.StringMatch = Widgets.QRadioButton('String Matching')
             self.Regex = Widgets.QRadioButton('Regex')
-            grouplayout.addWidget(self.StringMatch,0,0)
-            grouplayout.addWidget(self.Regex,0,1)
-            group.setLayout(grouplayout)
+            if self.addRegex:
+                grouplayout.addWidget(self.StringMatch,0,0)
+                grouplayout.addWidget(self.Regex,0,1)
+                group.setLayout(grouplayout)
             self.StringMatch.setChecked(True)
             return group
 
@@ -160,7 +237,7 @@ if True:
 
         # 1 is if Ok is pushed... 0 for cancel or 'X'
         if retval == 1:
-            return returnSelection(listWidget)
+            return returnListSelection(listWidget)
         else:
             return []
 
@@ -415,10 +492,14 @@ if True:
         def getHeaderNames(self):
             return self.header
 
-class PandasCSVopener(Widgets.QWidget):
-    done = Core.pyqtSignal(object)
+class PandasCSVopener(Widgets.QDialog):
+    complete = Core.pyqtSignal(object,object)
     def __init__(self,fpath,parent=None,**kwargs):
         super(PandasCSVopener,self).__init__(parent)
+        sizeObject = Widgets.QDesktopWidget().screenGeometry(-1)
+        self.screenwidth = sizeObject.width()
+        self.screenheight = sizeObject.height()
+        self.resize(self.screenwidth*(2./3.),self.screenheight*(2./3.))
         if not os.path.isfile(fpath):
             print('{} is not a valid file'.format(fpath))
             self.close()
@@ -433,8 +514,8 @@ class PandasCSVopener(Widgets.QWidget):
 
     def makeConnections(self):
         self.SepSelection.editingFinished.connect(lambda:self.preview())
-        self.changeHeaders.toggled.connect(self.addHeaderWidgets)
-        self.addHeaders.toggled.connect(self.addHeaderWidgets)
+        self.changeHeaders.toggled.connect(lambda:self.addHeaderWidgets())
+        self.addHeaders.toggled.connect(lambda:self.addHeaderWidgets())
         self.changeHeaders.toggled.connect(lambda:self.handleCheckBoxes('change'))
         self.addHeaders.toggled.connect(lambda:self.handleCheckBoxes('add'))
 
@@ -455,23 +536,37 @@ class PandasCSVopener(Widgets.QWidget):
         self.layout = Widgets.QGridLayout()
         self.SepLabel = Widgets.QLabel('Separator:')
         self.SepSelection = Widgets.QLineEdit(',')
+        self.GatherPctLabel = Widgets.QLabel('% data to gather')
+        self.GatherPct = Widgets.QLineEdit('100')
+        self.GatherPct.setValidator(Gui.QDoubleValidator())
+        self.GatherPct.editingFinished.connect(lambda:self.preview())
         self.changeHeaders = Widgets.QCheckBox('Change Headers')
         self.addHeaders = Widgets.QCheckBox('Add Headers')
+        self.RowNumLabel = Widgets.QLabel('Number of Rows:')
+        self.RowNum = Widgets.QLabel('')
         self.previewTable = Widgets.QTableWidget()
+        self.previewTable.setEditTriggers(Widgets.QAbstractItemView.NoEditTriggers)
+        self.HeadersWidget = Widgets.QWidget()
+        self.HeadersWidgetLayout = Widgets.QGridLayout()
+        self.HeadersWidget.setLayout(self.HeadersWidgetLayout)
         self.setLayout(self.layout)
         self.layout.addWidget(self.SepLabel,0,0)
         self.layout.addWidget(self.SepSelection,0,1)
-        self.layout.addWidget(self.changeHeaders,1,0)
-        self.layout.addWidget(self.addHeaders,1,1)
-
-        self.layout.addWidget(self.previewTable,1000,0,1,2)
+        self.layout.addWidget(self.GatherPctLabel,1,0)
+        self.layout.addWidget(self.GatherPct,1,1)
+        self.layout.addWidget(self.changeHeaders,2,0)
+        self.layout.addWidget(self.addHeaders,2,1)
+        self.layout.addWidget(self.HeadersWidget,3,0,3,2)
+        self.layout.addWidget(self.RowNumLabel,1000,0)
+        self.layout.addWidget(self.RowNum,1000,1)
+        self.layout.addWidget(self.previewTable,1001,0,1,2)
         self.buttonBox = Widgets.QDialogButtonBox()
         self.buttonBox.setStandardButtons(Widgets.QDialogButtonBox.Ok | Widgets.QDialogButtonBox.Cancel)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        self.layout.addWidget(self.buttonBox,1001,0)
+        self.buttonBox.accepted.connect(self.Accept)
+        self.buttonBox.rejected.connect(self.Reject)
+        self.layout.addWidget(self.buttonBox,1002,0)
 
-    def addHeaderWidgets(self,show):
+    def addHeaderWidgets(self):
         try:
             for i in range(len(self.newlabel)):
                 self.newlabel[i].deleteLater()
@@ -480,17 +575,23 @@ class PandasCSVopener(Widgets.QWidget):
             self.origlabel = []
         except:
             pass
-        if show:
+        if self.addHeaders.isChecked() or self.changeHeaders.isChecked():
             if self.y.shape[0]:
                 self.newlabel = []
                 self.origlabel = []
-                for i,header in enumerate(list(self.y)):
+                maxrows = 5
+                i = 2
+                j = 0
+                for header in list(self.y):
                     self.origlabel.append(Widgets.QLabel(header))
                     self.newlabel.append(Widgets.QLineEdit(header))
                     self.newlabel[-1].editingFinished.connect(lambda:self.preview())
-                    self.layout.addWidget(self.origlabel[-1],i+2,0)
-                    self.layout.addWidget(self.newlabel[-1],i+2,1)
-        self.preview()
+                    self.HeadersWidgetLayout.addWidget(self.origlabel[-1],i,j)
+                    self.HeadersWidgetLayout.addWidget(self.newlabel[-1],i,j+1)
+                    i+=1
+                    if i > maxrows+2:
+                        i = 2
+                        j+=2
 
     def preview(self):
         sep = self.SepSelection.text()
@@ -502,6 +603,15 @@ class PandasCSVopener(Widgets.QWidget):
             self.y = pd.read_csv(self.fpath,sep=sep,names=[header.text() for header in self.newlabel])
         elif self.changeHeaders.isChecked() and not self.addHeaders.isChecked():
             self.y = pd.read_csv(self.fpath,sep=sep).rename(columns={oheader.text():header.text() for oheader,header in zip(self.origlabel,self.newlabel)})
+        if self.addHeaders.isChecked():
+            minrows = 2
+        else:
+            minrows = 1
+        self.y = self.thinData(self.y,self.GatherPct.text(),minrows=minrows)
+        self.allheaders = list(self.y)
+        self.RowNum.setText(str(self.y.shape[0]))
+        self.addHeaderWidgets()
+        self.previewTable.clear()
         self.previewTable.setRowCount(10)
         self.previewTable.setColumnCount(self.y.shape[1])
         self.previewTable.setHorizontalHeaderLabels(list(self.y))
@@ -510,22 +620,36 @@ class PandasCSVopener(Widgets.QWidget):
                     data = str(self.y.iloc[row, col] )
                     self.previewTable.setItem(row, col, Widgets.QTableWidgetItem(str(data)))
 
-    def accept(self):
-        self.done.emit(self.y)
+    def thinData(self,array,pct,**kwargs):
+        return PF.thin_data(array,pct,**kwargs)
+
+    def Accept(self):
+        selected = returnTableSelectedColumns(self.previewTable)
+        if selected:
+            self.y = self.y[selected]
+        self.complete.emit(self.y,self.allheaders)
         self.close()
 
-    def reject(self):
-        self.done.emit(None)
+    def Reject(self):
+        self.complete.emit(pd.DataFrame(),[])
         self.close()
 
 
 if __name__ == '__main__':
     try:
-        def showdata(data):
+        app = Widgets.QApplication(sys.argv)
+        print 'ahah'
+        def showdata(data,headers):
             print(data)
-        path = pathtocsv
+            print(type(data))
+            print(data)
+            print(headers)
+        path = '/home/klinetry/Desktop/Phobos3/Test.csv'
         x = PandasCSVopener(path)
-        x.done.connect(showdata)
+        x.complete.connect(showdata)
+        print 'haha'
         x.show()
+        retval = app.exec_()
+        sys.exit(retval)
     except:
         pass

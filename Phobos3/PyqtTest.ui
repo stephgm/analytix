@@ -21,8 +21,8 @@
        <enum>Qt::Horizontal</enum>
       </property>
       <widget class="QWidget" name="gridLayoutWidget">
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="12" column="0">
+       <layout class="QGridLayout" name="FileOpeningLayout">
+        <item row="14" column="0">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -116,7 +116,7 @@
           </layout>
          </widget>
         </item>
-        <item row="14" column="0">
+        <item row="16" column="0">
          <widget class="QWidget" name="StatusIndicator" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -157,28 +157,6 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QPushButton" name="Button1">
-            <property name="text">
-             <string>GetFiles</string>
-            </property>
-            <property name="icon">
-             <iconset>
-              <normaloff>resources/standard_query.jpg</normaloff>resources/standard_query.jpg</iconset>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="CreateTable">
-            <property name="text">
-             <string>Create Table</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
         <item row="8" column="0">
          <widget class="QLabel" name="DataListMultiSelectLabel">
           <property name="enabled">
@@ -189,7 +167,7 @@
           </property>
          </widget>
         </item>
-        <item row="13" column="0">
+        <item row="15" column="0">
          <spacer name="verticalSpacer_2">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -202,12 +180,65 @@
           </property>
          </spacer>
         </item>
+        <item row="1" column="0">
+         <layout class="QHBoxLayout" name="EventRunComboLayout">
+          <item>
+           <widget class="QPushButton" name="Button1">
+            <property name="text">
+             <string>GetFiles</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>resources/standard_query.jpg</normaloff>resources/standard_query.jpg</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="13" column="0">
+         <widget class="QPushButton" name="CreateTable">
+          <property name="text">
+           <string>Create Table</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0">
+         <layout class="QGridLayout" name="ExtraneousDataGatherLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="GatherPctLabel">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Gather%&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="GatherPct">
+            <property name="text">
+             <string>100</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="gridLayoutWidget_2">
        <layout class="QGridLayout" name="StackedWidgetsLayout">
         <item row="1" column="0">
-         <widget class="QStackedWidget" name="stackedWidget">
+         <widget class="QStackedWidget" name="StackedTools">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -219,8 +250,18 @@
           </property>
           <widget class="QWidget" name="page">
            <layout class="QGridLayout" name="gridLayout_7">
+            <item row="1" column="0">
+             <layout class="QGridLayout" name="NativeHeaderLayout"/>
+            </item>
             <item row="0" column="0">
              <widget class="QTabWidget" name="TableTabWidget"/>
+            </item>
+            <item row="2" column="0">
+             <widget class="QPushButton" name="GetSelection">
+              <property name="text">
+               <string>retrunSelection</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -242,7 +283,7 @@
          </widget>
         </item>
         <item row="0" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <layout class="QHBoxLayout" name="StackedWidgetSelectionLayout">
           <item>
            <spacer name="horizontalSpacer_2">
             <property name="orientation">
@@ -381,7 +422,7 @@
   <connection>
    <sender>StackedWidgetSelect</sender>
    <signal>currentIndexChanged(int)</signal>
-   <receiver>stackedWidget</receiver>
+   <receiver>StackedTools</receiver>
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
