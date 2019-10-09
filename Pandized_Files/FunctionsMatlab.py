@@ -112,6 +112,11 @@ def handleValue(iItem,header,value):
         return None
     return value
 
+def isStructure(iItem,**kwargs):
+    '''
+    Returns whether the iItem is considered a structure by our definition
+    '''
+    return isinstance(iItem,(pd.DataFrame,dict)) or (isinstance(iItem,np.ndarray) and len(iItem.dtype)>0)
 
 def SortFields(iItem,fieldnames,**kwargs):
     '''
@@ -494,6 +499,67 @@ filterStruct = FilterOnIdx
 fiterStructMixed = FilterOnIdx
 ReturnUniqueStructure = UniqueOnField
 ReturnUniqueStructure_NP = UniqueOnField
+
+def MapColumns(iItem1,iItem2,mapcols='',left_on='index',right_on='index',**kwargs):
+    '''
+    This function takes two dataframes and maps columns from iItem2 to iItem1
+    based on one column from the iItem1 and one from iItem2.  This is like a merge,
+    but doesn't overpopulate the dataframe with nans.
+
+    Input:
+            iItem1 - dataframe in which you want to map columns to.
+            iItem2 - dataframe in which you want to map columns from
+            mapcols - The column or list of columns to map from iItem2 onto iItem1
+            left_on - The column used for matching values with right_on.  This column is in iItem1
+            right_on - The column used for matching values with left_on.  This column is in iItem2
+
+    Kwargs:
+            fillna - Value that you want to fill NANs with.
+            allcols - True:  Will grab all columns from iItem2 and map them to iItem1.  All columns
+                        are gathered except for right_on
+                      False: Will use mapcols instead.
+    '''
+    fillna = kwargs.get('fillnan','UNK')
+    allcols = kwargs.get('allcol',False)
+    failValue = getFailReturn(iItem1)
+    if debug:
+        origin = inspect.stack()[1][3]
+    if not (isinstance(iItem1,pd.DataFrame) and isinstance(iItem2,pd.DataFrame)):
+        if debug:
+            CCprint('One of the passed items is not a structure',origin)
+        return failValue
+    if not isIterable(mapcols):
+        mapcols = [mapcols]
+
+    oItem1 = pd.DataFrame(iItem1)
+    oItem2 = pd.DataFrame(iItem2)
+
+    if allcols:
+        mapcols = list(oItem2)
+        if right_on in mapcols:
+            mapcols.pop(mapcols.index(right_on))
+    if mapcols and not set(list(mapcols)).issubset(set(oItem2.columns)):
+        if debug:
+            CCprint('Field:{} not in iItem2'.format(mapcols),origin)
+        return failValue
+
+    if not (left_on in oItem1 and right_on in oItem2):
+        if debug:
+            CCprint('Either {} not in iItem1 or {} not in iItem2'.format(left_on,right_on),origin)
+        return failValue
+
+    oItem2.set_index(right_on,inplace=True)
+
+    for col in mapcols:
+        if col in oItem1:
+            lcol = '{}_right'.format(col)
+        else:
+            lcol = col
+        if not fillna:
+            oItem1[lcol] = oItem1[left_on].map(oItem2[col])
+        else:
+            oItem1[lcol] = oItem1[left_on].map(oItem2[col]).fillna(fillna)
+    return oItem1
 
 
 if __name__ == '__main__':
