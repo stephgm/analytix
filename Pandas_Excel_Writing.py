@@ -36,3 +36,9 @@ def highlight_cell(val):
 
 Truth = Truth.style.applymap(color_strings).applymap(highlight_cell)
 Truth.to_excel('That.xlsx')
+
+#Need to make a legend?
+#Just color the values with a legend function.  
+another_df = pd.DataFrame()
+another_df['Legend'] = pd.Series(['Starts with U','If Value is Number'])
+another_df.to_excel(writer,startrow=0, startcol=Truth.shape[1]+5) 
