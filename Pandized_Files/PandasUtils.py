@@ -6,8 +6,8 @@ Created on Tue Oct  8 18:46:27 2019
 @author: Jordan Marlow
 
 Pandas Utils.  This file takes out some of the guess work for Pandas functions
-and tries to optimize different ways of using Pandas.  These functions can work
-for dictionaries and structured arrays too.
+and tries to optimize different ways of using Pandas.  These functions only work for DataFrames at
+the moment.
 """
 
 from collections import Iterable,OrderedDict
