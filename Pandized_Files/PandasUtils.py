@@ -45,29 +45,6 @@ def isIterable(iItem,**kwargs):
     else:
         return isinstance(iItem,Iterable)
 
-def handleMixedDictTypes(iItem,oItem,**kwargs):
-    '''
-    Ensures that the output Dict (oItem) has the same types as input Dict (iItem)
-    No checks required.  It should be used on 2 dictionaries only. Obviously the
-    keys must match from iItem to oItem
-
-    Note: Slower, but safer if you copy.copy:  timeit ~ 3.28 microseconds per loop
-    Note: Fastest if you don't care to alter the original.  Which you shouldn't if
-    you're using this function.  Clearly you intend to change the type of the
-    dictionary oItem anyways: timeit ~ 1.98 microseconds per loop
-
-    For functions in this file, it doesn't matter if we change the original
-    because they come from dataframes, which makes a copy anyways.
-    '''
-    for key in iItem.keys():
-        if key in oItem:
-            keytype = type(iItem[key])
-            if keytype == np.ndarray:
-                oItem[key] = np.array(oItem[key],dtype=iItem[key].dtype)
-            else:
-                oItem[key] = keytype(oItem[key])
-    return oItem
-
 def getFailReturn(iItem,**kwargs):
     '''
     Returns the empty value of the datatype of iItem.
@@ -107,13 +84,6 @@ def handleValue(iItem,header,value):
     else:
         return None
     return value
-
-def isStructure(iItem,**kwargs):
-    '''
-    Returns whether the iItem is considered a structure by our definition
-    '''
-    return isinstance(iItem,(pd.DataFrame,dict)) or (isinstance(iItem,np.ndarray) and len(iItem.dtype)>0)
-
 
 def MapColumns(iItem1,iItem2,mapcols='',left_on='index',right_on='index',**kwargs):
     '''
