@@ -329,4 +329,5 @@ if __name__ == '__main__':
     x = RunningTotal(obj,'StartTalo')
     end = time.time()
     print end-start
-    plt.plot(x['Time'],x['Total'])
+    plt.plot(x['Time'],x['Total']) #This is how I was doing in.  It draws the unphysical line between the points.
+    plt.step(x['Time'],x['Total'],where='post') #This will show the physical line that should be shown in running total plots.
