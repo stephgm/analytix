@@ -6,8 +6,8 @@ Created on Tue Oct  8 18:46:27 2019
 @author: Jordan Marlow
 
 Pandas Utils.  This file takes out some of the guess work for Pandas functions
-and tries to optimize different ways of using Pandas.  These functions only work for DataFrames at
-the moment.
+and tries to optimize different ways of using Pandas.  These functions can work
+for dictionaries and structured arrays too.
 """
 
 from collections import Iterable,OrderedDict
@@ -44,6 +44,29 @@ def isIterable(iItem,**kwargs):
         return isinstance(iItem,Iterable) and not isinstance(iItem,basestring)
     else:
         return isinstance(iItem,Iterable)
+
+def handleMixedDictTypes(iItem,oItem,**kwargs):
+    '''
+    Ensures that the output Dict (oItem) has the same types as input Dict (iItem)
+    No checks required.  It should be used on 2 dictionaries only. Obviously the
+    keys must match from iItem to oItem
+
+    Note: Slower, but safer if you copy.copy:  timeit ~ 3.28 microseconds per loop
+    Note: Fastest if you don't care to alter the original.  Which you shouldn't if
+    you're using this function.  Clearly you intend to change the type of the
+    dictionary oItem anyways: timeit ~ 1.98 microseconds per loop
+
+    For functions in this file, it doesn't matter if we change the original
+    because they come from dataframes, which makes a copy anyways.
+    '''
+    for key in iItem.keys():
+        if key in oItem:
+            keytype = type(iItem[key])
+            if keytype == np.ndarray:
+                oItem[key] = np.array(oItem[key],dtype=iItem[key].dtype)
+            else:
+                oItem[key] = keytype(oItem[key])
+    return oItem
 
 def getFailReturn(iItem,**kwargs):
     '''
@@ -85,9 +108,16 @@ def handleValue(iItem,header,value):
         return None
     return value
 
+def isStructure(iItem,**kwargs):
+    '''
+    Returns whether the iItem is considered a structure by our definition
+    '''
+    return isinstance(iItem,(pd.DataFrame,dict)) or (isinstance(iItem,np.ndarray) and len(iItem.dtype)>0)
+
+
 def MapColumns(iItem1,iItem2,mapcols='',left_on='index',right_on='index',**kwargs):
     '''
-    This function takes two dataframes and maps columns from iItem2 to iItem1
+    This function takes two structures and maps columns from iItem2 to iItem1
     based on one column from the iItem1 and one from iItem2.  This is like a merge,
     but doesn't overpopulate the dataframe with nans.
 
@@ -109,9 +139,29 @@ def MapColumns(iItem1,iItem2,mapcols='',left_on='index',right_on='index',**kwarg
     failValue = getFailReturn(iItem1)
     if debug:
         origin = inspect.stack()[1][3]
-    if not (isinstance(iItem1,pd.DataFrame) and isinstance(iItem2,pd.DataFrame)):
+    if not isIterable(iItem1):
         if debug:
-            CCprint('One of the passed items is not a structure',origin)
+            CCprint('The iItem passed is not an iterable',origin)
+        return failValue
+    elif isinstance(iItem1,(list,tuple)):
+        if debug:
+            CCprint('{} type is not supported for this function'.format(type(iItem)),origin)
+        return failValue
+    elif isinstance(iItem1,np.ndarray) and len(iItem1.dtype) == 0:
+        if debug:
+            CCprint('You passed a non-structured array, which is not permitted',origin)
+        return failValue
+    if not isIterable(iItem2):
+        if debug:
+            CCprint('The iItem passed is not an iterable',origin)
+        return failValue
+    elif isinstance(iItem2,(list,tuple)):
+        if debug:
+            CCprint('{} type is not supported for this function'.format(type(iItem)),origin)
+        return failValue
+    elif isinstance(iItem2,np.ndarray) and len(iItem.dtype) == 0:
+        if debug:
+            CCprint('You passed a non-structured array, which is not permitted',origin)
         return failValue
     if not isIterable(mapcols):
         mapcols = [mapcols]
@@ -144,7 +194,18 @@ def MapColumns(iItem1,iItem2,mapcols='',left_on='index',right_on='index',**kwarg
             oItem1[lcol] = oItem1[left_on].map(oItem2[col])
         else:
             oItem1[lcol] = oItem1[left_on].map(oItem2[col]).fillna(fillna)
-    return oItem1
+    if isinstance(iItem1,np.ndarray):
+        oItem = oItem1.to_records(index=False)
+        return np.array(oItem,dtype=oItem.dtype)
+    elif isinstance(iItem1,dict):
+        oItem = oItem1.to_dict(orient='list')
+        for key in oItem:
+            oItem[key] = np.array(oItem[key])
+        return oItem
+    elif isinstance(iItem1,pd.DataFrame):
+        return oItem1
+    else:
+        return oItem1
 
 def RunningTotal(iItem,StartTimefld,EndTimefld='',**kwargs):
     '''
@@ -174,7 +235,7 @@ def RunningTotal(iItem,StartTimefld,EndTimefld='',**kwargs):
     particular instance of time.
 
     Input:
-            iItem - pandas dataframe
+            iItem - dictionary,dataframe, or structured array
             StartTimefld - The field that represents spawn time of object
             EndTimefld - The field that represents termination time of object.
                          This value does not have to be set if you only want total
@@ -188,32 +249,41 @@ def RunningTotal(iItem,StartTimefld,EndTimefld='',**kwargs):
     if debug:
         origin = inspect.stack()[1][3]
     failValue = getFailReturn(iItem)
-    if not isinstance(iItem,pd.DataFrame):
+    if not isIterable(iItem):
         if debug:
-            CCprint('iItem is not a dataframe',origin)
+            CCprint('The iItem passed is not an iterable',origin)
         return failValue
+    elif isinstance(iItem,(list,tuple)):
+        if debug:
+            CCprint('{} type is not supported for this function'.format(type(iItem)),origin)
+        return failValue
+    elif isinstance(iItem,np.ndarray) and len(iItem.dtype) == 0:
+        if debug:
+            CCprint('You passed a non-structured array, which is not permitted',origin)
+        return failValue
+    interItem = pd.DataFrame(iItem)
     if EndTimefld:
         iItem1 = pd.DataFrame()
         iItem2 = pd.DataFrame()
-        if not (StartTimefld in iItem and EndTimefld in iItem):
+        if not (StartTimefld in interItem and EndTimefld in interItem):
             if debug:
                 CCprint('The fields passed are not in the passed dataframe')
             return failValue
-        if not iItem[StartTimefld].dtype.kind in ['i','u','f']:
+        if not interItem[StartTimefld].dtype.kind in ['i','u','f']:
             try:
-                iItem[StartTimefld] = iItem[StartTimefld].astype(float)
+                interItem[StartTimefld] = interItem[StartTimefld].astype(float)
             except:
                 if debug:
                     CCprint('Could not convert Start Time field to float.  Returning empty')
                 return failValue
-        if not iItem[EndTimefld].dtype.kind in ['i','u','f']:
+        if not interItem[EndTimefld].dtype.kind in ['i','u','f']:
             try:
-                iItem[EndTimefld] = iItem[EndTimefld].astype(float)
+                interItem[EndTimefld] = interItem[EndTimefld].astype(float)
             except:
                 if debug:
                     CCprint('Could not convert End Time field to float. Returning empty')
                 return failValue
-        idx = iItem[StartTimefld] > iItem[EndTimefld]
+        idx = interItem[StartTimefld] > interItem[EndTimefld]
         if idx.all():
             if debug:
                 CCprint('It seems like your StartTimes and EndTimes are swapped, as all End times < Start Times.  Swapping')
@@ -221,40 +291,51 @@ def RunningTotal(iItem,StartTimefld,EndTimefld='',**kwargs):
         elif idx.any():
             if debug:
                 CCprint('Some of the End times are before the Start times.  Not physical, but may still look physical, which is wrong.')
-        iItem1['Time'] = iItem[StartTimefld]
-        iItem2['Time'] = iItem[EndTimefld]
+        iItem1['Time'] = interItem[StartTimefld]
+        iItem2['Time'] = interItem[EndTimefld]
         iItem1['ObjValue'] = pd.Series([1]*iItem1.shape[0])
         iItem2['ObjValue'] = pd.Series([-1]*iItem2.shape[0])
         oItem = pd.concat([iItem1,iItem2])
     else:
-        if not StartTimefld in iItem:
+        if not StartTimefld in oItem:
             if debug:
                 CCprint('Field:{} not in iItem'.format(StartTimefld),origin)
             return failValue
         oItem = pd.DataFrame()
-        oItem['Time'] = iItem[StartTimefld]
-        oItem['ObjValue'] = pd.Series([1]*iItem.shape[0])
+        oItem['Time'] = oItem[StartTimefld]
+        oItem['ObjValue'] = pd.Series([1]*oItem.shape[0])
     oItem.sort_values('Time',inplace=True)
     oItem['Total'] = oItem['ObjValue'].cumsum()
     oItem.drop(['ObjValue'],inplace=True,axis='columns')
     oItem.drop_duplicates('Time',keep='last',inplace=True)
     if reset:
         oItem = oItem.reset_index(drop=True)
-    return oItem
+    if isinstance(iItem,np.ndarray):
+        oItem = oItem.to_records(index=False)
+        return np.array(oItem,dtype=oItem.dtype)
+    elif isinstance(iItem,dict):
+        oItem = oItem.to_dict(orient='list')
+        for key in oItem:
+            oItem[key] = np.array(oItem[key])
+        return oItem
+    elif isinstance(iItem,pd.DataFrame):
+        return oItem
+    else:
+        return oItem
 
 
 
-def SplitDataFrameOnUnique(iItem,FieldName,**kwargs):
+def SplitStructureOnUnique(iItem,FieldName,**kwargs):
     '''
-    Returns a dictionary of dataframes that only have unique values of the specified
+    Returns a dictionary of structures that only have unique values of the specified
     fieldname.  This will condense code so that you don't have to write out
-    alot of filtering calls.  If you only need a few of these dataframes, it is
-    probably better to use FilterOnField on StructureUtils.py or just pop out
+    alot of filtering calls.  If you only need a few of these Structures, it is
+    probably better to use FilterOnField in StructureUtils.py or just pop out
     the items you don't need from the dictionary returned from this function.
 
     Input:
-            iItem - dataframe
-            FieldName - Field that is in the dataframe
+            iItem - dataframe, dictionary, structured array
+            FieldName - Field that is in the structure to unique on
     Kwargs:
             reset - Bool to reset the index.  Default is True
     Return:
@@ -265,21 +346,35 @@ def SplitDataFrameOnUnique(iItem,FieldName,**kwargs):
     reset = kwargs.get('reset',True)
     if debug:
         origin = inspect.stack()[1][3]
-    if not isinstance(iItem,pd.DataFrame):
+    failValue = {}
+    if not isIterable(iItem):
         if debug:
-            CCprint('The input item is not a dataframe.',origin)
-        return {}
-
-    if FieldName not in iItem:
+            CCprint('The iItem passed is not an iterable',origin)
+        return failValue
+    elif isinstance(iItem,(list,tuple)):
+        if debug:
+            CCprint('{} type is not supported for this function'.format(type(iItem)),origin)
+        return failValue
+    elif isinstance(iItem,np.ndarray) and len(iItem.dtype) == 0:
+        if debug:
+            CCprint('You passed a non-structured array, which is not permitted',origin)
+        return failValue
+    oItem = {}
+    interItem = pd.DataFrame(iItem)
+    if FieldName not in interItem:
         if debug:
             CCprint('Field:{} is not in the dataframe',origin)
         return {}
-    oItem = {}
-    uniquevals = pd.unique(iItem[FieldName])
+    uniquevals = pd.unique(interItem[FieldName])
     for val in uniquevals:
-        oItem[val] = iItem[iItem[FieldName]==val]
-        if reset:
-            oItem[val].reset_index(drop=True)
+        if isinstance(iItem,np.ndarray):
+            oItem[val] = np.array(interItem[interItem[FieldName]==val].to_records(index=False),dtype=iItem.dtype)
+        elif isinstance(iItem,dict):
+            oItem[val] = handleMixedDictTypes(iItem,interItem[interItem[FieldName]==val].to_dict(orient='list'))
+        elif isinstance(iItem,pd.DataFrame):
+            oItem[val] = interItem[interItem[FieldName]==val]
+            if reset:
+                oItem[val].reset_index(drop=True)
     return oItem
 
 
@@ -326,8 +421,8 @@ if __name__ == '__main__':
     obj = pd.DataFrame(Obj)
     import time
     start = time.time()
-    x = RunningTotal(obj,'StartTalo')
+    x = RunningTotal(obj,'StartTalo','EndTalo')
     end = time.time()
     print end-start
-    plt.plot(x['Time'],x['Total']) #This is how I was doing in.  It draws the unphysical line between the points.
-    plt.step(x['Time'],x['Total'],where='post') #This will show the physical line that should be shown in running total plots.
+    plt.step(x['Time'],x['Total'],where='post')
+    plt.plot(x['Time'],x['Total'])
