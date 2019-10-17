@@ -22,6 +22,7 @@ import psutil
 import sched
 import time
 import threading
+import numpy
 
 
 class MemoryManager(Widgets.QWidget):
@@ -106,8 +107,8 @@ class MemoryManager(Widgets.QWidget):
                 self.AlertPercent = int(self.AlertPercent)
             except:
                 self.AlertPercent = 90
-        print currpct
-        print self.AlertPercent
+        print(currpct)
+        print(self.AlertPercent)
         sys.stdout.flush()
         if currpct >= self.AlertPercent:
             self.Terminate.emit(True)
@@ -128,8 +129,23 @@ class MemoryManager(Widgets.QWidget):
             child.kill()
         parent.kill()
 
+def fuckItUp():
+    print(os.getpid())
+    import sys
+    #sys.stdout.flush()
+    import numpy as np
+    x = pd.DataFrame(index = range(10000000),columns=['a','b','c','d','e'])
+    a = numpy.empty(100000000)
+    y = pd.DataFrame()
+    thislist = []
+    for i in range(1000000):
+        y = pd.concat([y,x])
+        thislist.append(a.copy())
+#        import time
+#        time.sleep(10)
+
 if __name__ == '__main__':
-#    app = Widgets.QApplication(sys.argv)
+    app = Widgets.QApplication(sys.argv)
 #    def showdata(data):
 #        print data
 #    x = MemoryManager(None,alertpct=83)
@@ -141,25 +157,14 @@ if __name__ == '__main__':
     #Performing Hamilton Laptop melting test.
     import os
     parentPID = os.getpid()
-    print parentPID
+    print(parentPID)
 
     import multiprocessing
     from multiprocessing import Process
 
-    def fuckItUp():
-        print os.getpid()
-        import sys
-        sys.stdout.flush()
-        import numpy as np
-        x = pd.DataFrame(index = range(100000),columns=['a','b','c','d','e'])
-        y = pd.DataFrame()
-        thislist = []
-        for i in range(1000000):
-            y = pd.concat([y,x])
-#        import time
-#        time.sleep(10)
 
-    xxx = MemoryManager(pid=parentPID,alertpct=70,makeWidget=False,useTimer=True)
+
+    xxx = MemoryManager(pid=parentPID,alertpct=90,makeWidget=False,useTimer=True)
 
     procs = []
     for i in range(2):
@@ -168,3 +173,5 @@ if __name__ == '__main__':
         proc.start()
     for proc in procs:
         proc.join()
+    print('done son')
+    sys.exit(0)

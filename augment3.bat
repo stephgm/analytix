@@ -9,7 +9,7 @@ c:\anaconda3\Scripts\conda.exe config --set ssl_verify false
 c:\anaconda3\Scripts\conda.exe update -n base conda
 c:\anaconda3\Scripts\conda.exe update --all -y
 c:\anaconda3\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install --upgrade pip
-c:\anaconda3\Scripts\conda.exe install -y R cartopy swig pyopengl pyopengl-accelerate pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit cmake line_profiler cython cairo pyopengl pyopengl-accelerate plotly autopep8 geopandas selenium mock nodejs holoviews datashader hvplot graphviz panel param
+c:\anaconda3\Scripts\conda.exe install -y R cartopy swig pyopengl pyopengl-accelerate pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit cmake line_profiler cython cairo pyopengl pyopengl-accelerate plotly autopep8 geopandas selenium mock nodejs holoviews datashader hvplot graphviz panel param xmltodict
 :: failures : pyculib
 :: glib gobject-introspection
 c:\anaconda3\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install msgpack argparse urwid

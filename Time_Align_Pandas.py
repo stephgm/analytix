@@ -26,4 +26,4 @@ def timealign(df1,df2,df1time,df2time,**kwargs):
         left.dropna(inplace=True)
     return left
 
-x = timealign(l,h,'ltime','htime',dropNan=True)
+x = timealign(l,h,'ltime','htime',dropNan=False)
