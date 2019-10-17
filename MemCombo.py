@@ -17,7 +17,7 @@ import copy
 import pandas as pd
 import glob
 import re
-from collections import Iterable
+from collections.abc import Iterable
 import psutil
 
 
@@ -103,7 +103,7 @@ class MemoryManager(Widgets.QWidget):
 if __name__ == '__main__':
     app = Widgets.QApplication(sys.argv)
     def showdata(data):
-        print data
+        print(data)
     x = MemoryManager(None,alertpct=83)
     x.Terminate.connect(showdata)
     x.show()
