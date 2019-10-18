@@ -25,4 +25,15 @@ print('numpy  : '+numpy.__version__)
 print('scipy  : '+scipy.__version__)
 print('pandas : '+pandas.__version__)
 print('cartopy : '+cartopy.__version__)
+import h5py
+dtb = numpy.dtype([('this','f8'),('that','O')])
+def convert2SpecialDtype(idt):
+    ndtl = []
+    for dname,desc in idt.descr:
+        if desc[1] == 'S' or desc[1] == 'O' or desc[1] == 'U':
+            ndtl.append((dname,h5py.special_dtype(vlen=str)))
+        else:
+            ndtl.append((dname,desc))
+    return numpy.dtype(ndtl)
+dta = convert2SpecialDtype(dtb)
 #import plotnine
