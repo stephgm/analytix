@@ -22,7 +22,22 @@
       </property>
       <widget class="QWidget" name="gridLayoutWidget">
        <layout class="QGridLayout" name="FileOpeningLayout">
-        <item row="14" column="0">
+        <item row="1" column="0">
+         <layout class="QHBoxLayout" name="EventRunComboLayout">
+          <item>
+           <widget class="QPushButton" name="Button1">
+            <property name="text">
+             <string>GetFiles</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>resources/standard_query.jpg</normaloff>resources/standard_query.jpg</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="15" column="0">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -35,21 +50,21 @@
           </property>
          </spacer>
         </item>
-        <item row="10" column="0">
+        <item row="11" column="0">
          <widget class="QLabel" name="HeaderListLabel">
           <property name="text">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Headers&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
+        <item row="4" column="0">
          <widget class="QLabel" name="FileSelectionLabel">
           <property name="text">
            <string>File Selection</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
+        <item row="5" column="0">
          <widget class="QComboBox" name="FileNameCombo">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -59,7 +74,7 @@
           </property>
          </widget>
         </item>
-        <item row="11" column="0">
+        <item row="12" column="0">
          <widget class="QListWidget" name="HeaderList">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -78,7 +93,7 @@
           </property>
          </widget>
         </item>
-        <item row="9" column="0">
+        <item row="10" column="0">
          <widget class="QListWidget" name="DatasetList">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -94,14 +109,14 @@
           </property>
          </widget>
         </item>
-        <item row="7" column="0">
+        <item row="8" column="0">
          <widget class="QLabel" name="DatasetListLabel">
           <property name="text">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Datasets&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
+        <item row="3" column="0">
          <widget class="QWidget" name="SearchQWidget" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
@@ -116,7 +131,7 @@
           </layout>
          </widget>
         </item>
-        <item row="16" column="0">
+        <item row="17" column="0">
          <widget class="QWidget" name="StatusIndicator" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -137,14 +152,14 @@
           </layout>
          </widget>
         </item>
-        <item row="5" column="0">
+        <item row="6" column="0">
          <widget class="QLabel" name="GroupSelectionLabel">
           <property name="text">
            <string>Group Selection</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
+        <item row="7" column="0">
          <widget class="QComboBox" name="GroupNameCombo">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -157,7 +172,7 @@
           </property>
          </widget>
         </item>
-        <item row="8" column="0">
+        <item row="9" column="0">
          <widget class="QLabel" name="DataListMultiSelectLabel">
           <property name="enabled">
            <bool>false</bool>
@@ -167,7 +182,7 @@
           </property>
          </widget>
         </item>
-        <item row="15" column="0">
+        <item row="16" column="0">
          <spacer name="verticalSpacer_2">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -180,29 +195,14 @@
           </property>
          </spacer>
         </item>
-        <item row="1" column="0">
-         <layout class="QHBoxLayout" name="EventRunComboLayout">
-          <item>
-           <widget class="QPushButton" name="Button1">
-            <property name="text">
-             <string>GetFiles</string>
-            </property>
-            <property name="icon">
-             <iconset>
-              <normaloff>resources/standard_query.jpg</normaloff>resources/standard_query.jpg</iconset>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="13" column="0">
+        <item row="14" column="0">
          <widget class="QPushButton" name="CreateTable">
           <property name="text">
            <string>Create Table</string>
           </property>
          </widget>
         </item>
-        <item row="12" column="0">
+        <item row="13" column="0">
          <layout class="QGridLayout" name="ExtraneousDataGatherLayout">
           <item row="0" column="0">
            <widget class="QLabel" name="GatherPctLabel">
@@ -232,6 +232,13 @@
            </spacer>
           </item>
          </layout>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="CurrentDirectoryLabel">
+          <property name="text">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
