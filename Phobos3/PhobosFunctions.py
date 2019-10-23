@@ -5,7 +5,8 @@ Created on Fri Sep 20 23:37:07 2019
 
 @author: Jordan
 """
-'''This file is a group of functions that are commonly used in Phobos'''
+'''This file is a group of functions that are commonly used in Phobos.
+Meant for speed, versatility, and ease of use.'''
 import os
 import sys
 import glob
@@ -13,9 +14,9 @@ import h5py
 import fnmatch
 import pandas as pd
 import numpy as np
-import cPickle as pickle
-from collections import Iterable
+import pickle
 from six import string_types
+import re
 
 debug = True
 
@@ -69,6 +70,26 @@ if True:
                 else:
                     oItem[key] = keytype(oItem[key])
         return oItem
+
+    def get_run_from_path(fpath,**kwargs):
+        if not isinstance(fpath,string_types):
+            if debug:
+                print('argument passed was not a string, take it back.')
+            return fpath
+        if not os.path.isfile(fpath):
+            if debug:
+                print('{} is not a valid file, but still trying'.format(fpath))
+        result = re.findall(r'[\/\\]\d{3}.\d+[\/\\]',fpath)
+        if result:
+            result = result[0].strip('/').strip('\\')
+            return result
+        else:
+            if debug:
+                print('No run found.  Returning empty string')
+            return ''
+
+
+
 ### Data Getting
 
     def thin_data(array,pct,**kwargs):
@@ -128,7 +149,7 @@ if True:
         if isinstance(array,np.ndarray) and len(array.dtype) == 0:
             how = 'row'
             direction = 0
-        if isinstance(pct,basestring):
+        if isinstance(pct,string_types):
             try:
                 pct = float(pct)
             except:
@@ -144,11 +165,12 @@ if True:
                 return array
         #Should be safe to turn into dataframe
         oArray = pd.DataFrame(array)
-        if sortHeader and sortHeader in oArray:
-            oArray = oArray.sort_values(sortHeader)
-        else:
-            if debug:
-                print('{} not in the passed iterable.  Or you passed a list, tuple, or non-structured array'.format(sortHeader))
+        if sortHeader:
+            if sortHeader in oArray:
+                oArray = oArray.sort_values(sortHeader)
+            else:
+                if debug:
+                    print('{} not in the passed iterable.  Or you passed a list, tuple, or non-structured array'.format(sortHeader))
         if pct >= 100:
             return array
         elif pct*.01*oArray.shape[direction] < minrows:
@@ -187,7 +209,7 @@ if True:
 #        if not isinstance(array,pd.DataFrame) and not isinstance(array,np.ndarray):
 #            if debug:
 #                print('The data you entered was not a dataframe nor a numpy array.  Trying to convert and pass back the type you gave me. Setting how="row"')
-#            if isinstance(array,Iterable) and not isinstance(array,basestring):
+#            if isinstance(array,Iterable) and not isinstance(array,string_types):
 #                dtype = type(array)
 #                if isinstance(array,dict):
 #                    if debug:
@@ -212,7 +234,7 @@ if True:
 #                if debug:
 #                    print('The array that you passed is not Iterable or it is a string, which cannot be made into a numpy array. Returning input')
 #                return array
-#        if isinstance(pct,basestring):
+#        if isinstance(pct,string_types):
 #            try:
 #                pct = float(pct)
 #            except:
@@ -279,6 +301,7 @@ if True:
                 addDset - Add dataset name column to the Dataframe
                 addGrp - Add Group name column to the dataframe
                 addFile - Add File name column to dataframe
+                addRun - Add Run name column to dataframe
                 addCustom - Add user specified identifier to dataframe
         Return:
                 {file: file attribute Dataframe,
@@ -292,6 +315,7 @@ if True:
         addDset = kwargs.get('addDset',False)
         addGrp = kwargs.get('addGrp',False)
         addFile = kwargs.get('addFile',False)
+        addRun = kwargs.get('addRun',False)
         addCustom = kwargs.get('addCustom',{})
 
         if os.path.isfile(fpath):
@@ -323,6 +347,11 @@ if True:
                 for key in data:
                     for custom in addCustom:
                         data[key][custom] = np.array([addCustom[custom]]*data[key].shape[0])
+            if addRun:
+                run = get_run_from_path(fpath)
+                if run:
+                    for key in data:
+                        data[key]['Run'] = np.array([run]*data[key].shape[0])
         else:
             if debug:
                 print('{} is not a valid file'.format(fpath))
@@ -342,6 +371,7 @@ if True:
                 addDset - adds a Dataset name column to the dataframe
                 addGrp - add a Group name column to the dataframe
                 addFile - adds a Filename column to the dataframe
+                addRun - adds a Run number column to the dataframe
                 addCustom - adds a user specified identifier to the dataframe
                 gatherpct - a float X that will gather X% of the data
                 sortHeader - a header to sort on in ascending order
@@ -357,33 +387,34 @@ if True:
         addDset = kwargs.get('addDset',False)
         addGrp  = kwargs.get('addGrp',False)
         addFile = kwargs.get('addFile',False)
+        addRun  = kwargs.get('addRun',False)
         addCustom = kwargs.get('addCustom',{})
         gatherpct = kwargs.get('gatherpct',100)
         sortHeader = kwargs.get('sortHeader','')
         Phobos = kwargs.get('Phobos',False)
         if section:
-            if isinstance(section,basestring):
+            if isinstance(section,string_types):
                 if debug:
                     print('The section kwarg you passed is a string.  Pass an iterable')
                 section = (0,200)
-            elif isinstance(section,Iterable) and len(section) < 2:
+            elif isIterable(section) and len(section) < 2:
                 if debug:
                     print('The section kwarg you passed is not a correct length.')
                 section = (0,200)
-            elif isinstance(section,Iterable) and (not isinstance(section[0],int) or not isinstance(section[1],int)):
+            elif isIterable(section) and (not isinstance(section[0],int) or not isinstance(section[1],int)):
                 if debug:
                     print('One or both of the indecies in the section kwarg you passed are not integers')
                 section = (0,200)
-            elif not isinstance(section,Iterable):
+            elif not isIterable(section):
                 if debug:
                     print('The section kwarg you passed is not an iterable')
                 section = (0,200)
-        if headers and not isinstance(headers,Iterable) and not isinstance(headers,basestring):
+        if headers and not isIterable(headers):
             if debug:
                 print('The headers Kwarg you passed is not iterable.  Gathering all data')
             headers = None
         elif headers:
-            if not isinstance(headers[0],basestring):
+            if not isinstance(headers[0],string_types):
                 headers = None
                 if debug:
                     print('The iteration items of the headers Kwarg are not strings. Gathering all Data')
@@ -429,6 +460,10 @@ if True:
             data['Group'] = np.array([grp]*len(data[data.keys()[0]]))
         if addFile:
             data['File'] = np.array([os.path.basename(fpath)]*len(data[data.keys()[0]]))
+        if addRun:
+            run = get_run_from_path(fpath)
+            if run:
+                data['Run'] = np.array([run]*len(data[data.keys()[0]]))
         if addCustom and isinstance(addCustom,dict):
             for custom in addCustom:
                 data[custom] = np.array([addCustom[custom]]*len(data[data.keys()[0]]))
@@ -456,7 +491,7 @@ if True:
             return pd.DataFrame()
         for dset in dsets:
             dflist.append(get_h5_data(fpath,grp,dset,gatherpct=gatherpct,addDset=True))
-        return pd.concat(dflist)
+        return pd.concat(dflist,ignore_index=True).reset_index(drop=True)
 
     def get_multiple_groups(fpath,grps,dset,**kwargs):
         gatherpct = kwargs.get('gatherpct',100)
@@ -471,7 +506,7 @@ if True:
             return pd.DataFrame()
         for grp in grps:
             dflist.append(get_h5_data(fpath,grp,dset,gatherpct=gatherpct,addGrp=True))
-        return pd.concat(dflist)
+        return pd.concat(dflist,ignore_index=True).reset_index(drop=True)
 
     def get_multiple_files(fpaths,grp,dset,**kwargs):
         gatherpct = kwargs.get('gatherpct',100)
@@ -480,8 +515,8 @@ if True:
                 print('The passed fpaths args was not a list')
             return pd.DataFrame()
         for fpath in fpaths:
-            dflist.append(get_h5_data(fpath,grp,dset,gatherpct=gatherpct,addFile=True))
-        return pd.concat(dflist)
+            dflist.append(get_h5_data(fpath,grp,dset,gatherpct=gatherpct,addFile=True,addRun=True))
+        return pd.concat(dflist,ignore_index=True).reset_index(drop=True)
 
     def get_multiple_everything(fpaths,grps,dsets,**kwargs):
         gatherpct = kwargs.get('gatherpct',100)
@@ -527,12 +562,12 @@ if True:
         addFile = kwargs.get('addFile',False)
         addSheet = kwargs.get('addSheet',False)
         sortHeader = kwargs.get('sortHeader','')
-        if headers and not isinstance(headers,Iterable) and not isinstance(headers,basestring):
+        if headers and not isIterable(headers):
             if debug:
                 print('The headers Kwarg you passed is not iterable.  Gathering all data')
             headers = None
         elif headers:
-            if not isinstance(headers[0],basestring):
+            if not isinstance(headers[0],string_types):
                 headers = None
                 if debug:
                     print('The iteration items of the headers Kwarg are not strings. Gathering all Data')
@@ -587,12 +622,12 @@ if True:
         addFile = kwargs.get('addFile',False)
         addCustom = kwargs.get('addCustom',{})
         sortHeader = kwargs.get('sortHeader','')
-        if headers and not isinstance(headers,Iterable) and not isinstance(headers,basestring):
+        if headers and not isIterable(headers):
             if debug:
                 print('The headers Kwarg you passed is not iterable.  Gathering all data')
             headers = None
         elif headers:
-            if not isinstance(headers[0],basestring):
+            if not isinstance(headers[0],string_types):
                 headers = None
                 if debug:
                     print('The iteration items of the headers Kwarg are not strings. Gathering all Data')
@@ -642,7 +677,7 @@ if True:
             return []
         extension = os.path.splitext(fpath)[-1].strip().lower()
         if extension in ['.h5','.hdf5']:
-            if not os.path.isfile(fpath.split(extension)+'.json'):
+            if not os.path.isfile(fpath.split(extension)[0]+'.json'):
                 if debug:
                     print('{} does not have a json generated'.format(fpath))
                 with h5py.File(fpath,'r') as hf:
@@ -652,7 +687,7 @@ if True:
                     else:
                         return ['/']
             else:
-                with open(fpath.split(extension)+'.json','rb') as jf:
+                with open(fpath.split(extension)[0]+'.json','rb') as jf:
                     grps = json.load(jf).keys()
                 return grps
         elif extension in ['.csv','.xlsx','.pkl']:
@@ -680,7 +715,7 @@ if True:
             return []
         extension = os.path.splitext(fpath)[-1].strip().lower()
         if extension in ['.h5','.hdf5']:
-            if not os.path.isfile(fpath.split(extension)+'.json'):
+            if not os.path.isfile(fpath.split(extension)[0]+'.json'):
                 if debug:
                     print('{} does not have a json generated'.format(fpath))
                 with h5py.File(fpath,'r') as hf:
@@ -695,7 +730,7 @@ if True:
                             print('Group {} is not in file {}'.format(grp,fpath))
                         return []
             else:
-                with open(fpath.split(extension)+'.json','rb') as fid:
+                with open(fpath.split(extension)[0]+'.json','rb') as fid:
                     dsdict = json.load(fid)
                     if grp in dsdict:
                         dsets = [dset for dset in dsdict[grp] if dset not in ['commoncol','type']]
@@ -734,7 +769,7 @@ if True:
             return []
         extension = os.path.splitext(fpath)[-1].strip().lower()
         if extension in ['.h5','.hdf5']:
-            if not os.path.isfile(fpath.split(extension)+'.json'):
+            if not os.path.isfile(fpath.split(extension)[0]+'.json'):
                 if debug:
                     print('{} does not have a json generated'.format(fpath))
                 with h5py.File(fpath,'r') as hf:
@@ -752,7 +787,7 @@ if True:
                             print('Either Group {} or Dset {} is not in file {}.'.format(grp,dset,fpath))
                         return []
             else:
-                with open(fpath.split(extension)+'.json','rb') as fid:
+                with open(fpath.split(extension)[0]+'.json','rb') as fid:
                     dsdict = json.load(fid)
                     if grp in dsdict:
                         if dset in dsdict[grp]:
@@ -793,7 +828,7 @@ if True:
         '''
         extensions = kwargs.get('ext',['*'])
         maxDepth = kwargs.get('maxDepth',-1)
-        if not isinstance(extensions,Iterable) and not isinstance(extensions,basestring):
+        if not isIterable(extensions):
             if debug:
                 print('The ext argument you passed is not an iterable returning')
             return sdir,[]
