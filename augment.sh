@@ -41,7 +41,7 @@ $ccmd R cartopy swig pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit cm
 #$PREFIX/conda install -c conda-forge vitables
 $pcmd msgpack argparse urwid
 #$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph pygraphviz PyGObject
-$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph PyGObject cx-Freeze
+$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui avro spyder-memory-profiler veusz python-pptx orderedset objgraph
 $pcmd pandastable
 $pcmd altair altair-widgets seaborn-altair altair-recipes yerkes gencharts
 $pcmd actdiag blockdiag nwdiag seqdiag arrow dill pathlib
