@@ -24,6 +24,7 @@ export LD_LIBRARY_PATH="$PREFIX/lib:/lib64:/usr/lib64:/usr/local/lib64:/lib:/usr
 export GEOS_DIR="$1"
 export PKG_CONFIG_PATH="$1/lib/pkgconfig"
 export PYTHONHTTPSVERIFY=0
+export TABULATE_INSTALL=lib-only
 # check certificates may comment the next 2 out
 if [ 1 == 1 ];then
 $PREFIX/conda config --set ssl_verify false
@@ -44,6 +45,7 @@ $pcmd actdiag blockdiag nwdiag seqdiag arrow dill pathlib
 $pcmd -U ray
 $pcmd modin vega_datasets pdvega
 $pcmd ggplot pyggplot
+$pcmd terminal_table tabulate
 # for carpopy features
 $PREFIX/conda update --all -y
 $PREFIX/conda clean -a -y
