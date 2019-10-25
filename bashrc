@@ -24,3 +24,6 @@ alias ll="ls -lh"
 alias pipi="pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
 alias pipv="pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
 alias dev="cd ~/src/analytix"
+snow() {
+	clear;while :;do echo $LINES $COLUMNS $(($RANDOM%$COLUMNS));sleep 0.1;done|gawk '{a[$3]=0;for(x in a) {o=a[x];a[x]=a[x]+1;printf "\033[%s;%sH ",o,x;printf "\033[%s;%sH*\033[0;0H",a[x],x;}}'
+}
