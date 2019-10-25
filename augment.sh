@@ -45,10 +45,12 @@ $pcmd construct hexdump sysv_ipc pypcapfile python-pcapng pyrasite pyrasite-gui 
 $pcmd pandastable
 $pcmd altair altair-widgets seaborn-altair altair-recipes yerkes gencharts
 $pcmd actdiag blockdiag nwdiag seqdiag arrow dill pathlib
-$pcmd -U ray
-$pcmd modin vega_datasets pdvega
-$pcmd ggplot pyggplot
-#$pcmd terminal_table tabulate
+# if we are not doing ggplot dont think we need these
+#$pcmd -U ray
+#$pcmd modin vega_datasets pdvega
+#$pcmd ggplot pyggplot
+#$pcmd terminal-table
+$pcmd tabulate
 $PREFIX/python feature_download.py --output /storage/data/local/lib/python2.7/site-packages/cartopy/data physical
 $PREFIX/python feature_download.py --output /storage/data/local/lib/python2.7/site-packages/cartopy/data cultural
 $PREFIX/python feature_download.py --output /storage/data/local/lib/python2.7/site-packages/cartopy/data cultural-extra
@@ -62,6 +64,15 @@ $PREFIX/python feature_download.py --output /storage/data/local/lib/python2.7/si
 $PREFIX/conda update --all -y
 $PREFIX/conda clean -a -y
 fi
+cd $PREFIX/..
+
+./bin/python -m compileall .
+
+cd bin
+
+ln -s x86_64-conda_cos6-linux-gnu-gcc ./gcc
+
+chmod -R 755 *
 # scrubbed 7zip
 #tar -zxvf uza.tgz
 #cd uza
@@ -76,12 +87,6 @@ $PREFIX/python setup.py install
 cd ..
 rm -rf ViTables-3.0.0
 
-# cartopy handled by conda
-#unzip ~/Downloads/cartopy-master.zip
-#cd cartopy-master
-#$PREFIX/python setup.py install
-#cd ..
-#rm -rf cartopy-master
 
 tar -zxf ~/Downloads/basemap-1.0.7.tar.gz
 cd basemap-1.0.7
@@ -100,11 +105,7 @@ cd -
 mkdir -p $PREFIX/../lib/python2.7/site-packages/cartopy/data/raster/natural_earth
 cp NE1_HR_LC_SR_W_DR.png $PREFIX/../lib/python2.7/site-packages/cartopy/data/raster/natural_earth/.
 
-cd $PREFIX/..
 
-./bin/python -m compileall . 
-
-chmod -R 755 *
 
 #cd ~/Downloads
 #tar -jxvf p7zip_16.02_src_all.tar.bz2

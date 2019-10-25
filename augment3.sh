@@ -42,13 +42,15 @@ $pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx order
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"
 $pcmd altair altair-widgets seaborn-altair altair-recipes yerkes gencharts
 $pcmd actdiag blockdiag nwdiag seqdiag arrow dill pathlib
-$pcmd -U ray
-$pcmd modin vega_datasets pdvega
-$pcmd ggplot pyggplot
-$pcmd terminal_table tabulate
+# dont think we still need this
+#$pcmd -U ray
+#$pcmd modin vega_datasets pdvega
+#$pcmd ggplot pyggplot
+$pcmd terminal-table tabulate
 # for carpopy features
 $PREFIX/conda update --all -y
 $PREFIX/conda clean -a -y
+# just run cartopyFeatures.py in the repo
 #$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data physical
 #$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data cultural
 #$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data cultural-extra
@@ -70,22 +72,8 @@ cd ..
 rm -rf ViTables-3.0.0
 fi
 
-# cartopy handled by conda
-#unzip ~/Downloads/cartopy-master.zip
-#cd cartopy-master
-#$PREFIX/python setup.py install
-#cd ..
-#rm -rf cartopy-master
-
-# DNW
-#tar -zxf ~/Downloads/basemap-1.0.7.tar.gz
-#cd basemap-1.0.7
-#$PREFIX/python setup.py install
-#cd ..
-#rm -rf basemap-1.0.7
-
-# version=$($PREFIX/python -V | awk '{print $1}'
-
+# still need this?
+if [ 1 == 1 ];then
 mkdir -p $PREFIX/../lib/python3.7/site-packages/cartopy/data/shapefiles
 cd $PREFIX/../lib/python3.7/site-packages/cartopy/data/shapefiles
 #tar -zxvf ~/natural_earth.tgz
@@ -94,6 +82,8 @@ cd -
 
 mkdir -p $PREFIX/../lib/python3.7/site-packages/cartopy/data/raster/natural_earth
 cp ~/Downloads/NE1_HR_LC_SR_W_DR.png $PREFIX/../lib/python3.7/site-packages/cartopy/data/raster/natural_earth/.
+
+fi
 
 cd $PREFIX/..
 
