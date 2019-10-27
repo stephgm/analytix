@@ -9,6 +9,8 @@ fi
 shopt -s extglob
 export PS1="$(tty)\n\w\n[\u@\h \W]\$ "
 export PS1="\e[2;94m[\d \t]\e[0m\n\[\e[7;49;37m\]\w\[\e[0m\n\u@\h \W]\$ "
+# this is a little cooler
+PS1="\e[2;94m[\d \t]\e[0m\n\[\e[7;49;37m\]\w\[\e[0m\n\e[01;32m[\u@\h \W]\$ \e[0m"
 #export PREFIX="/storage/data/anaconda2-5.1.0"
 export PREFIX="/storage/data/local"
 #export PREFIX="/storage/data/anaconda3-5.1.0"
