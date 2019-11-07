@@ -21,11 +21,12 @@ import zmq
 import scipy
 import actdiag, blockdiag, nwdiag, seqdiag, arrow, colorcet, dill, pathlib, seaborn
 #import scandir
-print('numpy  : '+numpy.__version__)
-print('scipy  : '+scipy.__version__)
-print('pandas : '+pandas.__version__)
+print('numpy   : '+numpy.__version__)
+print('scipy   : '+scipy.__version__)
+print('pandas  : '+pandas.__version__)
 print('cartopy : '+cartopy.__version__)
 import h5py
+print('h5py    : '+h5py.__version__)
 dtb = numpy.dtype([('this','f8'),('that','O')])
 def convert2SpecialDtype(idt):
     ndtl = []
@@ -37,3 +38,4 @@ def convert2SpecialDtype(idt):
     return numpy.dtype(ndtl)
 dta = convert2SpecialDtype(dtb)
 #import plotnine
+print('dont forget shutil os.chmod and sphinx')
