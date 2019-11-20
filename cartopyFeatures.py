@@ -13,7 +13,7 @@ import cartopy
 if os.name == 'posix':
     cartopy.config['data_dir'] = '/storage/data/local/lib/python'+str(sys.version_info.major)+'.7/site-packages/cartopy'
 else:
-    cartopy.config['data_dir'] =r'C:\anaconda'+str(sys.version_info.major)+r'\Lib\site-packages\cartopy' 
+    cartopy.config['data_dir'] = os.path.join(os.path.dirname(sys.executable),'Lib','site-packages','cartopy')
 print(cartopy.config['data_dir'])
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
