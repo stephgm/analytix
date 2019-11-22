@@ -82,14 +82,17 @@ class StringTreeColumn(Widgets.QTreeWidget):
 
 if __name__ == '__main__':
 #    try:
-        app = Widgets.QApplication(sys.argv)
-        x = StringTreeColumn(None,['This','That'],addChecks=True,initCheckState=True)
-        x.addItems({'This':[1,2,3],'That':['f','ghoo','goood']})
-        x.show()
-        checked = x.returnCheckedItems()
-        time.sleep(5)
-        x.removeItems([0,1,2])
-        retval = app.exec_()
-        sys.exit(retval)
+    app = Widgets.QApplication(sys.argv)
+    x = StringTreeColumn(None,['This','That'],addChecks=True,initCheckState=True)
+    x.show()
+    x.addItems({'This':[1,2,3],'That':['f','ghoo','goood']})
+    input("to continue")
+    checked = x.returnCheckedItems()
+    print(checked)
+    input("to continue")
+    x.removeItems([0,1,2])
+    input("to continue")
+    retval = app.exec_()
+    sys.exit(retval)
 #    except:
 #        pass
