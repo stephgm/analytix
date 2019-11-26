@@ -13,6 +13,8 @@ import PyQt5.QtCore as Core
 from collections import OrderedDict
 import numpy as np
 import struct
+import binascii
+from six import string_types
 
 mplcolors = ['black','green','red','blue','orange','white','yellow']
 cmaps = sorted(m for m in plt.cm.datad if not m.endswith("_r"))
@@ -21,27 +23,29 @@ namedcolorsRGBlookup = {}
 x = matplotlib.colors.get_named_colors_mapping()
 for key in x:
     if not isinstance(x[key],tuple):
-        namedcolorsRGBlookup[key.replace('xkcd:','')]=tuple(map(lambda x: np.array(x)/255.,struct.unpack('BBB',x[key].strip('#').decode('hex'))))
+        namedcolorsRGBlookup[key.replace('xkcd:','')]=matplotlib.colors.to_rgb(x[key])
     elif isinstance(x[key],tuple) and isinstance(x[key][0],str) and '#' in x[key][0]:
-        namedcolorsRGBlookup[key.replace('xkcd:','')]=tuple(map(lambda x: np.array(x)/255.,struct.unpack('BBB',x[key][0].strip('#').decode('hex'))))
+        namedcolorsRGBlookup[key.replace('xkcd:','')]=tuple(map(lambda x: np.array(x)/255.,struct.unpack('BBB',x[key][0].strip('#'))))
     else:
         namedcolorsRGBlookup[key.replace('xkcd:','')]=tuple(map(float,x[key]))
 
 namedcolorsHEXlookupfromNAME = {}
 for key in x:
-    if isinstance(x[key],basestring):
-        namedcolorsHEXlookupfromNAME[key.replace('xkcd:','')]=x[key]
-    elif isinstance(x[key],tuple):
-        val = np.array(x[key])*255.
-        val = '#%02x%02x%02x' % tuple(val)
-        namedcolorsHEXlookupfromNAME[key.replace('xkcd:','')]=val
+    namedcolorsHEXlookupfromNAME[key.replace('xkcd:','')] = matplotlib.colors.to_hex(x[key])
+#    if isinstance(x[key],string_types):
+#        namedcolorsHEXlookupfromNAME[key.replace('xkcd:','')]=x[key]
+#    elif isinstance(x[key],tuple):
+#        break
+#        val = np.array(x[key])*255.
+#        val = '#%02x%02x%02x' % tuple(val)
+#        namedcolorsHEXlookupfromNAME[key.replace('xkcd:','')]=val
 
 namedcolorsNAMElookupfromHEX = {}
-for k,v in namedcolorsHEXlookupfromNAME.iteritems():
+for k,v in namedcolorsHEXlookupfromNAME.items():
     namedcolorsNAMElookupfromHEX[str(v)] = k
 
 namedcolorsNAMElookup = {}
-for k,v in namedcolorsRGBlookup.iteritems():
+for k,v in namedcolorsRGBlookup.items():
     namedcolorsNAMElookup[str(v)]=k
 
 
@@ -54,15 +58,15 @@ class RGBAWidget(Widgets.QWidget):
     def __init__(self,origvalue,parent=None,**kwargs):
         super(RGBAWidget,self).__init__(parent)
 
-        if isinstance(origvalue,basestring) and '#' not in origvalue and isinstance(eval('origvalue'),basestring):
+        if isinstance(origvalue,string_types) and '#' not in origvalue and isinstance(eval('origvalue'),string_types):
             origvalue = namedcolorsRGBlookup[origvalue]
-        elif isinstance(origvalue,basestring) and '#' not in origvalue and isinstance(eval('origvalue'),tuple):
+        elif isinstance(origvalue,string_types) and '#' not in origvalue and isinstance(eval('origvalue'),tuple):
             origvalue = eval(origvalue)
-        elif isinstance(origvalue,basestring):
+        elif isinstance(origvalue,string_types):
             origvalue = namedcolorsNAMElookupfromHEX[origvalue]
             origvalue = namedcolorsRGBlookup[origvalue]
         if not isinstance(origvalue,tuple):
-            print 'thhis is not a tuple'
+            print('thhis is not a tuple')
 
 
         self.makeAlpha = kwargs.get('alpha',True)
@@ -409,7 +413,7 @@ def on_pick(event):
         dialog.exec_()
 
     else:
-        print event.artist
+        print(event.artist)
 
 ax.scatter([1,2,3,4],[4,5,6,7],picker=5,label='FUN',c='red',cmap=None)
 sc = ax.scatter([5,6,7,8],[4,5,6,7],picker=5,label='Not Fun',c=[1,2,3,4],cmap=plt.cm.get_cmap('flag'))
