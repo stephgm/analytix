@@ -34,7 +34,7 @@ $pcmd --upgrade pip
 ccmd="$PREFIX/conda install -y"
 # no R, no cuda stuff cuz it regresses python
 $ccmd gcc_impl_linux-64 gcc_linux-64 gfortran_impl_linux-64 gfortran_linux-64 binutils_linux-64 binutils_impl_linux-64 gsl gxx_impl_linux-64 gxx_linux-64 make cartopy swig line_profiler vispy boost cmake autopep8 hdf4 glib pyqtgraph pyopengl pyopengl-accelerate gobject-introspection pymssql autopep8 geopandas selenium mock nodejs holoviews datashader hvplot graphviz panel param xmltodict
-$ccmd -c spyder-ide spyder=4.0.0rc1
+# $ccmd -c spyder-ide spyder=4.0.0rc3
 $pcmd msgpack argparse urwid
 # pdfminer
 # PyGObject, veusz DNW, spyder-memory-profiler?
