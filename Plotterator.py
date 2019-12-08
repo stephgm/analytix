@@ -1121,18 +1121,18 @@ class Plotter(object):
                                  if c['cmd'] != cmd]
         self.parseCommand(obj, cmd, cargs)
         
-    if __name__ == '__main__':
-        if False:
-            pltr = Plotter(combinelegend=True)
-            pltr.add_subplot()
-            x = np.random.randint(0,100,20)
-            y = np.random.randint(0,100,20)
-            pltr.scatter(x,y,label='FML')
-            pltr.parseCommand((0,0),'legend',[[]])
-            ax1 = pltr.add_subplot((1,0))
-            pltr.plot(y,x,axid=ax1,label='FYL')
-            l = ['Fudgemylife']
-            h = [([0],[0],dict(markerfacecolor='r',marker='d',color='w'))]
-            pltr.add_customlegend(ax1,h,l,loc='best')
-            ax2 = pltr.add_subplot((2,0))
-            pltr.scatter(y,y,ax2,label='fudge dragon')
+if __name__ == '__main__':
+    if False:
+        pltr = Plotter(combinelegend=True)
+        pltr.add_subplot()
+        x = np.random.randint(0,100,20)
+        y = np.random.randint(0,100,20)
+        pltr.scatter(x,y,label='FML')
+        pltr.parseCommand((0,0),'legend',[[]])
+        ax1 = pltr.add_subplot((1,0))
+        pltr.plot(y,x,axid=ax1,label='FYL')
+        l = ['Fudgemylife']
+        h = [([0],[0],dict(markerfacecolor='r',marker='d',color='w'))]
+        pltr.add_customlegend(ax1,h,l,loc='best')
+        ax2 = pltr.add_subplot((2,0))
+        pltr.scatter(y,y,ax2,label='fudge dragon')
