@@ -30,6 +30,8 @@ y = numpy.arange(n,dtype='f8')+4.
 z = numpy.empty(n)
 #print(x)
 #print(y)
+# get the JIT compilation out of the way
+z = addThenMultiply(x,y)
 tic = time.time()
 for i in range(N):
     z = addThenMultiply(x,y)

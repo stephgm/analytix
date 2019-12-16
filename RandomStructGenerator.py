@@ -20,7 +20,7 @@ def makeDictArray(**kwargs):
     data['Float'] = np.random.random(size)
     data['Bool'] = np.random.choice(bools,size)
     data['Time'] = np.random.choice([100.,101.,102.],size)
-    
+
     return data
 
 def makeDF(**kwargs):
@@ -36,8 +36,8 @@ def makeStructArray(**kwargs):
     for key in data:
         bullshit[key] = data[key]
     return bullshit
-    
-x = makeDF(size=50)
+
+x = makeDF(size=500)
 y = makeDictArray()
 z = makeStructArray()
 
@@ -60,4 +60,4 @@ if len(xx) > 1:
         z.fillna(value=0.,inplace=True)
     keys = [key for key in z if key.startswith('Float_')]
     z['sum'] = z[keys].apply(lambda x: sum(x), axis=1)
-    z.drop(columns=keys,inplace=True)
+    # z.drop(columns=keys,inplace=True)
