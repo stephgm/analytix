@@ -16,7 +16,7 @@ rem c:\anaconda3-b4\Scripts\conda.exe install -y -c spyder-ide spyder=4.0.0rc1
 :: glib gobject-introspection
 c:\anaconda3-b4\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install msgpack argparse urwid
 :: what actually works
-c:\anaconda3-b4\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install construct hexdump pypcapfile python-pcapng avro python-pptx
+c:\anaconda3-b4\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install construct hexdump pypcapfile python-pcapng avro python-pptx pyinstaller
 c:\anaconda3-b4\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install pyopencl pycuda
 rem dont work
 rem c:\anaconda3-b4\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install altair altair-widgets seaborn-altair altair-recipes yerkes gencharts
