@@ -47,7 +47,7 @@ $pcmd actdiag blockdiag nwdiag seqdiag arrow dill pathlib
 #$pcmd -U ray
 #$pcmd modin vega_datasets pdvega
 #$pcmd ggplot pyggplot
-$pcmd terminal-table tabulate
+$pcmd terminal-table tabulate pyinstaller
 # for carpopy features
 $PREFIX/conda update --all -y
 $PREFIX/conda clean -a -y
