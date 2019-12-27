@@ -8,15 +8,15 @@ Created on Fri Jan 25 20:07:06 2019
 import sys
 import os
 import glob
-from PyQt5 import *
-from PyQt5.Qt import *
+from PyQt5.Qt import QApplication, QFileDialog, QMainWindow
 from PyQt5 import uic
 import h5py
-LIBPATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#print("LIBPATH : "+LIBPATH)
-sys.path.extend([_ for _ in glob.glob(os.path.join(LIBPATH,'*'))
-                 if os.path.isdir(_)])
-import utils
+if not hasattr(sys,'frozen'):
+    LIBPATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    #print("LIBPATH : "+LIBPATH)
+    sys.path.extend([_ for _ in glob.glob(os.path.join(LIBPATH,'*'))
+                     if os.path.isdir(_)])
+# import utils
 #with h5py.File('idap.h5','r') as hh:
 #    data = hh['/ota.acquisitionSummary'][...]
 #utils.csvWriter(data,'idap.csv')
@@ -27,7 +27,10 @@ import utils
 class AdarConfigurator(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
-        uic.loadUi(os.path.join(os.path.dirname(os.path.realpath(__file__)),'adarConfigurator.ui'), self)
+        if not hasattr(sys,'frozen'):
+            uic.loadUi(os.path.join(os.path.dirname(os.path.realpath(__file__)),'adarConfigurator.ui'), self)
+        else:
+            uic.loadUi(os.path.join(os.path.dirname(sys.executable),'adarConfigurator.ui'), self)
         self.setWindowTitle("AEGIS ADAR Version Configurator")
         self.filebasename = 'aegisVersionConfig.ini'
         self.data = {}
@@ -48,7 +51,7 @@ class AdarConfigurator(QMainWindow):
         if spath:
             widget.setText(spath)
     def populateRunBox(self):
-        self.data = utils.read_ini(os.path.join(str(self.ExecutionPath.text()),self.filebasename))
+        # self.data = utils.read_ini(os.path.join(str(self.ExecutionPath.text()),self.filebasename))
         self.runListBox.blockSignals(True)
         self.elementListBox.blockSignals(True)
         self.versionComboBox.blockSignals(True)
@@ -93,8 +96,8 @@ class AdarConfigurator(QMainWindow):
         self.versionComboBox.blockSignals(False)
     def closeEvent(self,event):
         ep = str(self.ExecutionPath.text())
-        if ep and os.path.isdir(ep):
-            utils.write_ini(self.data,os.path.join(ep,self.filebasename))
+        # if ep and os.path.isdir(ep):
+        #     utils.write_ini(self.data,os.path.join(ep,self.filebasename))
 
 def main():
     app = QApplication(sys.argv)
