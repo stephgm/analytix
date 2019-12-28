@@ -38,7 +38,7 @@ $ccmd gcc_impl_linux-64 gcc_linux-64 gfortran_impl_linux-64 gfortran_linux-64 bi
 $pcmd msgpack argparse urwid
 # pdfminer
 # PyGObject, veusz DNW, spyder-memory-profiler?
-$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx orderedset objgraph pandastable # cx-Freeze
+$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx orderedset objgraph pandastable cx-Freeze
 # upgrading
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"
 $pcmd altair altair-widgets seaborn-altair altair-recipes yerkes gencharts

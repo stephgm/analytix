@@ -8,7 +8,8 @@ Created on Fri Jan 25 20:07:06 2019
 import sys
 import os
 import glob
-from PyQt5.Qt import QApplication, QFileDialog, QMainWindow
+from PyQt5.QtWidgets import QApplication
+from PyQt5.Qt import QFileDialog, QMainWindow
 from PyQt5 import uic
 import h5py
 if not hasattr(sys,'frozen'):
