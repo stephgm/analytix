@@ -7,7 +7,8 @@ Created on Thu Jun  6 21:28:25 2019
 """
 
 from __future__ import (absolute_import, division, print_function)
-
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 import argparse
 
 from cartopy import config

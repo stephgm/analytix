@@ -66,15 +66,17 @@ fi
 ##########################################
 #exit
 if [ 1 == 1 ];then
+if [ -f ~/Downloads/ViTables-3.0.0.tar.gz
 tar -zxf ~/Downloads/ViTables-3.0.0.tar.gz
 cd ViTables-3.0.0
 $PREFIX/python setup.py install
 cd ..
 rm -rf ViTables-3.0.0
 fi
+fi
 
 # still need this?
-if [ 1 == 1 ];then
+if [ 0 == 1 ];then
 mkdir -p $PREFIX/../lib/python3.7/site-packages/cartopy/data/shapefiles
 cd $PREFIX/../lib/python3.7/site-packages/cartopy/data/shapefiles
 #tar -zxvf ~/natural_earth.tgz

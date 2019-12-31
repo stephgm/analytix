@@ -7,6 +7,8 @@ Created on Thu Jun  6 21:36:06 2019
 """
 import os
 import sys
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 import cartopy
 #print(cartopy.config['data_dir'])
 #sys.exit(0)
