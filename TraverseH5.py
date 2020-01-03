@@ -5,7 +5,9 @@ Created on Mon Oct 28 13:33:39 2019
 
 @author: klinetry
 """
+import os
 import h5py
+import json
 
 
 def traverseH5(srcgrp,dsDict,**kwargs):
@@ -114,3 +116,10 @@ def traverseH5(srcgrp,dsDict,**kwargs):
                             dsDict[srcgrp.parent.parent.name]['objs'] = list(srcgrp.parent.parent.keys())
                     # List comprehension of all cols get dtype
     return True # Once you've gone thorugh all the items at this level return (unrecurse?)
+
+def genDSDict(h5er):
+    dsDict = {}
+    with h5py.File(h5er,'r') as fid:
+        traverseH5(fid,dsDict,forcecommon=False)
+    with open(h5er[:-3]+'.json','w') as fid:
+        json.dump(dsDict,fid)
