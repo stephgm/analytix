@@ -17,10 +17,10 @@ echo -n "installing ... "
 mkdir -p ${install_path}
 untar_sw ${install_path}
 cd ${install_path}
-#if [ -d local ];then
-#rm local
-#fi
-# ln -s ${version} local
+if [ -d local ];then
+rm local
+fi
+ln -s ${version} ./local
 echo -n "perms ... "
 chmod -R 755 ${idir}
 echo "done"
