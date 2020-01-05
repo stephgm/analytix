@@ -173,6 +173,7 @@ class CollectionsOptions(Widgets.QDialog):
         self.layout.addWidget(self.Ok)
         self.layout.addWidget(self.Cancel)
         self.makeConnections()
+        self.legline = ''
 
         for line in legend.get_lines():
             if line.get_label() == self.artist.get_label():
@@ -251,6 +252,7 @@ class Line2DOptions(Widgets.QDialog):
         self.layout.addWidget(self.Ok)
         self.layout.addWidget(self.Cancel)
         self.makeConnections()
+        self.legline = ''
 
         for line in legend.get_lines():
             if line.get_label() == self.artist.get_label():
@@ -292,26 +294,30 @@ class Line2DOptions(Widgets.QDialog):
 
     def Accept(self):
         self.artist.set_color(namedcolorsHEXlookupfromNAME[self.widgets['Line Color'].ColorCombo.currentText()])
-        self.legline.set_color(namedcolorsHEXlookupfromNAME[self.widgets['Line Color'].ColorCombo.currentText()])
+        if self.legline:
+            self.legline.set_color(namedcolorsHEXlookupfromNAME[self.widgets['Line Color'].ColorCombo.currentText()])
 
         self.artist.set_marker(self.widgets['Marker'].currentText())
         self.artist.set_markerfacecolor(namedcolorsHEXlookupfromNAME[self.widgets['Marker Face Color'].ColorCombo.currentText()])
         self.artist.set_markeredgecolor(namedcolorsHEXlookupfromNAME[self.widgets['Marker Edge Color'].ColorCombo.currentText()])
         self.artist.set_markersize(self.widgets['Marker Size'].text())
         self.artist.set_markeredgewidth(self.widgets['Marker Edge Width'].text())
-        self.legline.set_marker(self.widgets['Marker'].currentText())
-        self.legline.set_markerfacecolor(namedcolorsHEXlookupfromNAME[self.widgets['Marker Face Color'].ColorCombo.currentText()])
-        self.legline.set_markeredgecolor(namedcolorsHEXlookupfromNAME[self.widgets['Marker Edge Color'].ColorCombo.currentText()])
-        self.legline.set_markersize(self.widgets['Marker Size'].text())
-        self.legline.set_markeredgewidth(self.widgets['Marker Edge Width'].text())
+        if self.legline:
+            self.legline.set_marker(self.widgets['Marker'].currentText())
+            self.legline.set_markerfacecolor(namedcolorsHEXlookupfromNAME[self.widgets['Marker Face Color'].ColorCombo.currentText()])
+            self.legline.set_markeredgecolor(namedcolorsHEXlookupfromNAME[self.widgets['Marker Edge Color'].ColorCombo.currentText()])
+            self.legline.set_markersize(self.widgets['Marker Size'].text())
+            self.legline.set_markeredgewidth(self.widgets['Marker Edge Width'].text())
 
         self.artist.set_linestyle(self.widgets['Line Style'].currentText())
         self.artist.set_linewidth(self.widgets['Line Width'].text())
-        self.legline.set_linestyle(self.widgets['Line Style'].currentText())
-        self.legline.set_linewidth(self.widgets['Line Width'].text())
+        if self.legline:
+            self.legline.set_linestyle(self.widgets['Line Style'].currentText())
+            self.legline.set_linewidth(self.widgets['Line Width'].text())
 
         self.artist.set_label(self.widgets['Line Label'].text())
-        self.legline.set_label(self.widgets['Line Label'].text())
+        if self.legline:
+            self.legline.set_label(self.widgets['Line Label'].text())
 
         self.artist.figure.canvas.draw()
         self.close()
