@@ -3,7 +3,9 @@
 #pyinstaller --clean --paths /home/hollidayh/Hamilton/src/analytix/modules --add-data 'adarConfigurator.ui:.' adarConfigurator.py
 
 # cx Freeze
+if [ -e build ];then
 rm -rf build
+fi
 /storage/data/local/bin/python -OO setup.py build
 cat > build/exe.linux-x86_64-3.7/run << EOF
 #!/bin/bash
