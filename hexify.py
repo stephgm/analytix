@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Thu May 30 09:30:28 2019
@@ -14,23 +14,25 @@ if __name__ == '__main__':
 import os
 from binascii import hexlify, unhexlify
 
-exthex = hexlify('EXTENSION')
+exthex = hexlify(b'EXTENSION')
 
 def hexify(fname):
     print(fname)
-    with open(fname,'r') as fid:
+    with open(fname,'rb') as fid:
         binry = hexlify(fid.read())
     fn,ext = os.path.splitext(fname)
-    with open('{}_{}.txt'.format(fn,ext[1:]),'w') as fid:
-        fid.write('{}{}{}'.format(binry,exthex,hexlify(ext)))
+    with open(f'{fn}_{ext[1:]}.txt','wb') as fid:
+        fid.write(binry)
+        fid.write(exthex)
+        fid.write(hexlify(ext.encode()))
         
 def unhexify(fname):
-    with open(fname,'r') as fid:
-        ascry = unhexlify(fid.read())
+    with open(fname,'rb') as fid:
+        ascry = unhexlify(fid.read()).decode()
     extpos = ascry.rfind('EXTENSION')
     ext = ascry[extpos+9:]
-    with open('{}{}'.format(os.path.splitext(fname)[0].rsplit('_',1)[0],ext),'w') as fid:
-        fid.write(ascry[:extpos])
+    with open('{}{}'.format(os.path.splitext(fname)[0].rsplit('_',1)[0],ext),'wb') as fid:
+        fid.write(ascry[:extpos].encode())
     return ext
 
 def hexifyall(dname):
