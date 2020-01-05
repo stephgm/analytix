@@ -21,18 +21,18 @@ versionNumber = 1.1
 import sys
 import os
 
-if __name__ == '__main__':
-    if os.name == 'posix':
-        try:
-            from subprocess import check_output
-            with open('/dev/tty') as tty:
-                h,w = list(map(int,check_output(['stty','size'],stdin=tty).split()))
-        except:
-            w = 140 
-    else:
-        w = 140
-    NOTES = '*'*w
-    NOTES +=\
+# if __name__ == '__main__':
+#     if os.name == 'posix':
+#         try:
+#             from subprocess import check_output
+#             with open('/dev/tty') as tty:
+#                 h,w = list(map(int,check_output(['stty','size'],stdin=tty).split()))
+#         except:
+#             w = 140 
+#     else:
+#         w = 140
+#     NOTES = '*'*w
+#     NOTES +=\
 """
 usage: Plotterator.py <dir 1> <dir N> <file 1> <file N> <options>
 
@@ -40,10 +40,10 @@ option: -nt <##>
         Number of threads
         --max-threads Thread all jobs
 """
-    NOTES += '*'*w
-    if len(sys.argv) == 1:
-        print(NOTES)
-        sys.exit(0)
+    # NOTES += '*'*w
+    # if len(sys.argv) == 1:
+    #     print(NOTES)
+    #     sys.exit(0)
 
 import glob
 import pickle
@@ -54,7 +54,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
-from matploblib.lines import Line2D
+from matplotlib.lines import Line2D
 from matplotlib import table
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.mplot3d import Axes3D
@@ -260,6 +260,7 @@ class Plotter(object):
         self.fig['title'] = kwargs.get('title','')
         self.fig['figsize'] = kwargs.get('figsize',plt.rcParams['figure.figsize'])
         self.fig['classification'] = kwargs.get('classy','SECRET//NOFORN')
+        self.fig['facecolor'] = kwargs.get('facecolor',plt.rcParams['figure.facecolor'])
         self.fig['picker'] = kwargs.get('picker',True)
         self.fig['picker_type'] = kwargs.get('picker_type','original')
         self.fig['customlegend'] = None
@@ -504,87 +505,87 @@ class Plotter(object):
                                     execString = 'othAx[t].'+self.buildExecString(command)
                                     exec(execString,{'ccrs':ccrs},{'othAx':othAx,'t':t})
                             lng.set_draggable(True)
-                    h = []
-                    l = []
-                    if 'combinelegend' in self.sub[rowcol] and self.sub[rowcol]['combinelegend']:
-                        h,l = theaxes[rowcol].get_legend_handles_labels()
-                        for t in othAx:
-                            h1,l1 = othAx[t].get_legend_handles_labels()
-                            h+=h1
-                            l+=l1
-                    if 'customlegend' in self.sub[rowcol] and self.sub[rowcol]['combinelegend']:
-                        h,l = self.sub[rowcol]['customlegend']
-                        h = [eval('Line2D(hndl[0],hndl[1],{})'.format(self.buildKwargs(hndl[2])[:-1]),{'Line2D':Line2D},{'hndl':hndl})
-                                  for hndl in h]
+                h = []
+                l = []
+                if 'combinelegend' in self.sub[rowcol] and self.sub[rowcol]['combinelegend']:
+                    h,l = theaxes[rowcol].get_legend_handles_labels()
+                    for t in othAx:
+                        h1,l1 = othAx[t].get_legend_handles_labels()
+                        h+=h1
+                        l+=l1
+                if 'customlegend' in self.sub[rowcol] and self.sub[rowcol]['combinelegend']:
+                    h,l = self.sub[rowcol]['customlegend']
+                    h = [eval('Line2D(hndl[0],hndl[1],{})'.format(self.buildKwargs(hndl[2])[:-1]),{'Line2D':Line2D},{'hndl':hndl})
+                              for hndl in h]
+                if self.sub[rowcol]['commands']:
+                    for command in self.sub[rowcol]['commands']:
+                        if command['cmd'] == 'legend':
+                            if h:
+                                execString = 'thisax.legend(h,l,'+self.buildExecString(command)[7:]
+                                exec(execString,{'ccrs':ccrs},{'thisax':theaxes[rowcol],'h':h,'l':l})
+                            else:
+                                execString = 'thisax.'+self.buildExecString(command)
+                                exec(execString,{'ccrs':ccrs},{'thisax':theaxes[rowcol]})
+                lng = theaxes[rowcol].get_legend()
+                if lng:
                     if self.sub[rowcol]['commands']:
                         for command in self.sub[rowcol]['commands']:
-                            if command['cmd'] == 'legend':
-                                if h:
-                                    execString = 'thisax.legend(h,l,'+self.buildExecString(command)[7:]
-                                    exec(execString,{'ccrs':ccrs},{'thisax':theaxes[rowcol],'h':h,'l':l})
-                                else:
-                                    execString = 'thisax.'+self.buildExecString(command)
-                                    exec(execString,{'ccrs':ccrs},{'thisax':theaxes[rowcol]})
-                    lng = theaxes[rowcol].get_legend()
-                    if lng:
-                        if self.sub[rowcol]['commands']:
-                            for command in self.sub[rowcol]['commands']:
-                                if command['cmd'].startswith('get_legend'):
-                                    execString = 'thisax.'+self.buildExecString(command)
-                                    exec(execString,{'ccrs':ccrs},{'thisax':theaxes[rowcol]})
-                        lng.set_draggable(True)
-                    thiscb = None
-                    for i,(rc,cb,dt) in enumerate(cbs):
-                        thiscb = fig.colorbar(cm[i])
-                        thiscb.set_label(self.sub[rc]['colorbar']['label'])
-                    for rc in rowcols:
-                        if len(rc) == 3 and rc[:2] == rowcol and self.sub[rc]['colorbar'] and 'LSCFL' in self.sub[rc]['colorbar']: # Heatmap stuff
-                            cbinfo = self.sub[rc]['colorbar'] # for brevity
-                            cmap = LinearSegmentedColormap.from_list(cbinfo['LSCFL'][0],cbinfo['LSCFL'][1],**cbinfo['LSCFL'][2])
-                            p = theaxes[rowcol].pcolor(cbinfo['cbardata'][0],cmap=cmap,**cbinfo['cbardata'][1])
-                            thiscb = fig.colorbar(p,**cbinfo['cb'])
-                        if len(rc) == 3 and rc[:2] == rowcol and self.sub[rc]['colorbar'] and 'commands' in self.sub[rc]:
-                            if thiscb:
-                                if self.sub[rc]['commands']:
-                                    for command in self.sub[rc]['commands']:
-                                        execString = 'thiscb.'+self.buildExecString(command)
-                                        exec(execString,{'ccrs':ccrs},{'thiscb':thiscb})
-                    if 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['mapplot'] and self.sub[rowcol]['mapimg']:
-                        if not LOADED_BM:
-                            LOADED_BM = True
-                            BlueMarbleImg['bluemarblehd'] = np.load(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy'))
-                            BlueMarbleImg['bluemarblesd'] = np.load(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_8192x4096.npy'))
-                        EARTH_IMG = BlueMarbleImg[self.sub[rowcol]['mapimg']]
-                        if lonScale:
-                            theaxes[rowcol].set_global()
-                        theaxes[rowcol].imshow(EARTH_IMG,
-                                               origin = 'upper',
-                                               transform = ccrs.PlateCarree(),
-                                               extent=[-180,180,-90,90])
-                    if 'mapplot' in self.sub[rowcol] and 'features' in self.sub[rowcol] and self.sub[rowcol]['features']:
-                        for feature in self.sub[rowcol]['features']:
-                            featOfStrength = cfeature.ShapelyFeature(Reader(os.path.join(CfgDir,feature['fname'])).geometries(),
-                                                                     eval('ccrs.{}'.format(feature['transform']),{'ccrs':ccrs}))
-                            theaxes[rowcol].add_feature(featOfStrength)
-                    if 'mapplot' in self.sub[rowcol] and 'cfeatures' in self.sub[rowcol] and self.sub[rowcol]['cfeatures']:
-                        for feature in self.sub[rowcol]['cfeatures']:
-                            featOfStrength = eval('cfeature.{}'.format(feature['fname']),{'cfeature':cfeature})
-                            theaxes[rowcol].add_feature(featOfStrength)
-                    if 'table' in self.sub[rowcol] and self.sub[rowcol]['table']:
-                        self.fig['loose'] = True
-                        execString = '(thisax.'+self.buildExecString(self.sub[rowcol]['table']['command'][1:])
-                        the_table = eval('table.table'+execString,{'table':table},{'thisax':theaxes[rowcol]})
-                        if 'cellParams' in self.sub[rowcol]['table'] and (self.sub[rowcol]['table']['cellParams']['cellFontsize'] or
-                                                                          self.sub[rowcol]['table']['cellParams']['cellHeight']):
-                            prop = the_table.properties()
-                            cells = prop['child_artists']
-                            for cell in cells:
-                                if self.sub[rowcol]['table']['cellParams']['cellFontSize']:
-                                    cell.set_fontsize(self.sub[rowcol]['table']['cellParams']['cellFontSize'])
-                                    cell.set_height(cell.get_height()*self.sub[rowcol]['table']['cellParams']['cellHeight'])
-                        
-                    if setformat:
-                        theaxes[rowcol].format_coord = general_format_coord(theaxes[rowcol])
+                            if command['cmd'].startswith('get_legend'):
+                                execString = 'thisax.'+self.buildExecString(command)
+                                exec(execString,{'ccrs':ccrs},{'thisax':theaxes[rowcol]})
+                    lng.set_draggable(True)
+                thiscb = None
+                for i,(rc,cb,dt) in enumerate(cbs):
+                    thiscb = fig.colorbar(cm[i])
+                    thiscb.set_label(self.sub[rc]['colorbar']['label'])
+                for rc in rowcols:
+                    if len(rc) == 3 and rc[:2] == rowcol and self.sub[rc]['colorbar'] and 'LSCFL' in self.sub[rc]['colorbar']: # Heatmap stuff
+                        cbinfo = self.sub[rc]['colorbar'] # for brevity
+                        cmap = LinearSegmentedColormap.from_list(cbinfo['LSCFL'][0],cbinfo['LSCFL'][1],**cbinfo['LSCFL'][2])
+                        p = theaxes[rowcol].pcolor(cbinfo['cbardata'][0],cmap=cmap,**cbinfo['cbardata'][1])
+                        thiscb = fig.colorbar(p,**cbinfo['cb'])
+                    if len(rc) == 3 and rc[:2] == rowcol and self.sub[rc]['colorbar'] and 'commands' in self.sub[rc]:
+                        if thiscb:
+                            if self.sub[rc]['commands']:
+                                for command in self.sub[rc]['commands']:
+                                    execString = 'thiscb.'+self.buildExecString(command)
+                                    exec(execString,{'ccrs':ccrs},{'thiscb':thiscb})
+                if 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['mapplot'] and self.sub[rowcol]['mapimg']:
+                    if not LOADED_BM:
+                        LOADED_BM = True
+                        BlueMarbleImg['bluemarblehd'] = np.load(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy'))
+                        BlueMarbleImg['bluemarblesd'] = np.load(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_8192x4096.npy'))
+                    EARTH_IMG = BlueMarbleImg[self.sub[rowcol]['mapimg']]
+                    if lonScale:
+                        theaxes[rowcol].set_global()
+                    theaxes[rowcol].imshow(EARTH_IMG,
+                                           origin = 'upper',
+                                           transform = ccrs.PlateCarree(),
+                                           extent=[-180,180,-90,90])
+                if 'mapplot' in self.sub[rowcol] and 'features' in self.sub[rowcol] and self.sub[rowcol]['features']:
+                    for feature in self.sub[rowcol]['features']:
+                        featOfStrength = cfeature.ShapelyFeature(Reader(os.path.join(CfgDir,feature['fname'])).geometries(),
+                                                                 eval('ccrs.{}'.format(feature['transform']),{'ccrs':ccrs}))
+                        theaxes[rowcol].add_feature(featOfStrength)
+                if 'mapplot' in self.sub[rowcol] and 'cfeatures' in self.sub[rowcol] and self.sub[rowcol]['cfeatures']:
+                    for feature in self.sub[rowcol]['cfeatures']:
+                        featOfStrength = eval('cfeature.{}'.format(feature['fname']),{'cfeature':cfeature})
+                        theaxes[rowcol].add_feature(featOfStrength)
+                if 'table' in self.sub[rowcol] and self.sub[rowcol]['table']:
+                    self.fig['loose'] = True
+                    execString = '(thisax.'+self.buildExecString(self.sub[rowcol]['table']['command'][1:])
+                    the_table = eval('table.table'+execString,{'table':table},{'thisax':theaxes[rowcol]})
+                    if 'cellParams' in self.sub[rowcol]['table'] and (self.sub[rowcol]['table']['cellParams']['cellFontsize'] or
+                                                                      self.sub[rowcol]['table']['cellParams']['cellHeight']):
+                        prop = the_table.properties()
+                        cells = prop['child_artists']
+                        for cell in cells:
+                            if self.sub[rowcol]['table']['cellParams']['cellFontSize']:
+                                cell.set_fontsize(self.sub[rowcol]['table']['cellParams']['cellFontSize'])
+                                cell.set_height(cell.get_height()*self.sub[rowcol]['table']['cellParams']['cellHeight'])
+                    
+                if setformat:
+                    theaxes[rowcol].format_coord = general_format_coord(theaxes[rowcol])
         
         gotTitle = False
         figlng = None
@@ -638,8 +639,8 @@ class Plotter(object):
                 fig.canvas.mpl_connect('button_release_event',on_release)
             elif self.fig['picker_type'] == 'interactive':
                 fig.canvas.mpl_connect('pick_event',mplIon_pick)
-        if not self.fig['loose']:
-            fig.tight_layout(rect=[0,0.03,1,0.97])
+        # if not self.fig['loose']:
+            # fig.tight_layout(rect=(0,0.03,1,0.97))
         if CANVAS:
             return pCanvas
         if PERSIST:
@@ -714,18 +715,17 @@ class Plotter(object):
         '''
         if axid in self.sub:
             self.sub[axid]['lines'].append({})
-            self.liens.append(self.sub[axid]['lines'][-1])
+            self.lines.append(self.sub[axid]['lines'][-1])
         else:
             print('Invalid axis reference')
             return
         # last entry in axis lines is a blank dictionary
-        xx = self.sub[axid]['lines'][-1]
-        xx['plottype'] = 'plot'
-        xx['x'] = x
-        xx['y'] = y
-        xx['fmt'] = fmt
-        xx['picker'] = PICKERTOLERANCE
-        xx.update(kwargs)
+        self.sub[axid]['lines'][-1]['plottype'] = 'plot'
+        self.sub[axid]['lines'][-1]['x'] = x
+        self.sub[axid]['lines'][-1]['y'] = y
+        self.sub[axid]['lines'][-1]['fmt'] = fmt
+        self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1].update(kwargs)
         
     def scatter(self,x,y,axid=(0,0),**kwargs):
         '''
@@ -740,12 +740,11 @@ class Plotter(object):
             print('Invalid axis reference')
             return
         # last entry in axis lines is a blank dictionary
-        xx = self.sub[axid]['lines'][-1]
-        xx['plottype'] = 'scatter'
-        xx['x'] = x
-        xx['y'] = y
-        xx['picker'] = PICKERTOLERANCE
-        xx.update(kwargs)
+        self.sub[axid]['lines'][-1]['plottype'] = 'scatter'
+        self.sub[axid]['lines'][-1]['x'] = x
+        self.sub[axid]['lines'][-1]['y'] = y
+        self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1].update(kwargs)
     
     def scatter3d(self,x,y,z,axid=(0,0),**kwargs):
         '''
@@ -760,13 +759,12 @@ class Plotter(object):
             print('Invalid axis reference')
             return
         # last entry in axis lines is a blank dictionary
-        xx = self.sub[axid]['lines'][-1]
-        xx['plottype'] = 'scatter3d'
-        xx['x'] = x
-        xx['y'] = y
-        xx['z'] = z
-        xx['picker'] = PICKERTOLERANCE
-        xx.update(kwargs)
+        self.sub[axid]['lines'][-1]['plottype'] = 'scatter3d'
+        self.sub[axid]['lines'][-1]['x'] = x
+        self.sub[axid]['lines'][-1]['y'] = y
+        self.sub[axid]['lines'][-1]['z'] = z
+        self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1].update(kwargs)
         
     def pie(self,sizes,fmt='',axid=(0,0),**kwargs):
         '''
@@ -781,10 +779,9 @@ class Plotter(object):
             print('Invalid axis reference')
             return
         # last entry in axis lines is a blank dictionary
-        xx = self.sub[axid]['lines'][-1]
-        xx['plottype'] = 'pie'
-        xx['x'] = sizes
-        xx.update(kwargs)
+        self.sub[axid]['lines'][-1]['plottype'] = 'pie'
+        self.sub[axid]['lines'][-1]['x'] = sizes
+        self.sub[axid]['lines'][-1].update(kwargs)
         
     def stackplot(self,x,y,axid=(0,0),**kwargs):
         '''
@@ -799,12 +796,11 @@ class Plotter(object):
             print('Invalid axis reference')
             return
         # last entry in axis lines is a blank dictionary
-        xx = self.sub[axid]['lines'][-1]
-        xx['plottype'] = 'stackplot'
-        xx['x'] = x
-        xx['y'] = y
-        xx['picker'] = PICKERTOLERANCE
-        xx.update(kwargs)
+        self.sub[axid]['lines'][-1]['plottype'] = 'stackplot'
+        self.sub[axid]['lines'][-1]['x'] = x
+        self.sub[axid]['lines'][-1]['y'] = y
+        self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1].update(kwargs)
     
     def hist(self,x,bins,axid=(0,0),**kwargs):
         '''
@@ -819,12 +815,11 @@ class Plotter(object):
             print('Invalid axis reference')
             return
         # last entry in axis lines is a blank dictionary
-        xx = self.sub[axid]['lines'][-1]
-        xx['plottype'] = 'hist'
-        xx['x'] = x
-        xx['bins'] = bins
-        xx['picker'] = PICKERTOLERANCE
-        xx.update(kwargs)
+        self.sub[axid]['lines'][-1]['plottype'] = 'hist'
+        self.sub[axid]['lines'][-1]['x'] = x
+        self.sub[axid]['lines'][-1]['bins'] = bins
+        self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1].update(kwargs)
     
     def bar(self,x,height,axid=(0,0),width=0.8,bottom=None,align='center',**kwargs):
         '''
@@ -839,15 +834,14 @@ class Plotter(object):
             print('Invalid axis reference')
             return
         # last entry in axis lines is a blank dictionary
-        xx = self.sub[axid]['lines'][-1]
-        xx['plottype'] = 'bar'
-        xx['x'] = x
-        xx['height'] = height
-        xx['width'] = width
-        xx['bottom'] = bottom
-        xx['align'] = align
-        xx['picker'] = PICKERTOLERANCE
-        xx.update(kwargs)
+        self.sub[axid]['lines'][-1]['plottype'] = 'bar'
+        self.sub[axid]['lines'][-1]['x'] = x
+        self.sub[axid]['lines'][-1]['height'] = height
+        self.sub[axid]['lines'][-1]['width'] = width
+        self.sub[axid]['lines'][-1]['bottom'] = bottom
+        self.sub[axid]['lines'][-1]['align'] = align
+        self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1].update(kwargs)
     
     def barh(self,x,width,axid=(0,0),height=0.8,left=None,align='center',**kwargs):
         '''
@@ -862,15 +856,14 @@ class Plotter(object):
             print('Invalid axis reference')
             return
         # last entry in axis lines is a blank dictionary
-        xx = self.sub[axid]['lines'][-1]
-        xx['plottype'] = 'barh'
-        xx['x'] = x
-        xx['width'] = width
-        xx['height'] = height
-        xx['left'] = left
-        xx['align'] = align
-        xx['picker'] = PICKERTOLERANCE
-        xx.update(kwargs)
+        self.sub[axid]['lines'][-1]['plottype'] = 'barh'
+        self.sub[axid]['lines'][-1]['x'] = x
+        self.sub[axid]['lines'][-1]['width'] = width
+        self.sub[axid]['lines'][-1]['height'] = height
+        self.sub[axid]['lines'][-1]['left'] = left
+        self.sub[axid]['lines'][-1]['align'] = align
+        self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1].update(kwargs)
         
     def add_colorbar(self,axid=(0,0),colorbarname='jet',label='',dateridonteventknower=np.array([0,1]),**kwargs):
         if axid in self.sub:
@@ -1035,7 +1028,11 @@ class Plotter(object):
                             newc[k][k1] = "'''"+c[k][k1]+"'''"
                         else:
                             newc[k][k1] = c[k][k1]
-            newhandles.append(a,b,newc)
+                elif isinstance(c[k],str):
+                    newc[k] = "'''"+c[k]+"'''"
+                else:
+                    newc[k] = c[k]
+            newhandles.append((a,b,newc))
         thisthing['customlegend'] = (newhandles,labels)
         self.parseCommand(obj,'legend',[kwargs])
         
@@ -1083,23 +1080,22 @@ class Plotter(object):
                         thisthing['commands'][-1]['args'].append(car)
             elif isinstance(carg,dict):
                 for car in carg:
-                    xx = thisthing['commands'][-1]['kwargs'][car]
                     if isinstance(carg[car],dict):
-                        xx = {}
+                        thisthing['commands'][-1]['kwargs'][car] = {}
                         for k in carg[car]:
                             if isinstance(carg[car][k],str):
-                                xx[k] = "'''"+carg[car][k]+"'''"
+                                thisthing['commands'][-1]['kwargs'][car][k] = "'''"+carg[car][k]+"'''"
                             elif isinstance(car, np.ndarray):
-                                xx[k] = multiDims(carg[car][k],[])
+                                thisthing['commands'][-1]['kwargs'][car][k] = multiDims(carg[car][k],[])
                             else:
-                                xx[k] = carg[car][k]
+                                thisthing['commands'][-1]['kwargs'][car][k] = carg[car][k]
                     else:
                         if isinstance(carg[car], str):
-                            xx = "'''"+carg[car]+"'''"
+                            thisthing['commands'][-1]['kwargs'][car] = "'''"+carg[car]+"'''"
                         elif isinstance(car,np.ndarray):
-                            xx = multiDims(carg[car],[])
+                            thisthing['commands'][-1]['kwargs'][car] = multiDims(carg[car],[])
                         else:
-                            xx = carg[car]
+                            thisthing['commands'][-1]['kwargs'][car] = carg[car]
     
     def reparseCommand(self,obj,cmd,cargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
@@ -1122,17 +1118,28 @@ class Plotter(object):
         self.parseCommand(obj, cmd, cargs)
         
 if __name__ == '__main__':
-    if False:
+    if True:
         pltr = Plotter(combinelegend=True)
         pltr.add_subplot()
         x = np.random.randint(0,100,20)
         y = np.random.randint(0,100,20)
-        pltr.scatter(x,y,label='FML')
+        pltr.scatter(x,y,label='FML',c=x,cmap='jet')
+        pltr.add_colorbar((0,0),'jet','Mine',x)
         pltr.parseCommand((0,0),'legend',[[]])
         ax1 = pltr.add_subplot((1,0))
+        pltr.parseCommand(ax1,'set_title',[['FUCK']])
         pltr.plot(y,x,axid=ax1,label='FYL')
         l = ['Fudgemylife']
         h = [([0],[0],dict(markerfacecolor='r',marker='d',color='w'))]
         pltr.add_customlegend(ax1,h,l,loc='best')
         ax2 = pltr.add_subplot((2,0))
         pltr.scatter(y,y,ax2,label='fudge dragon')
+        pltr.parseCommand(ax2, 'legend', [[]])
+        pltr.share(ax1,ax2,axis='both')
+        ax3 = pltr.add_subplot((3,0))
+        pltr.pie([10,13,14],axid=ax3,autopct='%1.1f%%',labels=['log','bush','branch'])
+        pltr.parseCommand(ax3, 'legend', [[]])
+        pltr.createPlot('', PERSIST=True)
+        
+    
+    
