@@ -36,20 +36,23 @@ from PlotH5 import Plotterator
 
 x = np.linspace(0,100,50)
 
-fig = plt.figure(constrained_layout=True)
-# fig,ax = plt.subplots()
-gs = fig.add_gridspec(3, 2)
+# fig = plt.figure(constrained_layout=True)
+fig,ax = plt.subplots()
+# gs = fig.add_gridspec(3, 2)
 
-ax1 = fig.add_subplot(gs[0,1])
-ax2 = fig.add_subplot(gs[0:,0])
+# ax1 = fig.add_subplot(gs[0,1])
+# ax2 = fig.add_subplot(gs[0:,0])
 
-ax1.plot(x,x,c='r',ls=':',marker='*')
-ax2.scatter(x,x**2,c=x,ls='-',label='fuc',cmap=plt.cm.get_cmap('jet'))
-# ax2.scatter(x,x**2,c='g',label='fuc')
-ax2.legend()
-ax1.plot(x,x**3,c='g')
-ax1.set_xlabel('what')
-ax2.set_xlabel('who')
+# ax.plot(x,x,c='r',ls=':',marker='*')
+# ax.scatter(x,x**2,c=x,ls='-',label='fuc',cmap=plt.cm.get_cmap('jet'))
+# # ax2.scatter(x,x**2,c='g',label='fuc')
+# ax.legend()
+# ax.plot(x,x**3,c='g')
+
+ax.pie([10,23,32])
+
+ax.set_xlabel('what')
+ax.set_xlabel('who')
 fig.suptitle('WHOO')
 
 
@@ -88,6 +91,7 @@ def MPLtoPlotterator(fig):
     loose = not xx['tight_layout']
     
     pltr = Plotterator.Plotter(figsize=figsize,facecolor=facecolor,loose=loose,title=title)
+    print(pltr)
     for i,axes in enumerate(xx['axes']):
         yy = axes.properties()
         Id = getAxid(yy['geometry'])
@@ -124,6 +128,7 @@ def MPLtoPlotterator(fig):
             pltr.parseCommand(pax, 'legend', [[]])
         
         for child in yy['children']:
+            print(type(child))
             if isinstance(child,matplotlib.lines.Line2D):
                 z = child.properties()
                 xdata = z['xdata']
@@ -153,6 +158,7 @@ def MPLtoPlotterator(fig):
                          label=label,
                          zorder=zorder)
             elif isinstance(child,matplotlib.collections.PathCollection):
+                #Need a way to get markers... still
                 z = child.properties()
                 xdata = z['offsets'][:,0]
                 ydata = z['offsets'][:,1]
@@ -175,6 +181,23 @@ def MPLtoPlotterator(fig):
                              edgecolor=markeredgecolor,
                              label=label,
                              zorder=zorder)
+            elif isinstance(child,matplotlib.patches.Wedge):
+                #probably a pie chart?  But doesn't have to be
+                z = child
+                center = z.center
+                theta1 = z.theta1
+                theta2 = z.theta2
+                radius = z.r
+                width = z.width
+                facecolor = z.get_facecolor()
+                cargs =[ dict(center=center,
+                         theta1=theta1,
+                         theta2=theta2,
+                         r=radius,
+                         color=facecolor,
+                         width=width)]
+                pltr.add_patch(pax,'Wedge',cargs)
+                
                 
     pltr.createPlot('', PERSIST=True)    
     return yy,xx,z
