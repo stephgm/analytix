@@ -21,18 +21,18 @@ versionNumber = 1.1
 import sys
 import os
 
-# if __name__ == '__main__':
-#     if os.name == 'posix':
-#         try:
-#             from subprocess import check_output
-#             with open('/dev/tty') as tty:
-#                 h,w = list(map(int,check_output(['stty','size'],stdin=tty).split()))
-#         except:
-#             w = 140 
-#     else:
-#         w = 140
-#     NOTES = '*'*w
-#     NOTES +=\
+if __name__ == '__main__':
+    if os.name == 'posix':
+        try:
+            from subprocess import check_output
+            with open('/dev/tty') as tty:
+                h,w = list(map(int,check_output(['stty','size'],stdin=tty).split()))
+        except:
+            w = 140 
+    else:
+        w = 140
+    NOTES = '*'*w
+    NOTES +=\
 """
 usage: Plotterator.py <dir 1> <dir N> <file 1> <file N> <options>
 
@@ -40,10 +40,10 @@ option: -nt <##>
         Number of threads
         --max-threads Thread all jobs
 """
-    # NOTES += '*'*w
-    # if len(sys.argv) == 1:
-    #     print(NOTES)
-    #     sys.exit(0)
+    NOTES += '*'*w
+    if len(sys.argv) == 1:
+        print(NOTES)
+        sys.exit(0)
 
 import glob
 import pickle
@@ -245,7 +245,6 @@ class Plotter(object):
         '''
         Initiates figure with some commonly used defaults.  Use kwargs to override.
         '''
-        
         self.fig = {'commands':[]}
         self.sub = {}
         self.lines = []
@@ -476,7 +475,7 @@ class Plotter(object):
                 if 'patches' in self.sub[rowcol] and self.sub[rowcol]['patches']:
                     for patch in self.sub[rowcol]['patches']:
                         execString = 'thisax.add_patch(mpatches.{})'.format(self.buildExecString(patch))
-                        exec(execString,{'ccrs':ccrs},{'thisax':theaxes[rowcol]})
+                        exec(execString,{'ccrs':ccrs,'mpatches':mpatches},{'thisax':theaxes[rowcol]})
                 for t in self.sub:
                     if len(t) == 3 and t[:2] == rowcol and not self.sub[t]['colorbar']:
                         for line in deepcopy(self.sub[t]['lines']):
@@ -941,6 +940,7 @@ class Plotter(object):
         else:
             thisthing = self.sub[obj]
         thisthing['patches'].append({'cmd':cmd,'args':[],'kwargs':{}})
+        
         for carg in cargs:
             if isinstance(carg,list):
                 for car in carg:
@@ -951,6 +951,7 @@ class Plotter(object):
             else:
                 if isinstance(carg,dict):
                     for car in carg:
+                        thisthing['patches'][-1]['kwargs'][car] = {}
                         if isinstance(carg[car],dict):
                             thisthing['patches'][-1]['kwargs'][car] = {}
                             for k in carg[car]:
@@ -960,9 +961,9 @@ class Plotter(object):
                                     thisthing['patches'][-1]['kwargs'][car][k] = carg[car][k]
                         else:
                             if isinstance(carg[car],str):
-                                thisthing['patches'][-1]['kwargs'][car][k] = "'''"+carg[car]+"'''"
+                                thisthing['patches'][-1]['kwargs'][car] = "'''"+carg[car]+"'''"
                             else:
-                                thisthing['patches'][-1]['kwargs'][car][k] = carg[car]
+                                thisthing['patches'][-1]['kwargs'][car] = carg[car]
     
     def add_feature(self,filename,transform,axid=(0,0),**kwargs):
         if not os.path.isfile(os.path.join(CfgDir,filename[lenCfgDir:])):
