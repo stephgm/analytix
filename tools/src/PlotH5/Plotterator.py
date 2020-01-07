@@ -67,7 +67,7 @@ try:
     from cartopy.io.shapereader import Reader
     import cartopy.feature as cfeature
     if os.name == 'posix':
-        cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.7/site-package/cartopy'
+        cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.7/site-packages/cartopy'
     else:
         cartopy.config['data_dir'] = os.path.join(os.path.dirname(sys.executable),'Lib','site-packages','cartopy')
 except:
@@ -311,15 +311,15 @@ class Plotter(object):
             execString += self.buildKwargs(command['kwargs'])
             execString = execString[:-1]
         execString += ')'
-        return execString.replace('transform','transform=ccrs.')
+        return execString.replace('transform=','transform=ccrs.')
     
     def buildKwargs(self,kwargs):
         execString = ''
         for key in kwargs:
             if key == 'transform':
-                execString += '{}={}'.format(key,kwargs[key]).strip('\'')
+                execString += key + '=' + kwargs[key].strip('\'')
             elif isinstance(kwargs[key],dict):
-                execString += key+'=dict('+','.join([k+'='+str(multiDims(kwargs[key],[]))
+                execString += key+'=dict('+','.join([k+'='+str(multiDims(kwargs[key][k],[]))
                                                       for k in kwargs[key]])+')'
             elif isinstance(kwargs[key], str) or isinstance(kwargs[key],str):
                 execString += key+'='+str(kwargs[key])
@@ -572,7 +572,8 @@ class Plotter(object):
                 if 'mapplot' in self.sub[rowcol] and 'features' in self.sub[rowcol] and self.sub[rowcol]['features']:
                     for feature in self.sub[rowcol]['features']:
                         featOfStrength = cfeature.ShapelyFeature(Reader(os.path.join(CfgDir,feature['fname'])).geometries(),
-                                                                 eval('ccrs.{}'.format(feature['transform']),{'ccrs':ccrs}))
+                                                                 eval('ccrs.{}'.format(feature['transform']),{'ccrs':ccrs}),
+                                                                 **feature['kwargs'])
                         theaxes[rowcol].add_feature(featOfStrength)
                 if 'mapplot' in self.sub[rowcol] and 'cfeatures' in self.sub[rowcol] and self.sub[rowcol]['cfeatures']:
                     for feature in self.sub[rowcol]['cfeatures']:
@@ -603,7 +604,7 @@ class Plotter(object):
             figh = [eval('Line2D(hndl[0],hndl[1],{})'.format(self.buildKwargs(hndl[2])[:-1]),{'Line2D':Line2D},{'hndl':hndl})
                     for hndl in figh]
         if self.fig['commands']:
-            for command in fig['commands']:
+            for command in self.fig['commands']:
                 if not(command['cmd'].startswith('get_legend') or command['cmd'].startswith('legend')) and not(command['cmd'].startswith('legend')):
                     if 'title' in command['cmd']:
                         gotTitle = True
