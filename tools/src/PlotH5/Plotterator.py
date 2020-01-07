@@ -104,7 +104,7 @@ BlueMarbleImg = {'bluemarblehd':None,'bluemarblesd':None}
 STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','ota_presentation.mplstyle')
 ESI_STYLE_SHEET = os.path.join(RELATIVE_LIB_PATH,'gobat','esi_presentation.mplstyle')
 plt.style.use(STYLE_SHEET)
-exclude_list = ['x','y','z','fmt','plottype','bins','height','width','left','bottom','align']
+exclude_list = ['x','y','z','fmt','plottype','bins','height','width','left','bottom','align','commands']
 special_cmds = ['twinx','twiny','get_legend']
 PICKERTOLERANCE = 5
 figTitleFD = {
@@ -475,7 +475,11 @@ class Plotter(object):
                 if 'patches' in self.sub[rowcol] and self.sub[rowcol]['patches']:
                     for patch in self.sub[rowcol]['patches']:
                         execString = 'thisax.add_patch(mpatches.{})'.format(self.buildExecString(patch))
-                        exec(execString,{'ccrs':ccrs,'mpatches':mpatches},{'thisax':theaxes[rowcol]})
+                        thepatch = eval(execString,{'ccrs':ccrs,'mpatches':mpatches},{'thisax':theaxes[rowcol]})
+                        if 'commands' in patch and patch['commands']:
+                            for command in patch['commands']:
+                                execString = f'thepatch.{self.buildExecString(command)}'
+                                exec(execString,{'ccrs':ccrs,'mpatches':mpatches},{'thepatch':thepatch})
                 for t in self.sub:
                     if len(t) == 3 and t[:2] == rowcol and not self.sub[t]['colorbar']:
                         for line in deepcopy(self.sub[t]['lines']):
@@ -494,7 +498,11 @@ class Plotter(object):
                         if 'patches' in self.sub[t] and self.sub[t]['patches']:
                             for patch in self.sub[t]['patches']:
                                 execString = 'othAx[t].add_patch(mpatches.{})'.format(self.buildExecString(patch))
-                                exec(execString,{'ccrs':ccrs,'mpatches':mpatches},{'othAx':othAx,'t':t})
+                                thepatch = eval(execString,{'ccrs':ccrs,'mpatches':mpatches},{'othAx':othAx,'t':t})
+                                if 'commands' in patch and patch['commands']:
+                                    for command in patch['commands']:
+                                        execString = f'thepatch.{self.buildExecString(command)}'
+                                        exec(execString,{'ccrs':ccrs,'mpatches':mpatches},{'thepatch':thepatch})
                         if setformat:
                             othAx[t].format_coord = general_format_coord(othAx[t], theaxes[rowcol])
                         lng = othAx[t].get_legend()
@@ -673,7 +681,7 @@ class Plotter(object):
     
     def plotCall(self,ax,line):
         if line['plottype'] == 'plot':
-            sc = ax.plot(line['x'],line['y'],line['fmt'],
+            sc, = ax.plot(line['x'],line['y'],line['fmt'],
                          **{k:line[k] for k in line if k not in exclude_list})
         elif line['plottype'] == 'scatter':
             sc = ax.scatter(line['x'],line['y'],
@@ -681,6 +689,7 @@ class Plotter(object):
         elif line['plottype'] == 'pie':
             sc = ax.pie(line['x'],
                         **{k:line[k] for k in line if k not in exclude_list})
+            print(sc)
         elif line['plottype'] == 'scatter3d':
             sc = ax.scatter(line['x'],line['y'],line['z'],
                             **{k:line[k] for k in line if k not in exclude_list})
@@ -696,6 +705,12 @@ class Plotter(object):
         elif line['plottype'] == 'barh':
             sc = ax.barh(line['x'],line['width'],height=line['height'],left=line['left'],align=line['align'],
                          **{k:line[k] for k in line if k not in exclude_list})
+            
+        if 'commands' in line and line['commands'] and line['plottype'] in ('plot','scatter','scatter3d'):
+            for command in line['commands']:
+                execString = 'sc.'+self.buildExecString(command)
+                exec(execString,{'ccrs':ccrs},{'sc':sc})
+
         return sc
     
     def add_subplot(self,axid=(0,0),rowspan=1,colspan=1,threeD=False,combinelegend=False,mapplot=False,mapproj='PlateCarree()'):
@@ -724,7 +739,10 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['y'] = y
         self.sub[axid]['lines'][-1]['fmt'] = fmt
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
+        
+        return len(self.sub[axid]['lines'])-1
         
     def scatter(self,x,y,axid=(0,0),**kwargs):
         '''
@@ -743,7 +761,10 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['x'] = x
         self.sub[axid]['lines'][-1]['y'] = y
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
+    
+        return len(self.sub[axid]['lines'])-1
     
     def scatter3d(self,x,y,z,axid=(0,0),**kwargs):
         '''
@@ -763,8 +784,11 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['y'] = y
         self.sub[axid]['lines'][-1]['z'] = z
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
         
+        return len(self.sub[axid]['lines'])-1
+    
     def pie(self,sizes,fmt='',axid=(0,0),**kwargs):
         '''
         Attempt to set the reference to correct axis,
@@ -780,8 +804,11 @@ class Plotter(object):
         # last entry in axis lines is a blank dictionary
         self.sub[axid]['lines'][-1]['plottype'] = 'pie'
         self.sub[axid]['lines'][-1]['x'] = sizes
+        self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
         
+        return len(self.sub[axid]['lines'])-1
+    
     def stackplot(self,x,y,axid=(0,0),**kwargs):
         '''
         Attempt to set the reference to correct axis,
@@ -799,7 +826,10 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['x'] = x
         self.sub[axid]['lines'][-1]['y'] = y
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
+    
+        return len(self.sub[axid]['lines'])-1
     
     def hist(self,x,bins,axid=(0,0),**kwargs):
         '''
@@ -818,7 +848,10 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['x'] = x
         self.sub[axid]['lines'][-1]['bins'] = bins
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
+    
+        return len(self.sub[axid]['lines'])-1
     
     def bar(self,x,height,axid=(0,0),width=0.8,bottom=None,align='center',**kwargs):
         '''
@@ -840,7 +873,10 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['bottom'] = bottom
         self.sub[axid]['lines'][-1]['align'] = align
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
+    
+        return len(self.sub[axid]['lines'])-1
     
     def barh(self,x,width,axid=(0,0),height=0.8,left=None,align='center',**kwargs):
         '''
@@ -862,8 +898,11 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['left'] = left
         self.sub[axid]['lines'][-1]['align'] = align
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
         
+        return len(self.sub[axid]['lines'])-1
+    
     def add_colorbar(self,axid=(0,0),colorbarname='jet',label='',dateridonteventknower=np.array([0,1]),**kwargs):
         if axid in self.sub:
             cnt = 0
@@ -939,31 +978,11 @@ class Plotter(object):
             thisthing = self.fig
         else:
             thisthing = self.sub[obj]
-        thisthing['patches'].append({'cmd':cmd,'args':[],'kwargs':{}})
-        
-        for carg in cargs:
-            if isinstance(carg,list):
-                for car in carg:
-                    if isinstance(car,str):
-                        thisthing['patches'][-1]['args'].append("'''"+car+"'''")
-                    else:
-                        thisthing['patches'][-1]['args'].append(car)
-            else:
-                if isinstance(carg,dict):
-                    for car in carg:
-                        thisthing['patches'][-1]['kwargs'][car] = {}
-                        if isinstance(carg[car],dict):
-                            thisthing['patches'][-1]['kwargs'][car] = {}
-                            for k in carg[car]:
-                                if isinstance(carg[car][k], str) or isinstance(car,str):
-                                    thisthing['patches'][-1]['kwargs'][car][k] = "'''"+carg[car][k]+"'''"
-                                else:
-                                    thisthing['patches'][-1]['kwargs'][car][k] = carg[car][k]
-                        else:
-                            if isinstance(carg[car],str):
-                                thisthing['patches'][-1]['kwargs'][car] = "'''"+carg[car]+"'''"
-                            else:
-                                thisthing['patches'][-1]['kwargs'][car] = carg[car]
+        # cmd is the thing that creates it, commands are the set_call stuff
+        thisthing['patches'].append({'cmd':cmd,'args':[],'kwargs':{},'commands':[]})
+        theobject = thisthing['patches'][-1]
+        self.commandParsing(theobject,cargs)
+        return len(thisthing['patches'])-1
     
     def add_feature(self,filename,transform,axid=(0,0),**kwargs):
         if not os.path.isfile(os.path.join(CfgDir,filename[lenCfgDir:])):
@@ -1070,34 +1089,68 @@ class Plotter(object):
         else:
             thisthing = self.sub[obj]
         thisthing['commands'].append({'cmd':cmd,'args':[],'kwargs':{}})
+        theobject = thisthing['commands'][-1]
+        self.commandParsing(theobject,cargs)
+
+    def parseLineCommand(self,axid,obj,cmd,cargs):
+        if not (isinstance(axid,tuple) and axid in self.sub) and \
+            not (isinstance(obj,int) and obj < len(self.sub[axid]['lines'])):
+            print('Unrecognized reference object')
+            return
+        if not isinstance(cmd,str):
+            print(axid,obj,cmd,cargs)
+            print('Invalid input to parseLineCommand')
+            return
+        # Ok now do stuff
+        thisthing = self.sub[axid]['lines'][obj]
+        thisthing['commands'].append({'cmd':cmd,'args':[],'kwargs':{}})
+        theobject = thisthing['commands'][-1]
+        self.commandParsing(theobject,cargs)
+
+    def parsePatchCommand(self,axid,obj,cmd,cargs):
+        if not (isinstance(axid,tuple) and axid in self.sub) and \
+            not (isinstance(obj,int) and obj < len(self.sub[axid]['patches'])):
+            print('Unrecognized reference object')
+            return
+        if not isinstance(cmd,str):
+            print(axid,obj,cmd,cargs)
+            print('Invalid input to parseLineCommand')
+            return
+        # Ok now do stuff
+        thisthing = self.sub[axid]['patches'][obj]
+        thisthing['commands'].append({'cmd':cmd,'args':[],'kwargs':{}})
+        theobject = thisthing['commands'][-1]
+        self.commandParsing(theobject,cargs)
+
+    def commandParsing(self,theobject,cargs):
         for carg in cargs:
             if isinstance(carg,list):
                 for car in carg:
                     if isinstance(car,str):
-                        thisthing['commands'][-1]['args'].append("'''"+car+"'''")
+                        theobject['args'].append("'''"+car+"'''")
                     elif isinstance(car,np.ndarray):
-                        thisthing['commands'][-1]['args'].append(multiDims(car,[]))
+                        theobject['args'].append(multiDims(car,[]))
                     else:
-                        thisthing['commands'][-1]['args'].append(car)
+                        theobject['args'].append(car)
             elif isinstance(carg,dict):
                 for car in carg:
                     if isinstance(carg[car],dict):
-                        thisthing['commands'][-1]['kwargs'][car] = {}
+                        theobject['kwargs'][car] = {}
                         for k in carg[car]:
                             if isinstance(carg[car][k],str):
-                                thisthing['commands'][-1]['kwargs'][car][k] = "'''"+carg[car][k]+"'''"
+                                theobject['kwargs'][car][k] = "'''"+carg[car][k]+"'''"
                             elif isinstance(car, np.ndarray):
-                                thisthing['commands'][-1]['kwargs'][car][k] = multiDims(carg[car][k],[])
+                                theobject['kwargs'][car][k] = multiDims(carg[car][k],[])
                             else:
-                                thisthing['commands'][-1]['kwargs'][car][k] = carg[car][k]
+                                theobject['kwargs'][car][k] = carg[car][k]
                     else:
                         if isinstance(carg[car], str):
-                            thisthing['commands'][-1]['kwargs'][car] = "'''"+carg[car]+"'''"
+                            theobject['kwargs'][car] = "'''"+carg[car]+"'''"
                         elif isinstance(car,np.ndarray):
-                            thisthing['commands'][-1]['kwargs'][car] = multiDims(carg[car],[])
+                            theobject['kwargs'][car] = multiDims(carg[car],[])
                         else:
-                            thisthing['commands'][-1]['kwargs'][car] = carg[car]
-    
+                            theobject['kwargs'][car] = carg[car]
+                            
     def reparseCommand(self,obj,cmd,cargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
             print('Unrecognized reference object')
@@ -1128,13 +1181,17 @@ if __name__ == '__main__':
         pltr.add_colorbar((0,0),'jet','Mine',x)
         pltr.parseCommand((0,0),'legend',[[]])
         ax1 = pltr.add_subplot((1,0))
+        patchnum = pltr.add_patch(ax1,'Rectangle',[[[0,0],10,10]])
+        pltr.parsePatchCommand(ax1,patchnum,'set_color',[['orange']])
         pltr.parseCommand(ax1,'set_title',[['FUCK']])
-        pltr.plot(y,x,axid=ax1,label='FYL')
+        linenum = pltr.plot(y,x,axid=ax1,label='FYL')
+        pltr.parseLineCommand(ax1,linenum,'set_color',[['purple']])
         l = ['Fudgemylife']
         h = [([0],[0],dict(markerfacecolor='r',marker='d',color='w'))]
         pltr.add_customlegend(ax1,h,l,loc='best')
         ax2 = pltr.add_subplot((2,0))
-        pltr.scatter(y,y,ax2,label='fudge dragon')
+        linenum2 = pltr.scatter(y,y,ax2,label='fudge dragon')
+        pltr.parseLineCommand(ax2,linenum2,'set_color',[['red']])        
         pltr.parseCommand(ax2, 'legend', [[]])
         pltr.share(ax1,ax2,axis='both')
         ax3 = pltr.add_subplot((3,0))
