@@ -13,6 +13,8 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import matplotlib
+from matplotlib.artist import *
+from matplotlib.transforms import *
 import PyQt5.QtWidgets as Widgets
 import PyQt5.QtGui as Gui
 import PyQt5.QtCore as Core
@@ -21,6 +23,7 @@ import numpy as np
 import struct
 import binascii
 from six import string_types
+import inspect
 
 
 if not hasattr(sys, 'frozen'):
@@ -43,13 +46,13 @@ fig,ax = plt.subplots()
 # ax1 = fig.add_subplot(gs[0,1])
 # ax2 = fig.add_subplot(gs[0:,0])
 
-# ax.plot(x,x,c='r',ls=':',marker='*')
+ax.plot(x,x,c='r',ls=':',marker='*')
 # ax.scatter(x,x**2,c=x,ls='-',label='fuc',cmap=plt.cm.get_cmap('jet'))
-# # ax2.scatter(x,x**2,c='g',label='fuc')
-# ax.legend()
-# ax.plot(x,x**3,c='g')
+# ax2.scatter(x,x**2,c='g',label='fuc')
+ax.legend()
+ax.plot(x,x**3,c='g')
 
-ax.pie([10,23,32])
+# ax.pie([10,23,32])
 
 ax.set_xlabel('what')
 ax.set_xlabel('who')
@@ -80,6 +83,98 @@ def getSpan(subgridspec,geometry):
     s = getAxid([rows,cols,start])
     e = getAxid([rows,cols,end])
     return tuple(np.array(e)-np.array(s)+1)
+
+def getGetsandSets(obj):
+    gets = []
+    sets = []
+    for o in dir(obj):
+        if 'subplotspec' in o:
+            continue
+        if 'set_data' in o:
+            continue
+        if '_setstate' in o:
+            continue
+        if 'get' in o:
+            gets.append(o)
+        if 'set' in o:
+            sets.append(o)
+    gets = map(lambda x: x.replace('get','set'),gets)
+    h = list(set(gets).intersection(set(sets)))
+    return h
+
+def setFigAxes(obj,cmd,PlotteratorObj,attr):
+    print(obj)
+    try:
+        if callable(attr):
+            attr = attr()
+        else:
+            print(f'{attr} is  not callable')
+            return
+        if isinstance(attr,np.ndarray) or attr != None:
+            if not 'matplotlib' in str(type(attr)) or isinstance(attr,np.ndarray):
+                PlotteratorObj.parseCommand(obj,f'{cmd}',[[attr]])
+            else:
+                print(f'{attr} is class')
+        else:
+            print(f'{attr} is nan')
+    except:
+        print(f'{cmd} failed')
+
+def setLines(axid,obj,cmd,PlotteratorObj,attr):
+    print(obj)
+    try:
+        if callable(attr):
+            attr = attr()
+        else:
+            print(f'{attr} is  not callable')
+            return
+        if isinstance(attr,np.ndarray) or attr != None:
+            # if not inspect.isclass(type(attr) or isinstance(np.ndarray)):
+            if not 'matplotlib' in str(type(attr)) or isinstance(attr,np.ndarray):
+                PlotteratorObj.parseLineCommand(axid,obj,f'{cmd}',[[attr]])
+            else:
+                print(f'{attr} is class')
+        else:
+            print(f'{attr} is nan')
+    except:
+        print(f'{cmd} failed')
+    
+
+def newMPLtoPl(fig):
+    xx = fig.properties()
+    
+    figsize = (xx['figwidth'],xx['figheight'])
+    title = fig._suptitle.get_text()
+    facecolor = xx['facecolor']
+    loose = not xx['tight_layout']
+    
+    pltr = Plotterator.Plotter(figsize=figsize,facecolor=facecolor,loose=loose,title=title)
+    # figure = fig
+    # figGetsSets = getGetsandSets(figure)
+    # pltr = Plotterator.Plotter()
+    # for cmd in figGetsSets:
+    #     attr = eval(f'fig.{cmd.replace("set","get")}')
+    #     setFigAxes('fig', cmd, pltr,attr)
+            
+    for i,axes in enumerate(fig.properties()['axes']):
+        axesGetSets = getGetsandSets(axes)
+        yy = axes.properties()
+        Id = getAxid(yy['geometry'])
+        rowspan,colspan = getSpan(yy['subplotspec'], yy['geometry'])
+        pax = pltr.add_subplot(Id,rowspan,colspan)
+        for cmd in axesGetSets:
+            attr = eval(f'axes.{cmd.replace("set","get")}')
+            setFigAxes(pax, cmd, pltr,attr)
+        for child in yy['children']:
+            if isinstance(child,matplotlib.lines.Line2D):
+                z = child.properties()
+                childGetSets = getGetsandSets(child)
+                line = pltr.plot([],[])
+                for cmd in childGetSets:
+                    attr = eval(f'child.{cmd.replace("set","get")}')
+                    setLines(pax,line, cmd, pltr,attr)
+    
+    pltr.createPlot('',PERSIST=True)
     
 
 def MPLtoPlotterator(fig):
@@ -202,6 +297,7 @@ def MPLtoPlotterator(fig):
     pltr.createPlot('', PERSIST=True)    
     return yy,xx,z
     
-yy,xx,z = MPLtoPlotterator(fig)
+# yy,xx,z = MPLtoPlotterator(fig)
+z = newMPLtoPl(fig)
 
 
