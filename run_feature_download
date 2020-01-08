@@ -4,8 +4,9 @@ CONDA_PREFIX="/storage/data/local"
 export PYTHONHTTPSVERIFY=0
 #python feature_download.py -output ${CONDA_PREFIX}/lib/python2.7/site-packages/cartopy/data physical gshhs cultural cultural-extra
 ver=$(${CONDA_PREFIX}/bin/python -V 2>&1 | awk '{split($0,a);print a[2]}' | awk -F "." '{print $1}')
+verminor=$(${CONDA_PREFIX}/bin/python -V 2>&1 | awk '{split($0,a);print a[2]}' | awk -F "." '{print $2}')
 echo ${CONDA_PREFIX}/lib/python${ver}.7/site-packages/cartopy/data
-${CONDA_PREFIX}/bin/python feature_download.py --output ${CONDA_PREFIX}/lib/python${ver}.7/site-packages/cartopy/data physical
-${CONDA_PREFIX}/bin/python feature_download.py --output ${CONDA_PREFIX}/lib/python${ver}.7/site-packages/cartopy/data gshhs
-${CONDA_PREFIX}/bin/python feature_download.py --output ${CONDA_PREFIX}/lib/python${ver}.7/site-packages/cartopy/data cultural
-${CONDA_PREFIX}/bin/python feature_download.py --output ${CONDA_PREFIX}/lib/python${ver}.7/site-packages/cartopy/data cultural-extra
+${CONDA_PREFIX}/bin/python feature_download.py --output ${CONDA_PREFIX}/lib/python${ver}.${verminor}/site-packages/cartopy/data physical
+${CONDA_PREFIX}/bin/python feature_download.py --output ${CONDA_PREFIX}/lib/python${ver}.${verminor}/site-packages/cartopy/data gshhs
+${CONDA_PREFIX}/bin/python feature_download.py --output ${CONDA_PREFIX}/lib/python${ver}.${verminor}/site-packages/cartopy/data cultural
+${CONDA_PREFIX}/bin/python feature_download.py --output ${CONDA_PREFIX}/lib/python${ver}.${verminor}/site-packages/cartopy/data cultural-extra
