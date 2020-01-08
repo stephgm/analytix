@@ -24,5 +24,7 @@ def multiDims(arr,newlist):
             else:
                 newlist = list(arr)
         return newlist
+    elif isinstance(arr,(tuple,list)):
+        return [multiDims(nextarr,[]) for nextarr in arr]
     else:
         return arr
