@@ -50,7 +50,6 @@ import pickle
 import numpy as np
 import matplotlib
 from copy import deepcopy
-from matplotlib.backends.backend_qt5agg import FigureCanvas
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
@@ -404,6 +403,7 @@ class Plotter(object):
             fig = plt.figure(facecolor=self.fig['facecolor'],
                              figsize=self.fig['figsize'])
         else:
+            from matplotlib.backends.backend_qt5agg import FigureCanvas
             pCanvas = FigureCanvas(matplotlib.figure.Figure(facecolor=self.fig['facecolor'],figsize=self.fig['figsize']))
             fig = pCanvas.figure
         global space
