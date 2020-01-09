@@ -66,7 +66,7 @@ fi
 ##########################################
 #exit
 if [ 1 == 1 ];then
-if [ -f ~/Downloads/ViTables-3.0.0.tar.gz
+if [ -f ~/Downloads/ViTables-3.0.0.tar.gz ];then
 tar -zxf ~/Downloads/ViTables-3.0.0.tar.gz
 cd ViTables-3.0.0
 $PREFIX/python setup.py install
