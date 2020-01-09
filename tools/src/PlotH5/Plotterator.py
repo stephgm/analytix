@@ -426,9 +426,10 @@ class Plotter(object):
                 cm = []
                 othAx = {}
                 if self.sub[rowcol]['3d']:
-                    theaxes[rowcol] = fig.add_subplot(gs[rowcol[0]:rowcol+self.sub[rowcol]['rowspan'],
-                                                      rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']],
-                                                      projection = '3d')
+                    theaxes[rowcol] = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
+                                                         rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']],
+                                                         picker=PICKERTOLERANCE,
+                                                         projection = '3d')
                 elif 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['mapplot']:
                     theaxes[rowcol] = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
                                                          rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']],
@@ -445,8 +446,8 @@ class Plotter(object):
                                 lonScale = 1. - (float(self.sub[rowcol]['mapproj'][cloc:loc])/360.)
                 else:
                     theaxes[rowcol] = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
-                                                         rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']],picker=PICKERTOLERANCE)
-                    
+                                                         rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']],
+                                                         picker=PICKERTOLERANCE)
                 for t in self.sub:
                     if len(t) == 3 and t[:2] == rowcol:
                         for command in self.sub[t]['commands']:
@@ -684,13 +685,15 @@ class Plotter(object):
         if line['plottype'] == 'plot':
             sc, = ax.plot(line['x'],line['y'],line['fmt'],
                          **{k:line[k] for k in line if k not in exclude_list})
+        elif line['plottype'] == 'plot3d':
+            sc = ax.plot(line['x'],line['y'],line['z'],line['fmt'],
+                         **{k:line[k] for k in line if k not in exclude_list})
         elif line['plottype'] == 'scatter':
             sc = ax.scatter(line['x'],line['y'],
                             **{k:line[k] for k in line if k not in exclude_list})
         elif line['plottype'] == 'pie':
             sc = ax.pie(line['x'],
                         **{k:line[k] for k in line if k not in exclude_list})
-            print(sc)
         elif line['plottype'] == 'scatter3d':
             sc = ax.scatter(line['x'],line['y'],line['z'],
                             **{k:line[k] for k in line if k not in exclude_list})
@@ -707,7 +710,7 @@ class Plotter(object):
             sc = ax.barh(line['x'],line['width'],height=line['height'],left=line['left'],align=line['align'],
                          **{k:line[k] for k in line if k not in exclude_list})
             
-        if 'commands' in line and line['commands'] and line['plottype'] in ('plot','scatter','scatter3d'):
+        if 'commands' in line and line['commands'] and line['plottype'] in ('plot','plot3d','scatter','scatter3d'):
             for command in line['commands']:
                 execString = 'sc.'+self.buildExecString(command)
                 exec(execString,{'ccrs':ccrs},{'sc':sc})
@@ -738,6 +741,30 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['plottype'] = 'plot'
         self.sub[axid]['lines'][-1]['x'] = x
         self.sub[axid]['lines'][-1]['y'] = y
+        self.sub[axid]['lines'][-1]['fmt'] = fmt
+        self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
+        self.sub[axid]['lines'][-1]['commands'] = []
+        self.sub[axid]['lines'][-1].update(kwargs)
+        
+        return len(self.sub[axid]['lines'])-1
+        
+    def plot3d(self,x,y,z,fmt='',axid=(0,0),**kwargs):
+        '''
+        Attempt to set the reference to the correct axis,
+        return with message if invalid
+        axid not required, will default to single subplot
+        '''
+        if axid in self.sub:
+            self.sub[axid]['lines'].append({})
+            self.lines.append(self.sub[axid]['lines'][-1])
+        else:
+            print('Invalid axis reference')
+            return
+        # last entry in axis lines is a blank dictionary
+        self.sub[axid]['lines'][-1]['plottype'] = 'plot3d'
+        self.sub[axid]['lines'][-1]['x'] = x
+        self.sub[axid]['lines'][-1]['y'] = y
+        self.sub[axid]['lines'][-1]['z'] = z
         self.sub[axid]['lines'][-1]['fmt'] = fmt
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
         self.sub[axid]['lines'][-1]['commands'] = []
@@ -1175,29 +1202,30 @@ class Plotter(object):
 if __name__ == '__main__':
     if True:
         pltr = Plotter(combinelegend=True)
-        pltr.add_subplot()
+        pltr.add_subplot(threeD=True)
         x = np.random.randint(0,100,20)
         y = np.random.randint(0,100,20)
-        pltr.scatter(x,y,label='FML',c=x,cmap='jet')
-        pltr.add_colorbar((0,0),'jet','Mine',x)
-        pltr.parseCommand((0,0),'legend',[[]])
-        ax1 = pltr.add_subplot((1,0))
-        patchnum = pltr.add_patch(ax1,'Rectangle',[[[0,0],10,10]])
-        pltr.parsePatchCommand(ax1,patchnum,'set_color',[['orange']])
-        pltr.parseCommand(ax1,'set_title',[['FUCK']])
-        linenum = pltr.plot(y,x,axid=ax1,label='FYL')
-        pltr.parseLineCommand(ax1,linenum,'set_color',[['purple']])
-        l = ['Fudgemylife']
-        h = [([0],[0],dict(markerfacecolor='r',marker='d',color='w'))]
-        pltr.add_customlegend(ax1,h,l,loc='best')
-        ax2 = pltr.add_subplot((2,0))
-        linenum2 = pltr.scatter(y,y,ax2,label='fudge dragon')
-        pltr.parseLineCommand(ax2,linenum2,'set_color',[['red']])        
-        pltr.parseCommand(ax2, 'legend', [[]])
-        pltr.share(ax1,ax2,axis='both')
-        ax3 = pltr.add_subplot((3,0))
-        pltr.pie([10,13,14],axid=ax3,autopct='%1.1f%%',labels=['log','bush','branch'])
-        pltr.parseCommand(ax3, 'legend', [[]])
+        z = np.random.randint(0,100,20)
+        pltr.plot3d(x,y,z,label='FML')#,c=x,cmap='jet')
+#        pltr.add_colorbar((0,0),'jet','Mine',x)
+#        pltr.parseCommand((0,0),'legend',[[]])
+#        ax1 = pltr.add_subplot((1,0))
+#        patchnum = pltr.add_patch(ax1,'Rectangle',[[[0,0],10,10]])
+#        pltr.parsePatchCommand(ax1,patchnum,'set_color',[['orange']])
+#        pltr.parseCommand(ax1,'set_title',[['FUCK']])
+#        linenum = pltr.plot3d(y,x,y,axid=ax1,label='FYL')
+#        pltr.parseLineCommand(ax1,linenum,'set_color',[['purple']])
+#        l = ['Fudgemylife']
+#        h = [([0],[0],dict(markerfacecolor='r',marker='d',color='w'))]
+#        pltr.add_customlegend(ax1,h,l,loc='best')
+#        ax2 = pltr.add_subplot((2,0))
+#        linenum2 = pltr.scatter(y,y,ax2,label='fudge dragon')
+#        pltr.parseLineCommand(ax2,linenum2,'set_color',[['red']])        
+#        pltr.parseCommand(ax2, 'legend', [[]])
+#        pltr.share(ax1,ax2,axis='both')
+#        ax3 = pltr.add_subplot((3,0))
+#        pltr.pie([10,13,14],axid=ax3,autopct='%1.1f%%',labels=['log','bush','branch'])
+#        pltr.parseCommand(ax3, 'legend', [[]])
         pltr.createPlot('', PERSIST=True)
         
     
