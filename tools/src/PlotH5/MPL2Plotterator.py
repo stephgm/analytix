@@ -583,8 +583,22 @@ def PlotterateFig(fig):
                               height=0)]
                 line = pltr.add_patch(pax,'Rectangle',cargs)
             elif isinstance(child,matplotlib.collections.PolyCollection):
-                pass
-                # return child
+                patch = True
+                paths = child.get_paths()
+                points = paths[-1].vertices
+                ec = child.get_edgecolor()
+                fc = child.get_facecolor()[0]
+                print(fc[0])
+                print(ec)
+                if not ec:
+                    ec = fc
+                else:
+                    ec = ec[0]
+                excludes.extend(['get_edgecolor','get_edgecolors','get_ec',
+                                 'get_facecolor','get_facecolors','get_fc'])
+                cargs = [dict(xy=points,ec=ec,fc=fc)]
+                line = pltr.add_patch(pax,'Polygon',cargs)
+                continue
             else:
                 continue
             childGetSets = getGetsandSets(child)
@@ -613,7 +627,7 @@ if __name__ == '__main__':
     x = np.random.randint(0,20,200)
     y = np.random.randint(0,25,200)
     
-    if True:
+    if False:
         def randrange(n, vmin, vmax):
             '''
             Helper function to make an array of random numbers having shape (n, )
@@ -641,12 +655,12 @@ if __name__ == '__main__':
             if False:
                 ax.plot(xs,ys,zs,marker=m)
     
-    if False:
+    if True:
         fig,ax = plt.subplots()
         x = np.random.randint(0,20,200)
         y = np.random.randint(0,25,200)
         
-        if True:
+        if False:
             #scatter plot
             sc = ax.scatter(x,y,marker='D',c=x,s=200,ec='k',cmap=plt.cm.get_cmap('bone'))
             cbar = fig.colorbar(sc)
@@ -697,7 +711,7 @@ if __name__ == '__main__':
             autolabel(rects1)
             autolabel(rects2)
             
-        if False:
+        if True:
             #stack plot
             
             x = [1, 2, 3, 4, 5]
@@ -706,9 +720,10 @@ if __name__ == '__main__':
             y3 = [1, 3, 5, 7, 9]
             
             y = np.vstack([y1, y2, y3])
+            print(y)
             
             labels = ["Fibonacci ", "Evens", "Odds"]
-            ax.stackplot(x, y1, y2, y3, labels=labels)
+            ax.stackplot(x, y, labels=labels)
             
         if False:
             #histogram
