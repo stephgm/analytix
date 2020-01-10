@@ -498,7 +498,6 @@ def PlotterateFig(fig):
             if isinstance(child,mpl_toolkits.mplot3d.art3d.Line3D):
                 patch = False
                 # return child
-                excludes.extend(['get_aa'])
                 x,y,z = child.get_data_3d()
                 line = pltr.plot3d(x,y,z,axid=pax)
             
@@ -624,7 +623,9 @@ if __name__ == '__main__':
         
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        
+        ax.set_xlabel('what')
+        ax.set_ylabel('who')
+        ax.set_zlabel('when')
         n = 100
         
         # For each set of style and range settings, plot n random points in the box
@@ -634,7 +635,9 @@ if __name__ == '__main__':
             ys = randrange(n, 0, 100)
             zs = randrange(n, zlow, zhigh)
             if True:
-                ax.scatter(xs, ys, zs, marker=m,c=xs)
+                sc = ax.scatter(xs, ys, zs, marker=m,c=xs,cmap='bone')
+                cbar = fig.colorbar(sc)
+                cbar.set_label('hoo')
             if False:
                 ax.plot(xs,ys,zs,marker=m)
     
