@@ -13,17 +13,8 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import matplotlib
-from matplotlib.artist import *
-from matplotlib.transforms import *
-import PyQt5.QtWidgets as Widgets
-import PyQt5.QtGui as Gui
-import PyQt5.QtCore as Core
-from collections import OrderedDict
+import mpl_toolkits
 import numpy as np
-import struct
-import binascii
-from six import string_types
-import inspect
 
 debug = False
 
@@ -371,6 +362,12 @@ def setPatch(axid,obj,cmd,PlotteratorObj,attr):
     except:
         if debug:
             print(f'{cmd} failed')
+            
+def determineAxesType(axes):
+    if '3D' in str(type(axes)):
+        return '3D'
+    else:
+        return 'normal'
 
 def PlotterateFig(fig):
     '''
@@ -400,7 +397,6 @@ def PlotterateFig(fig):
         Issues:
             1. Need to provide better support for legends.  Currently only basic
             ones are made..... somtimes
-            2. Annotations need to be looked at
     Lines:
         Creates:
             1. Line plots
@@ -421,6 +417,7 @@ def PlotterateFig(fig):
         Creates:
             1. Bar charts
             2. Rectangle Patch
+            3. Histogram
         Issues:
             None that I know of
     PatchCollection:
@@ -432,14 +429,17 @@ def PlotterateFig(fig):
         Creates:
             1. Annotations
         Issues:
-            1. This is super basic.  Gotta be able to set more things than pos
-            and text
+            None that I know of
     Text:
         Creates:
             1. Annotations
         Issues:
-            1. This is super basic.  Gotta be able to set more things than pos
-            and text
+            None that I know of
+            
+    Some more things to look at....
+    Basemap plots - How to identify?  Transforms?
+    3D plots - I don't think this will be hard
+    Stackplots - I dont know anything
     
 
     '''
@@ -454,6 +454,7 @@ def PlotterateFig(fig):
     loose = not xx['tight_layout']
     pltr = Plotterator.Plotter(figsize=figsize,facecolor=facecolor,loose=loose,title=title)
     for i,axes in enumerate(fig.properties()['axes']):
+        
         excludes = []
         # return axes
         axesGetSets = getGetsandSets(axes)
@@ -467,7 +468,11 @@ def PlotterateFig(fig):
         # return yy
         Id = getAxid(yy['geometry'])
         rowspan,colspan = getSpan(yy['subplotspec'], yy['geometry'])
-        pax = pltr.add_subplot(Id,rowspan,colspan)
+        axType = determineAxesType(axes)
+        if axType == 'normal':
+            pax = pltr.add_subplot(Id,rowspan,colspan)
+        elif axType == '3D':
+            pax = pltr.add_subplot(Id,rowspan,colspan,threeD=True)
         
         for cmd in axesGetSets:
             if cmd in excludes:
@@ -489,7 +494,36 @@ def PlotterateFig(fig):
                 the Spine object in the list of children for the axes.
                 '''
                 break
-            if isinstance(child,matplotlib.lines.Line2D):
+            
+            if isinstance(child,mpl_toolkits.mplot3d.art3d.Line3D):
+                patch = False
+                # return child
+                excludes.extend(['get_aa'])
+                x,y,z = child.get_data_3d()
+                line = pltr.plot3d(x,y,z,axid=pax)
+            
+            elif isinstance(child,mpl_toolkits.mplot3d.art3d.Path3DCollection):
+                # return child
+                patch = False
+                marker = determineMarker(child)
+                x,y,z = child._offsets3d
+                array = child.get_array()
+                if isinstance(array,np.ndarray):
+                    color = child.get_facecolors()
+                    ec = child.get_edgecolors()
+                    cmap = child.get_cmap()
+                    colorbar = child.colorbar
+                    excludes.extend(['get_array','get_facecolor','get_facecolors',
+                                     'get_fc','get_edgecolor','get_edgecolors','get_ec'])
+                    if cmap:
+                        cmap = cmap.name
+                    if colorbar and cmap:
+                        pltr.add_colorbar(pax,cmap,colorbar._label,np.array([array.min(),array.max()]))
+                    line = pltr.scatter3d(x,y,z,axid=pax,marker=marker,c=array.data,ec=ec,cmap=cmap)
+                else:
+                    line = pltr.scatter3d(x,y,z,axid=pax,marker=marker)
+                
+            elif isinstance(child,matplotlib.lines.Line2D):
                 patch = False
                 line = pltr.plot([],[],axid=pax)
             elif isinstance(child,matplotlib.collections.PathCollection):
@@ -514,18 +548,26 @@ def PlotterateFig(fig):
                     line = pltr.scatter(x,y,axid=pax,marker=marker,c=array.data,ec=ec,cmap=cmap)
                 else:
                     line = pltr.scatter([],[],axid=pax,marker=marker)
+                    
             elif isinstance(child,matplotlib.text.Annotation):
                 patch = None
                 text = child._text
                 xy = child.xy
-                pltr.parseCommand(pax,'annotate',[[text,xy]])
+                va = child._verticalalignment
+                ha = child._horizontalalignment
+                color = child._color
+                pltr.parseCommand(pax,'annotate',[[text,xy],dict(va=va,ha=ha,color=color)])
                 continue
+            
             elif isinstance(child,matplotlib.text.Text):
                 patch = None
                 text = child._text
                 x = child._x
                 y = child._y
-                pltr.parseCommand(pax,'text',[[x,y,text]])
+                va = child._verticalalignment
+                ha = child._horizontalalignment
+                color = child._color
+                pltr.parseCommand(pax,'text',[[x,y,text],dict(ha=ha,va=va,color=color)])
                 continue
                 
             elif isinstance(child,matplotlib.patches.Wedge):
@@ -569,52 +611,123 @@ def PlotterateFig(fig):
     pltr.createPlot('',PERSIST=True)
     
 if __name__ == '__main__':
-    fig,ax = plt.subplots()
     x = np.random.randint(0,20,200)
     y = np.random.randint(0,25,200)
     
-    if False:
-        #scatter plot
-        sc = ax.scatter(x,y,marker='D',c=x,s=200,ec='k',cmap=plt.cm.get_cmap('bone'))
-        cbar = fig.colorbar(sc)
-        cbar.set_label('what')
-        sc2 = ax.scatter(x,y,marker='D',c=x,s=20,ec='b',cmap=plt.cm.get_cmap('jet'),zorder=2)
-        cbar = fig.colorbar(sc2)
-        cbar.set_label('who')
-    if False:
-        #pie chart
-        cmap = plt.cm.jet
-        plcolor = cmap(np.linspace(0.,1.,3))
-        ax.pie([10,23,32],autopct='%.2f%%',colors=plcolor)
-        
     if True:
-        # bar chart
-        labels = ['G1', 'G2', 'G3', 'G4', 'G5']
-        men_means = [20, 34, 30, 35, 27]
-        women_means = [25, 32, 34, 20, 25]
+        def randrange(n, vmin, vmax):
+            '''
+            Helper function to make an array of random numbers having shape (n, )
+            with each number distributed Uniform(vmin, vmax).
+            '''
+            return (vmax - vmin)*np.random.rand(n) + vmin
         
-        x = np.arange(len(labels))  # the label locations
-        width = 0.35  # the width of the bars
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
         
-        rects1 = ax.bar(x - width/2, men_means, width, label='Men')
-        rects2 = ax.bar(x + width/2, women_means, width, label='Women')
+        n = 100
         
-        # Add some text for labels, title and custom x-axis tick labels, etc.
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels)
-        
+        # For each set of style and range settings, plot n random points in the box
+        # defined by x in [23, 32], y in [0, 100], z in [zlow, zhigh].
+        for m, zlow, zhigh in [('o', -50, -25)]:#, ('^', -30, -5)]:
+            xs = randrange(n, 23, 32)
+            ys = randrange(n, 0, 100)
+            zs = randrange(n, zlow, zhigh)
+            if True:
+                ax.scatter(xs, ys, zs, marker=m,c=xs)
+            if False:
+                ax.plot(xs,ys,zs,marker=m)
+    
     if False:
-        #stack plot
+        fig,ax = plt.subplots()
+        x = np.random.randint(0,20,200)
+        y = np.random.randint(0,25,200)
         
-        x = [1, 2, 3, 4, 5]
-        y1 = [1, 1, 2, 3, 5]
-        y2 = [0, 4, 2, 6, 8]
-        y3 = [1, 3, 5, 7, 9]
+        if True:
+            #scatter plot
+            sc = ax.scatter(x,y,marker='D',c=x,s=200,ec='k',cmap=plt.cm.get_cmap('bone'))
+            cbar = fig.colorbar(sc)
+            cbar.set_label('what')
+            sc2 = ax.scatter(x,y,marker='D',c=x,s=20,ec='b',cmap=plt.cm.get_cmap('jet'),zorder=2)
+            cbar = fig.colorbar(sc2)
+            cbar.set_label('who')
+        if False:
+            #pie chart
+            cmap = plt.cm.jet
+            plcolor = cmap(np.linspace(0.,1.,3))
+            ax.pie([10,23,32],autopct='%.2f%%',colors=plcolor)
+            
+        if False:
+            #bar chart
+            N = 5
+            men_means = (20, 35, 30, 35, 27)
+            men_std = (2, 3, 4, 1, 2)
+            
+            ind = np.arange(N)  # the x locations for the groups
+            width = 0.35
+            rects1 = ax.bar(ind, men_means, width, color='r', yerr=men_std)
+    
+            women_means = (25, 32, 34, 20, 25)
+            women_std = (3, 5, 2, 3, 3)
+            rects2 = ax.bar(ind + width, women_means, width, color='y', yerr=women_std)
+            
+            # add some text for labels, title and axes ticks
+            ax.set_ylabel('Scores')
+            ax.set_title('Scores by group and gender')
+            ax.set_xticks(ind + width / 2)
+            ax.set_xticklabels(('G1', 'G2', 'G3', 'G4', 'G5'))
+            ax.annotate('What',(1,10),color='b')
+            
+            ax.legend((rects1[0], rects2[0]), ('Men', 'Women'))
+            
+            
+            def autolabel(rects):
+                """
+                Attach a text label above each bar displaying its height
+                """
+                for rect in rects:
+                    height = rect.get_height()
+                    ax.text(rect.get_x() + rect.get_width()/2., 1.05*height,
+                            '%d' % int(height),
+                            ha='center', va='bottom')
+            
+            autolabel(rects1)
+            autolabel(rects2)
+            
+        if False:
+            #stack plot
+            
+            x = [1, 2, 3, 4, 5]
+            y1 = [1, 1, 2, 3, 5]
+            y2 = [0, 4, 2, 6, 8]
+            y3 = [1, 3, 5, 7, 9]
+            
+            y = np.vstack([y1, y2, y3])
+            
+            labels = ["Fibonacci ", "Evens", "Odds"]
+            ax.stackplot(x, y1, y2, y3, labels=labels)
+            
+        if False:
+            #histogram
+            import matplotlib.mlab as mlab
+            import scipy.stats
+    
+            mu, sigma = 100, 15
+            x = mu + sigma*np.random.randn(10000)
+            
+            # the histogram of the data
+            n, bins, patches = plt.hist(x, 50, normed=1, facecolor='green', alpha=0.75)
+            
+            # add a 'best fit' line
+            y = scipy.stats.norm.pdf( bins, mu, sigma)
+            l = plt.plot(bins, y, 'r--', linewidth=1)
+            
+            plt.xlabel('Smarts')
+            plt.ylabel('Probability')
+            plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu=100,\ \sigma=15$')
+            plt.axis([40, 160, 0, 0.03])
+            plt.grid(True)
         
-        y = np.vstack([y1, y2, y3])
-        
-        labels = ["Fibonacci ", "Evens", "Odds"]
-        ax.stackplot(x, y1, y2, y3, labels=labels)
     
     
     z = PlotterateFig(fig)
