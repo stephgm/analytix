@@ -964,7 +964,7 @@ class Plotter(object):
                     cnt += 1
             newref = axid+(cnt,)
             self.initAxes(newref, 1, 1)
-            self.parseCommand(newref,'twin()'.format(axis),[kwargs])
+            self.parseCommand(newref,'twin{}'.format(axis),[kwargs])
             return newref
         else:
             print('Invalid axis reference')
