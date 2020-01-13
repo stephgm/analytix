@@ -524,72 +524,21 @@ def PlotterateFig(fig):
     This function will take in a matplotlib figure object and Plotterate it.
     Some aspects of the plot may NOT carry over perfectly, however, this is a
     WIP.
-
-    Parameters
-    ----------
-    fig : Matplotlib Figure
-
-    Returns
-    -------
-    None.
     
-    Detailed Info
-    -------------
+    Inputs:
+        fig - matplotlib figure object
+    Kwargs:
+        N/A
+    Returns:
+        N/A but subject to change
     
     Figure:
-        Creates:
-            1. matplotlib figure
         Issues:
             1. Need to add support for legends
     Axes:
-        Creates:
-            1. matplotlib axes
         Issues:
             1. Need to provide better support for legends.  Currently only basic
             ones are made..... somtimes
-    Lines:
-        Creates:
-            1. Line plots
-        Issues:
-            None at the moment
-    Scatter:
-        Creates:
-            1. Scatter plots
-        Issues:
-            None that I know of
-    Wedges:
-        Creates:
-            1. Pie charts
-            2. Wedge Patch
-        Issues:
-            None that I know of
-    Rectangle:
-        Creates:
-            1. Bar charts
-            2. Rectangle Patch
-            3. Histogram
-        Issues:
-            None that I know of
-    PatchCollection:
-        Creates:
-            1. Stacked Plots
-        Issues:
-            All the issues... Ugh
-    Annotation:
-        Creates:
-            1. Annotations
-        Issues:
-            None that I know of
-    Text:
-        Creates:
-            1. Annotations
-        Issues:
-            None that I know of
-            
-    Some more things to look at....
-    Basemap plots - How to identify?  Transforms?
-    3D plots - I don't think this will be hard
-    Stackplots - I dont know anything
     
 
     '''
@@ -745,9 +694,9 @@ def PlotterateFig(fig):
                 # return child
                 patch = False
                 if mapplot:
-                    line = pltr.plot([],[],axid=pax,transform=proj)
+                    line = pltr.plot([],[],axid=pax,transform=proj,picker=5)
                 else:
-                    line = pltr.plot([],[],axid=pax)
+                    line = pltr.plot([],[],axid=pax,picker=5)
             elif isinstance(child,matplotlib.collections.PathCollection):
                 # return child
                 patch = False
@@ -813,12 +762,14 @@ def PlotterateFig(fig):
                              theta1=0,
                              theta2=0,
                              r=0,
-                            transform=proj)]
+                            transform=proj,
+                            picker=5)]
                 else:
                     cargs =[dict(center=(0,0),
                              theta1=0,
                              theta2=0,
-                             r=0)]
+                             r=0,
+                             picker=5)]
                 line = pltr.add_patch(pax,'Wedge',cargs)
             elif isinstance(child,matplotlib.patches.Rectangle):
                 patch = True
@@ -826,32 +777,34 @@ def PlotterateFig(fig):
                     cargs = [dict(xy=(0,0),
                                   width=0,
                                   height=0,
-                                  transform=proj)]
+                                  transform=proj,
+                                  picker=5)]
                 else:
                     cargs = [dict(xy=(0,0),
                                   width=0,
-                                  height=0)]
+                                  height=0,
+                                  picker=5)]
                 line = pltr.add_patch(pax,'Rectangle',cargs)
             elif isinstance(child,matplotlib.patches.Polygon):
                 patch = True
                 if mapplot:
-                    cargs = [dict(xy=[[0,0],[0,1]],transform=proj)]
+                    cargs = [dict(xy=[[0,0],[0,1]],transform=proj,picker=5)]
                 else:
-                    cargs = [dict(xy=[[0,0],[0,1]])]
+                    cargs = [dict(xy=[[0,0],[0,1]],picker=5)]
                 line = pltr.add_patch(pax, 'Polygon', cargs)
             elif isinstance(child,matplotlib.patches.Circle):
                 patch = True
                 if mapplot:
-                    cargs = [dict(xy=[0,0],radius=0,transform=proj)]
+                    cargs = [dict(xy=[0,0],radius=0,transform=proj,picker=5)]
                 else:
-                    cargs = [dict(xy=[0,0],radius = 0)]
+                    cargs = [dict(xy=[0,0],radius = 0,picker=5)]
                 line = pltr.add_patch(pax,'Circle',cargs)
             elif isinstance(child,matplotlib.patches.Ellipse):
                 patch = True
                 if mapplot:
-                    cargs = [dict(xy=[0,0],width=0,height=0,transform=proj)]
+                    cargs = [dict(xy=[0,0],width=0,height=0,transform=proj,picker=5)]
                 else:
-                    cargs = [dict(xy=[0,0],width=0,height=0)]
+                    cargs = [dict(xy=[0,0],width=0,height=0,picker=5)]
                 line = pltr.add_patch(pax,'Ellipse',cargs)
             elif isinstance(child,matplotlib.collections.PolyCollection):
                 patch = True
@@ -868,9 +821,9 @@ def PlotterateFig(fig):
                 excludes.extend(['get_edgecolor','get_edgecolors','get_ec',
                                  'get_facecolor','get_facecolors','get_fc'])
                 if mapplot:
-                    cargs = [dict(xy=points,ec=ec,fc=fc,transform=proj)]
+                    cargs = [dict(xy=points,ec=ec,fc=fc,transform=proj,picker=5)]
                 else:
-                    cargs = [dict(xy=points,ec=ec,fc=fc)]
+                    cargs = [dict(xy=points,ec=ec,fc=fc,picker=5)]
                 line = pltr.add_patch(pax,'Polygon',cargs)
                 continue
             else:
@@ -900,7 +853,7 @@ def PlotterateFig(fig):
 if __name__ == '__main__':
     x = np.random.randint(0,20,200)
     y = np.random.randint(0,25,200)
-    
+    fig = ''
     if False:
         def randrange(n, vmin, vmax):
             '''
@@ -943,9 +896,10 @@ if __name__ == '__main__':
             ax.legend()
             cbar = fig.colorbar(sc2)
             cbar.set_label('who')
-            ax2 = ax.twinx()
-            ax2.scatter(y,x,marker='*',c='b',label='who')
-            ax2.legend()
+            # ax2 = ax.twinx()
+            ax.scatter(y,x,marker='*',c='b',label='who')
+            # ax2.legend()
+            ax.set_ylabel('What')
         if False:
             #pie chart
             cmap = plt.cm.jet
@@ -1062,5 +1016,5 @@ if __name__ == '__main__':
             plt.grid(True)
         
     
-    
-    # z = PlotterateFig(fig)
+    if fig:
+        z = PlotterateFig(fig)
