@@ -50,6 +50,7 @@ import pickle
 import numpy as np
 import matplotlib
 from copy import deepcopy
+from matplotlib.backends.backend_qt5agg import FigureCanvas
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
@@ -66,7 +67,7 @@ try:
     from cartopy.io.shapereader import Reader
     import cartopy.feature as cfeature
     if os.name == 'posix':
-        cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/cartopy'
+        cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.7/site-packages/cartopy'
     else:
         cartopy.config['data_dir'] = os.path.join(os.path.dirname(sys.executable),'Lib','site-packages','cartopy')
 except:
@@ -277,6 +278,7 @@ class Plotter(object):
                           'patches':[],
                           'features':[],
                           'cfeatures':[],
+                          'texts':[],
                           'rowspan':rowspan,
                           'colspan':colspan,
                           '3d':threeD,
@@ -353,7 +355,7 @@ class Plotter(object):
             except:
                 self.lines = []
             for rowcol in self.sub:
-                for line in self.sub[rowcol]['lines']:
+                for line in self.sub['lines']:
                     self.lines.append(line)
             # handling for versions that did not track colorbars separately
             try:
@@ -403,7 +405,6 @@ class Plotter(object):
             fig = plt.figure(facecolor=self.fig['facecolor'],
                              figsize=self.fig['figsize'])
         else:
-            from matplotlib.backends.backend_qt5agg import FigureCanvas
             pCanvas = FigureCanvas(matplotlib.figure.Figure(facecolor=self.fig['facecolor'],figsize=self.fig['figsize']))
             fig = pCanvas.figure
         global space
@@ -453,7 +454,7 @@ class Plotter(object):
                         for command in self.sub[t]['commands']:
                             if command['cmd'].startswith('twin'):
                                 execString = 'thisax.'+self.buildExecString(command)
-                                othAx[t] = eval(execString,{},{'thisax':theaxes[rowcol]})
+                                othAx[t] = eval(execString,(),{'thisax':theaxes[rowcol]})
                 cbs = [(rc,self.sub[rc]['colorbar']['colorbarname'],self.sub[rc]['colorbar']['cbardata']) for rc in rowcols
                        if len(rc) == 3 and rc[:2] == rowcol and self.sub[rc]['colorbar'] and 'colorbarname' in self.sub[rc]['colorbar']]
                 for rc,cb,dt in cbs:
@@ -481,6 +482,14 @@ class Plotter(object):
                             for command in patch['commands']:
                                 execString = f'thepatch.{self.buildExecString(command)}'
                                 exec(execString,{'ccrs':ccrs,'mpatches':mpatches},{'thepatch':thepatch})
+                if 'texts' in self.sub[rowcol] and self.sub[rowcol]['texts']:
+                    for text in self.sub[rowcol]['texts']:
+                        execString = 'thisax.text{}'.format(self.buildExecString(text))
+                        thetext = eval(execString,{'ccrs':ccrs},{'thisax':theaxes[rowcol]})
+                        if 'commands' in text and text['commands']:
+                            for command in text['commands']:
+                                execString = f'thetext.{self.buildExecString(command)}'
+                                exec(execString,{'ccrs':ccrs},{'thetext':thetext})
                 for t in self.sub:
                     if len(t) == 3 and t[:2] == rowcol and not self.sub[t]['colorbar']:
                         for line in deepcopy(self.sub[t]['lines']):
@@ -504,6 +513,14 @@ class Plotter(object):
                                     for command in patch['commands']:
                                         execString = f'thepatch.{self.buildExecString(command)}'
                                         exec(execString,{'ccrs':ccrs,'mpatches':mpatches},{'thepatch':thepatch})
+                        if 'texts' in self.sub[rowcol] and self.sub[rowcol]['texts']:
+                            for text in self.sub[rowcol]['texts']:
+                                execString = 'othAx[t].text{}'.format(self.buildExecString(text))
+                                thetext = eval(execString,{'ccrs':ccrs},{'othAx':othAx,'t':t})
+                                if 'commands' in text and text['commands']:
+                                    for command in text['commands']:
+                                        execString = f'thetext.{self.buildExecString(command)}'
+                                        exec(execString,{'ccrs':ccrs},{'thetext':thetext})
                         if setformat:
                             othAx[t].format_coord = general_format_coord(othAx[t], theaxes[rowcol])
                         lng = othAx[t].get_legend()
@@ -648,8 +665,8 @@ class Plotter(object):
                 fig.canvas.mpl_connect('button_release_event',on_release)
             elif self.fig['picker_type'] == 'interactive':
                 fig.canvas.mpl_connect('pick_event',mplIon_pick)
-        # if not self.fig['loose']:
-            # fig.tight_layout(rect=(0,0.03,1,0.97))
+        if not self.fig['loose']:
+            fig.tight_layout(rect=(0,0.03,1,0.97))
         if CANVAS:
             return pCanvas
         if PERSIST:
@@ -687,7 +704,7 @@ class Plotter(object):
                          **{k:line[k] for k in line if k not in exclude_list})
         elif line['plottype'] == 'plot3d':
             sc = ax.plot(line['x'],line['y'],line['z'],line['fmt'],
-                         **{k:line[k] for k in line if k not in exclude_list})[-1]
+                         **{k:line[k] for k in line if k not in exclude_list})
         elif line['plottype'] == 'scatter':
             sc = ax.scatter(line['x'],line['y'],
                             **{k:line[k] for k in line if k not in exclude_list})
@@ -723,7 +740,7 @@ class Plotter(object):
             return axid
         else:
             print('Axes location already initiated')
-            return axid
+            return []
     
     def plot(self,x,y,fmt='',axid=(0,0),**kwargs):
         '''
@@ -964,7 +981,7 @@ class Plotter(object):
                     cnt += 1
             newref = axid+(cnt,)
             self.initAxes(newref, 1, 1)
-            self.parseCommand(newref,'twin{}'.format(axis),[kwargs])
+            self.parseCommand(newref,'twin()'.format(axis),[kwargs])
             return newref
         else:
             print('Invalid axis reference')
@@ -995,7 +1012,7 @@ class Plotter(object):
     
     def add_patch(self,obj,cmd,cargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
-            print('Unrecognized reference object')
+            print('Unrecognized reference object add_patch ',obj,cmd,cargs)
             return
         if not isinstance(cmd,str) or not isinstance(cargs, list):
             print(obj,cmd,cargs)
@@ -1011,6 +1028,25 @@ class Plotter(object):
         theobject = thisthing['patches'][-1]
         self.commandParsing(theobject,cargs)
         return len(thisthing['patches'])-1
+
+    def add_text(self,obj,cargs):
+        if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
+            print('Unrecognized reference object in add_text call ',obj,cargs)
+            return
+        if not isinstance(cargs, list):
+            print(obj,cargs)
+            print('Invalid input to add_text')
+            return
+        # Ok now do stuff
+        if obj == 'fig':
+            thisthing = self.fig
+        else:
+            thisthing = self.sub[obj]
+        # cmd is the thing that creates it, commands are the set_call stuff
+        thisthing['texts'].append({'cmd':'','args':[],'kwargs':{},'commands':[]})
+        theobject = thisthing['texts'][-1]
+        self.commandParsing(theobject,cargs)
+        return len(thisthing['texts'])-1
     
     def add_feature(self,filename,transform,axid=(0,0),**kwargs):
         if not os.path.isfile(os.path.join(CfgDir,filename[lenCfgDir:])):
@@ -1041,7 +1077,7 @@ class Plotter(object):
                   cellFontSize=None, cellHeight=None,
                   kwargs={}):
         if not isinstance(axid,tuple) and axid in self.sub:
-            print('Unrecognized reference object')
+            print('Unrecognized reference object in add_table call ',axid)
             return
         # Ok now do stuff
         self.sub[axid]['table'] = {'ax':axid,'command':{'cmd':'','args':[cellText,cellColours,
@@ -1052,9 +1088,10 @@ class Plotter(object):
                                                         'kwargs':kwargs},
                                    'cellParams':{'cellFontSize':cellFontSize,
                                                  'cellHeight':cellHeight}}
+    
     def add_customlegend(self,obj,handles,labels,**kwargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
-            print('unrecognized reference object')
+            print('Unrecognized reference object in add_customlegend ',obj,handles,labels)
             return
         if not isinstance(handles,list) or not isinstance(labels,list) or len(handles) != len(labels):
             print(obj,handles,labels)
@@ -1105,7 +1142,7 @@ class Plotter(object):
     
     def parseCommand(self,obj,cmd,cargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
-            print('Unrecognized reference object')
+            print('Unrecognized reference object in parseCommand ',obj,cmd,cargs)
             return
         if not isinstance(cmd,str):
             print(obj,cmd,cargs)
@@ -1123,7 +1160,7 @@ class Plotter(object):
     def parseLineCommand(self,axid,obj,cmd,cargs):
         if not (isinstance(axid,tuple) and axid in self.sub) and \
             not (isinstance(obj,int) and obj < len(self.sub[axid]['lines'])):
-            print('Unrecognized reference object')
+            print('Unrecognized reference object in parseLineCommand ',axid,obj,cmd,cargs)
             return
         if not isinstance(cmd,str):
             print(axid,obj,cmd,cargs)
@@ -1138,14 +1175,29 @@ class Plotter(object):
     def parsePatchCommand(self,axid,obj,cmd,cargs):
         if not (isinstance(axid,tuple) and axid in self.sub) and \
             not (isinstance(obj,int) and obj < len(self.sub[axid]['patches'])):
-            print('Unrecognized reference object')
+            print('Unrecognized reference object in parsePatchCommand ',axid,obj,cmd,cargs)
             return
         if not isinstance(cmd,str):
             print(axid,obj,cmd,cargs)
-            print('Invalid input to parseLineCommand')
+            print('Invalid input to parsePatchCommand')
             return
         # Ok now do stuff
         thisthing = self.sub[axid]['patches'][obj]
+        thisthing['commands'].append({'cmd':cmd,'args':[],'kwargs':{}})
+        theobject = thisthing['commands'][-1]
+        self.commandParsing(theobject,cargs)
+
+    def parseTextCommand(self,axid,obj,cmd,cargs):
+        if not (isinstance(axid,tuple) and axid in self.sub) and \
+            not (isinstance(obj,int) and obj < len(self.sub[axid]['patches'])):
+            print('Unrecognized reference object in parseTextCommand ',axid,obj,cmd,cargs)
+            return
+        if not isinstance(cmd,str):
+            print(axid,obj,cmd,cargs)
+            print('Invalid input to parseTextCommand')
+            return
+        # Ok now do stuff
+        thisthing = self.sub[axid]['texts'][obj]
         thisthing['commands'].append({'cmd':cmd,'args':[],'kwargs':{}})
         theobject = thisthing['commands'][-1]
         self.commandParsing(theobject,cargs)
@@ -1181,7 +1233,7 @@ class Plotter(object):
                             
     def reparseCommand(self,obj,cmd,cargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
-            print('Unrecognized reference object')
+            print('Unrecognized reference object in reparseCommand ',obj,cmd,cargs)
             return
         if not isinstance(cmd, str) or not isinstance(cargs,list):
             print(obj,cmd,cargs)
@@ -1202,11 +1254,14 @@ class Plotter(object):
 if __name__ == '__main__':
     if True:
         pltr = Plotter(combinelegend=True)
-        pltr.add_subplot(threeD=True)
+        ax = pltr.add_subplot()
         x = np.random.randint(0,100,20)
         y = np.random.randint(0,100,20)
         z = np.random.randint(0,100,20)
-        pltr.plot3d(x,y,z,label='FML')#,c=x,cmap='jet')
+        pltr.plot(x,y,label='FML')
+#        pltr.parseCommand(ax,'text',[[.5,.5,'CarlIsAnIdiot']])
+        pltr.add_text(ax,'',[[.5,.5,'CarlIsAnIdiot']])
+                      #,c=x,cmap='jet')
 #        pltr.add_colorbar((0,0),'jet','Mine',x)
 #        pltr.parseCommand((0,0),'legend',[[]])
 #        ax1 = pltr.add_subplot((1,0))
