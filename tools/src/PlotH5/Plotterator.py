@@ -401,12 +401,8 @@ class Plotter(object):
             self.savePkl(fname)
             return
         plt.style.use(os.path.join(RELATIVE_LIB_PATH,'gobat',os.path.basename(self.fig['stylesheet'])))
-        if not CANVAS:
-            fig = plt.figure(facecolor=self.fig['facecolor'],
-                             figsize=self.fig['figsize'])
-        else:
-            pCanvas = FigureCanvas(matplotlib.figure.Figure(facecolor=self.fig['facecolor'],figsize=self.fig['figsize']))
-            fig = pCanvas.figure
+        fig = plt.figure(facecolor=self.fig['facecolor'],
+                         figsize=self.fig['figsize'])
         global space
         space = ' '*(int(self.fig['figsize'][0])*15)
         numrows = 1
@@ -668,16 +664,16 @@ class Plotter(object):
         if not self.fig['loose']:
             fig.tight_layout(rect=(0,0.03,1,0.97))
         if CANVAS:
-            return pCanvas
+            return fig
         if PERSIST:
-            plt.show()
+            fig.show()
         else:
             if SAVEPNG:
                 fig.savefig(os.path.splitext(fname)[0]+'.png',facecolor=self.fig['facecolor'],format='png')
             if SAVEPKL:
                 self.savePkl(fname)
             if SHOW:
-                plt.show()
+                fig.show()
             plt.close(fig)
             
     def savePkl(self,fname):
