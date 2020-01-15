@@ -67,7 +67,7 @@ try:
     from cartopy.io.shapereader import Reader
     import cartopy.feature as cfeature
     if os.name == 'posix':
-        cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.7/site-packages/cartopy'
+        cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/cartopy'
     else:
         cartopy.config['data_dir'] = os.path.join(os.path.dirname(sys.executable),'Lib','site-packages','cartopy')
 except:
@@ -355,7 +355,7 @@ class Plotter(object):
             except:
                 self.lines = []
             for rowcol in self.sub:
-                for line in self.sub['lines']:
+                for line in self.sub[rowcol]['lines']:
                     self.lines.append(line)
             # handling for versions that did not track colorbars separately
             try:
@@ -450,7 +450,7 @@ class Plotter(object):
                         for command in self.sub[t]['commands']:
                             if command['cmd'].startswith('twin'):
                                 execString = 'thisax.'+self.buildExecString(command)
-                                othAx[t] = eval(execString,(),{'thisax':theaxes[rowcol]})
+                                othAx[t] = eval(execString,{},{'thisax':theaxes[rowcol]})
                 cbs = [(rc,self.sub[rc]['colorbar']['colorbarname'],self.sub[rc]['colorbar']['cbardata']) for rc in rowcols
                        if len(rc) == 3 and rc[:2] == rowcol and self.sub[rc]['colorbar'] and 'colorbarname' in self.sub[rc]['colorbar']]
                 for rc,cb,dt in cbs:
@@ -736,7 +736,7 @@ class Plotter(object):
             return axid
         else:
             print('Axes location already initiated')
-            return []
+            return axid
     
     def plot(self,x,y,fmt='',axid=(0,0),**kwargs):
         '''
@@ -977,7 +977,7 @@ class Plotter(object):
                     cnt += 1
             newref = axid+(cnt,)
             self.initAxes(newref, 1, 1)
-            self.parseCommand(newref,'twin()'.format(axis),[kwargs])
+            self.parseCommand(newref,'twin{}'.format(axis),[kwargs])
             return newref
         else:
             print('Invalid axis reference')
