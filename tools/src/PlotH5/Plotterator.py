@@ -534,7 +534,7 @@ class Plotter(object):
                         h1,l1 = othAx[t].get_legend_handles_labels()
                         h+=h1
                         l+=l1
-                if 'customlegend' in self.sub[rowcol] and self.sub[rowcol]['combinelegend']:
+                if 'customlegend' in self.sub[rowcol] and self.sub[rowcol]['customlegend']:
                     h,l = self.sub[rowcol]['customlegend']
                     h = [eval('Line2D(hndl[0],hndl[1],{})'.format(self.buildKwargs(hndl[2])[:-1]),{'Line2D':Line2D},{'hndl':hndl})
                               for hndl in h]
