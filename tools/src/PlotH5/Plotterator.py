@@ -696,11 +696,11 @@ class Plotter(object):
     
     def plotCall(self,ax,line):
         if line['plottype'] == 'plot':
-            sc, = ax.plot(line['x'],line['y'],line['fmt'],
-                         **{k:line[k] for k in line if k not in exclude_list})
+            sc = ax.plot(line['x'],line['y'],line['fmt'],
+                         **{k:line[k] for k in line if k not in exclude_list})[0]
         elif line['plottype'] == 'plot3d':
             sc = ax.plot(line['x'],line['y'],line['z'],line['fmt'],
-                         **{k:line[k] for k in line if k not in exclude_list})
+                         **{k:line[k] for k in line if k not in exclude_list})[0]
         elif line['plottype'] == 'scatter':
             sc = ax.scatter(line['x'],line['y'],
                             **{k:line[k] for k in line if k not in exclude_list})
