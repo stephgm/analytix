@@ -50,7 +50,7 @@ import pickle
 import numpy as np
 import matplotlib
 from copy import deepcopy
-from matplotlib.backends.backend_qt5agg import FigureCanvas
+#from matplotlib.backends.backend_qt5agg import FigureCanvas
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
