@@ -717,7 +717,7 @@ class Plotter(object):
             sc = ax.hist(line['x'],line['bins'],
                          **{k:line[k] for k in line if k not in exclude_list})
         elif line['plottype'] == 'bar':
-            sc = ax.bar(line['x'],line['height'],width=line['width'],left=line['left'],align=line['align'],
+            sc = ax.bar(line['x'],line['height'],width=line['width'],bottom=line['bottom'],align=line['align'],
                         **{k:line[k] for k in line if k not in exclude_list})
         elif line['plottype'] == 'barh':
             sc = ax.barh(line['x'],line['width'],height=line['height'],left=line['left'],align=line['align'],
