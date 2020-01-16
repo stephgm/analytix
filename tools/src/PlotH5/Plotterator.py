@@ -622,7 +622,7 @@ class Plotter(object):
                 if not(command['cmd'].startswith('get_legend') or command['cmd'].startswith('legend')) and not(command['cmd'].startswith('legend')):
                     if 'title' in command['cmd']:
                         gotTitle = True
-                    execString = 'fig.legend(figh,figl,'+self.buildExecString(command)
+                    execString = 'fig.'+self.buildExecString(command)
                     exec(execString,{'ccrs':ccrs},{'fig':fig})
             for command in self.fig['commands']:
                 if command['cmd'] == 'legend':
