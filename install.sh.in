@@ -20,7 +20,7 @@ cd ${install_path}
 if [ -d local ];then
 rm local
 fi
-ln -s ${version} ./local
+ln -s ${idir} ./local
 echo -n "perms ... "
 chmod -R 755 ${idir}
 echo "done"
