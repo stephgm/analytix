@@ -1,5 +1,6 @@
 #ANACONDA_INC=/storage/data/local/include/python2.7
-ANACONDA_INC=/storage/data/local/include/python3.6m
+#ANACONDA_INC=/storage/data/local/include/python3.6m
+ANACONDA_INC=/storage/data/local/include/python3.7m
 
 test: main.c libfoo.so _foo.so
 	#gcc --version
