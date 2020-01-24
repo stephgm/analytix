@@ -654,7 +654,28 @@ if True:
         else:
             statusbar.setStyleSheet(StyleSheetString+"}")
             statusbar.showMessage(msg,msecs)
-
+            
+### Simple Yes No Message
+    
+    def YesNoMessageBox(MessageText,**kwargs):
+        '''
+        A simple box that asks a question through the Message Text and pops up
+        yes or no buttons.  Returns False if 'x' or 'No' clicked, else True if
+        'yes' is clicked.
+        Input:
+            MessageText - The text that you want to show in the box. Should be a yes or no question
+        Kwargs:
+            title - Changes the title of the window
+        Returns:
+            True or False
+        '''
+        title = kwargs.get('title','Select One')
+        msg = Widgets.QMessageBox.question(None, title, MessageText, Widgets.QMessageBox.Yes | Widgets.QMessageBox.No, Widgets.QMessageBox.No)
+        if msg == Widgets.QMessageBox.Yes:
+            return True
+        else:
+            return False
+        
 ### Warning Messages
 
     def MessageBox(MessageText,**kwargs):
