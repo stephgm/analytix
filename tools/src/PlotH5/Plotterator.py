@@ -165,7 +165,7 @@ def on_pick(event):
             ann = ax.annotate(line.get_label(),(xdata[ind[0]],ydata[ind[0]]))
             ann_list.append(ann)
             line.figure.canvas.draw()
-        elif isinstance(event.artist,matplotlib.collections.PatchCollection):
+        elif isinstance(event.artist,matplotlib.collections.PathCollection):
             collection = event.artist
             ind = event.ind
             xy = collection.get_offsets()
