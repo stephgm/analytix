@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>614</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="1" column="1">
+       <widget class="QComboBox" name="DomainCombo"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Domain Selection</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="EventCombo"/>
+      </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="NewDomainButton">
+        <property name="text">
+         <string>New Domain</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Event Selection</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QPushButton" name="NewEventButton">
+        <property name="text">
+         <string>New Event</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="3">
+       <widget class="QStackedWidget" name="stackedWidget">
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <widget class="QWidget" name="page_3">
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="0" column="1">
+           <layout class="QGridLayout" name="gridLayout_3">
+            <item row="4" column="1">
+             <widget class="QPushButton" name="OutputButton">
+              <property name="text">
+               <string>Custom Output</string>
+              </property>
+             </widget>
+            </item>
+            <item row="11" column="0" colspan="3">
+             <widget class="QTreeWidget" name="GroundTestTree">
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ExtendedSelection</enum>
+              </property>
+              <attribute name="headerShowSortIndicator" stdset="0">
+               <bool>false</bool>
+              </attribute>
+              <attribute name="headerStretchLastSection">
+               <bool>true</bool>
+              </attribute>
+              <column>
+               <property name="text">
+                <string>Path Selection</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Base Dir</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Phase</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Full Dir</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QPushButton" name="DataButton">
+              <property name="text">
+               <string>Custom Data</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>Documentation Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="9" column="0">
+             <widget class="QPushButton" name="AddPhase">
+              <property name="text">
+               <string>Add Phase</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="2">
+             <widget class="QLineEdit" name="OutputLine"/>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_9">
+              <property name="text">
+               <string>Data Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_8">
+              <property name="text">
+               <string>Output Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QPushButton" name="DoxButton">
+              <property name="text">
+               <string>Custom Dox</string>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="1">
+             <widget class="QPushButton" name="ITPButton">
+              <property name="text">
+               <string>Custom ITP</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="0">
+             <widget class="QLabel" name="label_10">
+              <property name="text">
+               <string>OSF Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="0">
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>ITP Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="EventBaseButton">
+              <property name="text">
+               <string>Set Base</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QPushButton" name="ConfigButton">
+              <property name="text">
+               <string>Custom Config</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="2">
+             <widget class="QLineEdit" name="ConfigLine"/>
+            </item>
+            <item row="3" column="2">
+             <widget class="QLineEdit" name="ExecLine"/>
+            </item>
+            <item row="10" column="0">
+             <widget class="QPushButton" name="AutoPopulate">
+              <property name="text">
+               <string>Auto Populate</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QPushButton" name="ExecButton">
+              <property name="text">
+               <string>Custom Exec</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_6">
+              <property name="text">
+               <string>Config Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="1">
+             <widget class="QPushButton" name="OSFButton">
+              <property name="text">
+               <string>Custom OSF</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="2">
+             <widget class="QLineEdit" name="DoxLine"/>
+            </item>
+            <item row="0" column="2">
+             <widget class="QLineEdit" name="EventBaseLine"/>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_4">
+              <property name="text">
+               <string>Event Base Directory (Linux)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="9" column="1">
+             <widget class="QPushButton" name="RemovePhases">
+              <property name="text">
+               <string>Remove Phases</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_7">
+              <property name="text">
+               <string>Execution Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="2">
+             <widget class="QLineEdit" name="OSFLine"/>
+            </item>
+            <item row="6" column="2">
+             <widget class="QLineEdit" name="DataLine"/>
+            </item>
+            <item row="8" column="2">
+             <widget class="QLineEdit" name="ITPLine"/>
+            </item>
+            <item row="1" column="1">
+             <widget class="QPushButton" name="EventBaseWindowsButton">
+              <property name="text">
+               <string>Set Base</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_15">
+              <property name="text">
+               <string>Event Base Directory (Windows)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="QLineEdit" name="EventBaseWindowsLine"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="page_4">
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="gridLayout_5">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_13">
+              <property name="text">
+               <string>Event Location (Linux)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QLineEdit" name="GenericEventLine"/>
+            </item>
+            <item row="2" column="2">
+             <widget class="QLineEdit" name="GenericExecLine">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_14">
+              <property name="text">
+               <string>Execution Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0" colspan="3">
+             <widget class="QTreeWidget" name="GenericTree">
+              <column>
+               <property name="text">
+                <string>Button</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Data Type</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Run Directory</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="GenEventButton">
+              <property name="text">
+               <string>Event Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QPushButton" name="GenExecButton">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Exec Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QPushButton" name="AddDataPathButton">
+              <property name="text">
+               <string>Add Data Path</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QPushButton" name="RemoveDataPathsButton">
+              <property name="text">
+               <string>Remove Data Paths</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>Event Location (Windows)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QPushButton" name="GenEventButtonWindows">
+              <property name="text">
+               <string>Event Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="QLineEdit" name="GenericEventLineWindows"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="DomainTypeCombo">
+        <item>
+         <property name="text">
+          <string>Ground Test</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Generic</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_12">
+        <property name="text">
+         <string>Data Type</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="0">
+     <widget class="QPushButton" name="SaveButton">
+      <property name="text">
+       <string>Save</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>DomainTypeCombo</sender>
+   <signal>activated(int)</signal>
+   <receiver>stackedWidget</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>358</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>356</x>
+     <y>122</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
