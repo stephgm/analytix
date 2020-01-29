@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec  6 15:33:24 2019
-
-@author: klinetry
-"""
-
-
-"""
 VERSION HISTORY
 Date            Author              Version Number          Modification
 --------        ------------        --------------          -------------
@@ -28,7 +21,7 @@ if __name__ == '__main__':
             with open('/dev/tty') as tty:
                 h,w = list(map(int,check_output(['stty','size'],stdin=tty).split()))
         except:
-            w = 140 
+            w = 140
     else:
         w = 140
     NOTES = '*'*w
@@ -77,8 +70,8 @@ if ccrs:
     CfgDir = config['repo_data_dir']
     lenCfgDir = len(CfgDir)+1
     resolution = '10m'
-    
-    
+
+
 if not hasattr(sys, 'frozen'):
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     if __name__ == '__main__':
@@ -136,7 +129,7 @@ figClassFD = {
              'color':'red',
              'size':'18',
              'weight':'bold'
-             }      
+             }
 
 def general_format_coord(current,other=None,llabel='',rlabel='',**kwargs):
     def format_coord(x,y):
@@ -177,13 +170,13 @@ def on_pick(event):
             fig.canvas.draw()
     except:
         pass
-    
+
 def on_release(event):
     for ann in ann_list:
         ann.remove()
         ann_list.remove(ann)
     event.canvas.draw()
-    
+
 def PNGerator(flist,**kwargs):
     nthreads = kwargs.get('nthreads',1)
     if (nthreads > 1 and nthreads > cpu_count()) or nthreads < 1:
@@ -204,12 +197,12 @@ def PNGerator(flist,**kwargs):
             pool.join()
     else:
         print('Invalid input.  Provide single file name string or list of filename strings')
-        
+
 def pngthread(fname):
     pltr = Plotter()
     pltr.retrievePlot(fname)
     pltr.createPlot(fname,SAVEPNG=True,SAVEPKL=False)
-    
+
 class Plotter(object):
     '''
     Plotter class allows for storing data, specifications and commands
@@ -227,7 +220,7 @@ class Plotter(object):
     subplot using the starting row, col as a reference and allowing for a
     rowspan, colspan to span multiple grid sectors.  Plot, scatter, pie,
     scatter3d, hist, stackplot, bar, barh calls add data to the plot.
-    
+
     Data is stored as follows:
         fig = a dictionary of figure params, as well as any commands to be
               executed against the figure at generation.
@@ -268,7 +261,7 @@ class Plotter(object):
         self.fig['sharing'] = []
         # Whether or not to use tight layout
         self.fig['loose'] = kwargs.get('loose',False)
-        
+
     def initAxes(self,axid,rowspan,colspan,threeD=False,colorbar={},combinelegend=False,mapplot=False,mapproj='PlateCarree()',table=None):
         '''
         Initiates each axes in the sub dictionary, requires reference starting
@@ -290,7 +283,7 @@ class Plotter(object):
                           'mapimg':None,
                           'table':table,
                           'customlegend':None}
-        
+
     def buildExecString(self,command):
         '''
         Given a command dictionary as follows:
@@ -306,7 +299,7 @@ class Plotter(object):
         if command['args']:
             execString += ','.join(map(str,[multiDims(arg,[])
                                             for arg in command['args']]))
-        
+
         if command['kwargs']:
             if command['args']:
                 execString += ','
@@ -314,7 +307,7 @@ class Plotter(object):
             execString = execString[:-1]
         execString += ')'
         return execString.replace('transform=','transform=ccrs.')
-    
+
     def buildKwargs(self,kwargs):
         execString = ''
         for key in kwargs:
@@ -329,7 +322,7 @@ class Plotter(object):
                 execString += key+'='+str(multiDims(kwargs[key],[]))
             execString += ','
         return execString
-    
+
     # def multiDims(self,arr,newlist):
     #     if isinstance(arr,np.ndarray):
     #         if arr.ndim > 2:
@@ -344,7 +337,7 @@ class Plotter(object):
     #         return newlist
     #     else:
     #         return arr
-    
+
     def createPlot(self,fname,**kwargs):
         global LOADED_BM
         global BlueMarbleImg
@@ -380,9 +373,9 @@ class Plotter(object):
         if self.version < 1.1:
             self.fig['picker_type'] = 'original'
         self.version = versionNumber #updating Plot version.  Happens after all necessary changes happen
-        
+
         # This ends the version discrepency handlin' as best we know, dingleberries remain below
-        
+
         SAVEPNG = kwargs.get('SAVEPNG',False)
         SAVEPKL = kwargs.get('SAVEPKL',False)
         # Show waits for the plot to be closed
@@ -606,10 +599,10 @@ class Plotter(object):
                             if self.sub[rowcol]['table']['cellParams']['cellFontSize']:
                                 cell.set_fontsize(self.sub[rowcol]['table']['cellParams']['cellFontSize'])
                                 cell.set_height(cell.get_height()*self.sub[rowcol]['table']['cellParams']['cellHeight'])
-                    
+
                 if setformat:
                     theaxes[rowcol].format_coord = general_format_coord(theaxes[rowcol])
-        
+
         gotTitle = False
         figlng = None
         figh = []
@@ -677,7 +670,7 @@ class Plotter(object):
             if SHOW:
                 fig.show()
             plt.close(fig)
-            
+
     def savePkl(self,fname):
         try:
             if self.lines:
@@ -695,7 +688,7 @@ class Plotter(object):
         pickle.dump({'fig':self.fig,'sub':self.sub,'lines':self.lines,'cbs':self.cbs,'version':self.version},
                     open(os.path.splitext(fname)[0]+'.pklplt','wb'),
                     2)
-    
+
     def plotCall(self,ax,line):
         if line['plottype'] == 'plot':
             sc = ax.plot(line['x'],line['y'],line['fmt'],
@@ -724,14 +717,14 @@ class Plotter(object):
         elif line['plottype'] == 'barh':
             sc = ax.barh(line['x'],line['width'],height=line['height'],left=line['left'],align=line['align'],
                          **{k:line[k] for k in line if k not in exclude_list})
-            
+
         if 'commands' in line and line['commands'] and line['plottype'] in ('plot','plot3d','scatter','scatter3d'):
             for command in line['commands']:
                 execString = 'sc.'+self.buildExecString(command)
                 exec(execString,{'ccrs':ccrs},{'sc':sc})
 
         return sc
-    
+
     def add_subplot(self,axid=(0,0),rowspan=1,colspan=1,threeD=False,combinelegend=False,mapplot=False,mapproj='PlateCarree()'):
         if axid not in self.sub:
             self.initAxes(axid, rowspan, colspan, threeD,{},combinelegend,mapplot,mapproj)
@@ -739,7 +732,7 @@ class Plotter(object):
         else:
             print('Axes location already initiated')
             return axid
-    
+
     def plot(self,x,y,fmt='',axid=(0,0),**kwargs):
         '''
         Attempt to set the reference to the correct axis,
@@ -760,9 +753,9 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
         self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
-        
+
         return len(self.sub[axid]['lines'])-1
-        
+
     def plot3d(self,x,y,z,fmt='',axid=(0,0),**kwargs):
         '''
         Attempt to set the reference to the correct axis,
@@ -784,9 +777,9 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
         self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
-        
+
         return len(self.sub[axid]['lines'])-1
-        
+
     def scatter(self,x,y,axid=(0,0),**kwargs):
         '''
         Attempt to set the reference to correct axis,
@@ -806,9 +799,9 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
         self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
-    
+
         return len(self.sub[axid]['lines'])-1
-    
+
     def scatter3d(self,x,y,z,axid=(0,0),**kwargs):
         '''
         Attempt to set the reference to correct axis,
@@ -829,9 +822,9 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
         self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
-        
+
         return len(self.sub[axid]['lines'])-1
-    
+
     def pie(self,sizes,fmt='',axid=(0,0),**kwargs):
         '''
         Attempt to set the reference to correct axis,
@@ -849,9 +842,9 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['x'] = sizes
         self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
-        
+
         return len(self.sub[axid]['lines'])-1
-    
+
     def stackplot(self,x,y,axid=(0,0),**kwargs):
         '''
         Attempt to set the reference to correct axis,
@@ -871,9 +864,9 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
         self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
-    
+
         return len(self.sub[axid]['lines'])-1
-    
+
     def hist(self,x,bins,axid=(0,0),**kwargs):
         '''
         Attempt to set the reference to correct axis,
@@ -893,9 +886,9 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
         self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
-    
+
         return len(self.sub[axid]['lines'])-1
-    
+
     def bar(self,x,height,axid=(0,0),width=0.8,bottom=None,align='center',**kwargs):
         '''
         Attempt to set the reference to correct axis,
@@ -918,9 +911,9 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
         self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
-    
+
         return len(self.sub[axid]['lines'])-1
-    
+
     def barh(self,x,width,axid=(0,0),height=0.8,left=None,align='center',**kwargs):
         '''
         Attempt to set the reference to correct axis,
@@ -943,9 +936,9 @@ class Plotter(object):
         self.sub[axid]['lines'][-1]['picker'] = PICKERTOLERANCE
         self.sub[axid]['lines'][-1]['commands'] = []
         self.sub[axid]['lines'][-1].update(kwargs)
-        
+
         return len(self.sub[axid]['lines'])-1
-    
+
     def add_colorbar(self,axid=(0,0),colorbarname='jet',label='',dateridonteventknower=np.array([0,1]),**kwargs):
         if axid in self.sub:
             cnt = 0
@@ -959,7 +952,7 @@ class Plotter(object):
                                                  'cbardata':dateridonteventknower})
             else: # this is the heatmap style
                 cb = kwargs.get('cb',{})
-                if len(colorbarname == 2):
+                if len(colorbarname) == 2:
                     colorbarname.append({})
                 if len(dateridonteventknower) == 1:
                     dateridonteventknower.append({})
@@ -970,7 +963,7 @@ class Plotter(object):
         else:
             print('Invalid axis reference')
             return
-    
+
     def twin(self,axid=(0,0),axis='x',**kwargs):
         if axid in self.sub:
             cnt = 0
@@ -984,7 +977,7 @@ class Plotter(object):
         else:
             print('Invalid axis reference')
             return []
-    
+
     def share(self,source,target,axis='x'):
         if axis not in ('x','y','both'):
             print('Invalid share axis designation. Use "x", "y", or "both".')
@@ -996,7 +989,7 @@ class Plotter(object):
                 self.fig['sharing'].append({'source':source,'target':target,'axis':'y'})
             else:
                 self.fig['sharing'].append({'source':source,'target':target,'axis':axis})
-    
+
     def add_map(self,filename,axid=(0,0),**kwargs):
         if filename.lower() not in BlueMarbleImg:
             print('{} not in dictionary'.format(filename.lower()))
@@ -1007,7 +1000,7 @@ class Plotter(object):
         else:
             self.sub[axid]['mapimg'] = filename.lower()
         return
-    
+
     def add_patch(self,obj,cmd,cargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
             print('Unrecognized reference object add_patch ',obj,cmd,cargs)
@@ -1045,7 +1038,7 @@ class Plotter(object):
         theobject = thisthing['texts'][-1]
         self.commandParsing(theobject,cargs)
         return len(thisthing['texts'])-1
-    
+
     def add_feature(self,filename,transform,axid=(0,0),**kwargs):
         if not os.path.isfile(os.path.join(CfgDir,filename[lenCfgDir:])):
             print('{} not in cartopy config dir'.format(filename))
@@ -1055,7 +1048,7 @@ class Plotter(object):
             print('Subplot is not a Map Plot')
         else:
             self.sub[axid]['features'].append({'fname':filename[lenCfgDir:],'transform':transform,'kwargs':kwargs})
-    
+
     def add_cfeature(self,featurename,axid=(0,0),**kwargs):
         if not cfeature:
             print('cartopy.feature not loaded')
@@ -1065,7 +1058,7 @@ class Plotter(object):
             print('Subplot is not a Map Plot')
         else:
             self.sub[axid]['cfeatures'].append({'fname':featurename,'kwargs':kwargs})
-        
+
     def add_table(self,axid,
                   cellText=None, cellColours=None,
                   cellLoc='right', colWidths=None,
@@ -1086,7 +1079,7 @@ class Plotter(object):
                                                         'kwargs':kwargs},
                                    'cellParams':{'cellFontSize':cellFontSize,
                                                  'cellHeight':cellHeight}}
-    
+
     def add_customlegend(self,obj,handles,labels,**kwargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
             print('Unrecognized reference object in add_customlegend ',obj,handles,labels)
@@ -1118,7 +1111,7 @@ class Plotter(object):
             newhandles.append((a,b,newc))
         thisthing['customlegend'] = (newhandles,labels)
         self.parseCommand(obj,'legend',[kwargs])
-        
+
     def retrievePlot(self,fname):
         if os.path.isfile(fname):
             tempDict = pickle.load(open(fname,'rb'),encoding='latin1')
@@ -1137,7 +1130,7 @@ class Plotter(object):
                 print('Invalid file.')
         else:
             print('Invalid file.')
-    
+
     def parseCommand(self,obj,cmd,cargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
             print('Unrecognized reference object in parseCommand ',obj,cmd,cargs)
@@ -1228,7 +1221,7 @@ class Plotter(object):
                             theobject['kwargs'][car] = multiDims(carg[car],[])
                         else:
                             theobject['kwargs'][car] = carg[car]
-                            
+
     def reparseCommand(self,obj,cmd,cargs):
         if obj != 'fig' and not (isinstance(obj,tuple) and obj in self.sub):
             print('Unrecognized reference object in reparseCommand ',obj,cmd,cargs)
@@ -1237,7 +1230,7 @@ class Plotter(object):
             print(obj,cmd,cargs)
             print('Invalid input to parseCommand')
             return
-        
+
         return
         #For now, don't do stuff
         #Ok now do stuff
@@ -1248,7 +1241,7 @@ class Plotter(object):
         thisthing['commands'] = [c for c in thisthing['commands']
                                  if c['cmd'] != cmd]
         self.parseCommand(obj, cmd, cargs)
-        
+
 if __name__ == '__main__':
     if True:
         pltr = Plotter(combinelegend=True)
@@ -1273,13 +1266,13 @@ if __name__ == '__main__':
 #        pltr.add_customlegend(ax1,h,l,loc='best')
 #        ax2 = pltr.add_subplot((2,0))
 #        linenum2 = pltr.scatter(y,y,ax2,label='fudge dragon')
-#        pltr.parseLineCommand(ax2,linenum2,'set_color',[['red']])        
+#        pltr.parseLineCommand(ax2,linenum2,'set_color',[['red']])
 #        pltr.parseCommand(ax2, 'legend', [[]])
 #        pltr.share(ax1,ax2,axis='both')
 #        ax3 = pltr.add_subplot((3,0))
 #        pltr.pie([10,13,14],axid=ax3,autopct='%1.1f%%',labels=['log','bush','branch'])
 #        pltr.parseCommand(ax3, 'legend', [[]])
         pltr.createPlot('', PERSIST=True)
-        
-    
-    
+
+
+
