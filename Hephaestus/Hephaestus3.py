@@ -425,6 +425,25 @@ class Hephaestus(Widgets.QMainWindow):
         for button in qbuttons:
             button.setEnabled(enable)
         self.enable_os_specific(enableall=self.EnableAllPathsCheck.isChecked())
+        
+    def remove_event(self):
+        domaintype = self.DomainTypeCombo.currentText()
+        domain = self.DomainCombo.currentText()
+        event = self.EventCombo.currentText()
+        if domain and event:
+            confirmed = MessageBox(f'Are you sure you want to delete {event} from the {domain} domain?')
+            if confirmed:
+                if domaintype in self.data and domain in self.data[domaintype] and event in self.data[domaintype][domain]:
+                    self.data[domaintype][domain].pop(event)
+    
+    def remove_domain(self):
+        domaintype = self.DomainTypeCombo.currentText()
+        domain = self.DomainCombo.currentText()
+        if domain:
+            confirmed = MessageBox(f'Are you sure you want to delete the domain {domain}?  This will remove all events inside the domain.')
+            if confirmed:
+                if domaintype in self.data and domain in self.data[domaintype]:
+                    self.data[domaintype].pop(domain)
             
     def add_new_domain(self):
         domain = popUpSimpleText('Domain Name:', title='Enter Domain')
@@ -459,7 +478,14 @@ class Hephaestus(Widgets.QMainWindow):
                                     self.autopopulate_digest_paths('windows')
                                     OS = 'windows'
                                 #TODO, just scan the execution directory to get the phases
-                                self.autopopulate_ground_test_phases(OS)
+                                directories = []
+                                if OS == 'linux':
+                                    if self.ExecPathLinuxLine.text() and os.path.isdir(self.ExecPathLinuxLine.text()):
+                                        directories = [p for p in os.listdir(self.ExecPathLinuxLine.text()) if os.path.isdir(p)]
+                                elif OS == 'windows':
+                                    if self.ExecPathWindowsLine.text() and os.path.isdir(self.ExecPathWindowsLine.text()):
+                                        directories = [p for p in os.listdir(self.ExecPathWindowsLine.text()) if os.path.isdir(p)]
+                                self.autopopulate_ground_test_phases(OS, phases=directories)
                                 return
                             else:
                                 return
@@ -607,6 +633,7 @@ class Hephaestus(Widgets.QMainWindow):
             
     def autopopulate_ground_test_phases(self,OS,**kwargs):
         showWarning = kwargs.pop('showWarning',True)
+        phases = kwargs.pop('phases',[])
         event = self.EventCombo.currentText()
         domain = self.DomainCombo.currentText()
         if 'windows' in OS.lower():
@@ -616,7 +643,8 @@ class Hephaestus(Widgets.QMainWindow):
             OS = 'Linux'
             basedir = self.EventPathLinuxLine.text()
         if event and domain and basedir:
-            phases = popUpListWidget(['rfr','tci','esa','eci','tc_dev',event],selection=2,title='Select Phases')
+            if not phases:
+                phases = popUpListWidget(['rfr','tci','esa','eci','tc_dev',event],selection=2,title='Select Phases')
             if phases:
                 for phase in phases:
                     for base in ['output','execution','data']:
