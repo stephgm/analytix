@@ -45,7 +45,7 @@ def isIterable(iItem,**kwargs):
     '''
     acceptstrings = kwargs.get('strOk',False)
     if not acceptstrings:
-        return isinstance(iItem,Iterable) and not isinstance(iItem,basestring)
+        return isinstance(iItem,Iterable) and not isinstance(iItem,str)
     else:
         return isinstance(iItem,Iterable)
 
@@ -236,12 +236,12 @@ def SetOperations(iItem1,iItem2,**kwargs):
     if (isinstance(iItem1,(list,tuple)) or (isinstance(iItem1,np.ndarray) and len(iItem1.dtype)==0 and iItem1.ndim==1)) and\
         (isinstance(iItem2,(list,tuple)) or (isinstance(iItem2,np.ndarray) and len(iItem2.dtype)==0 and iItem2.ndim==1)):
         rtype = type(iItem2)
-        if isinstance(how,basestring) and how.lower() == 'intersect':
+        if isinstance(how,str) and how.lower() == 'intersect':
             if rtype == np.ndarray:
                 return np.array(list(set(iItem2)&set(iItem1)),dtype=iItem2.dtype)
             else:
                 return rtype(set(iItem2) & set(iItem1))
-        elif isinstance(how,basestring) and how.lower() == 'difference':
+        elif isinstance(how,str) and how.lower() == 'difference':
             if rtype == np.ndarray:
                 return np.array(list(set(iItem2)-set(iItem1)),dtype=iItem2.dtype)
             else:
@@ -257,9 +257,9 @@ def SetOperations(iItem1,iItem2,**kwargs):
         if debug:
             CCprint('None of the column names match.',origin)
         return iItem2
-    if isinstance(how,basestring) and how.lower() == 'intersect':
+    if isinstance(how,str) and how.lower() == 'intersect':
         oItem = oItem2.merge(oItem1,indicator = True, how='left').loc[lambda x : x['_merge']=='both'].drop(columns='_merge')
-    elif isinstance(how,basestring) and how.lower() == 'difference':
+    elif isinstance(how,str) and how.lower() == 'difference':
         oItem = oItem2.merge(oItem1,indicator = True, how='left').loc[lambda x : x['_merge']!='both'].drop(columns='_merge')
     else:
         if debug:

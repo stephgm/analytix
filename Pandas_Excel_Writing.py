@@ -1,5 +1,5 @@
 #An example in how to color cells with pandas xlsx writer....  Conditional statements and everything.
-
+import pandas as pd
 truth = {'TrackId':[1,2,3,4,5,5]}
 track = {'TrackId':[1,2,3,4,6,7,8,11,0,10],
          'Type':['Puppy','Doggy','Tnak','TV','Fun','Hank','tank','pid','Unicorn','pid'],
@@ -12,7 +12,7 @@ Track = pd.DataFrame(track)
 Truth['Type'] = Truth['TrackId'].map(Track.set_index('TrackId')['Type']).fillna('UNK')
 
 def color_strings(val):
-    if isinstance(val,basestring):
+    if isinstance(val,str):
         if val.startswith('Do'):
             color = 'red'
         elif val.lower().startswith('p'):
@@ -26,7 +26,7 @@ def color_strings(val):
     return 'color: %s' % color
 
 def highlight_cell(val):
-    if isinstance(val,basestring):
+    if isinstance(val,str):
         if val.startswith('U'):
             color = 'green'
         else: color = 'white'
