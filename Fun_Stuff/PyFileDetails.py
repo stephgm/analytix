@@ -25,6 +25,9 @@ class Get_PyFile_Data(object):
             self.fpath = ''
             
         self.read_lines()
+        self.functions = {}
+        self.classes = {}
+        self.classes_methods={}
         
     def read_lines(self):
         if self.fpath:
@@ -95,7 +98,7 @@ class Get_PyFile_Data(object):
                     
                     self.functions['Function Name'].append(func)
                     self.functions['Args'].append(args)
-                    self.functions['Line Number'].append(i)
+                    self.functions['Line Number'].append(i+1)
                 else:
                     continue
         return pd.DataFrame(self.functions)
@@ -108,7 +111,7 @@ class Get_PyFile_Data(object):
                 if line.startswith('class'):
                     currentclass = line.replace('class','').split('(')[0]
                     self.classes['Class Name'].append(currentclass)
-                    self.classes['Line Number'].append(i)
+                    self.classes['Line Number'].append(i+1)
         return pd.DataFrame(self.classes)
     
     def get_class_and_methods(self):
@@ -136,7 +139,7 @@ class Get_PyFile_Data(object):
                         args = args.split(')')[0]
                     self.classes_methods['Method'].append(func)
                     self.classes_methods['Args'].append(args)
-                    self.classes_methods['Line Number'].append(i)
+                    self.classes_methods['Line Number'].append(i+1)
                 else:
                     continue
                 indentlevel = 0
@@ -161,11 +164,14 @@ class Get_PyFile_Data(object):
         self.what_calls_what = {'Source':[],'Target':[],'Source Type':[],'Target Type':[],'Source Class':[],'Target Class':[],'Line Number':[]}
         if self.fpath and self.lines:
             outline = self.get_outline()
+            outline['Class Name'] += '('
+            outline['Method'] += '('
+            outline['Function Name'] += '('
+            
             currentclass = ''
             classindent = 0
             currentdef = ''
             for i,line in enumerate(self.lines):
-                print(i)
                 indentlevel = 0
                 for char in line:
                     if char == ' ':
@@ -194,14 +200,23 @@ class Get_PyFile_Data(object):
                     if args:
                         args = args.split(')')[0]
                     continue
-                for row in range(outline.shape[0]):
+                if currentdef and isinstance(currentdef,string_types) and currentdef.startswith('__') and currentdef.endswith('__'):
+                    continue
+                idx1 = pd.Series(list(map(lambda x: True if isinstance(x,string_types) and x in line else False,outline['Function Name'])))
+                idx2 = pd.Series(list(map(lambda x: True if isinstance(x,string_types) and x in line else False,outline['Method'])))
+                idx = (idx1) | (idx2)
+                for row,b in enumerate(idx):
+                    if not b:
+                        continue
                     FuncName = outline.iloc[row]['Function Name']
                     MethodName = outline.iloc[row]['Method']
                     ClassName = outline.iloc[row]['Class Name']
+                    # if MethodName and isinstance(MethodName,string_types) and MethodName.startswith('__') and MethodName.endswith('__'):
+                        # continue
                     if FuncName and isinstance(FuncName,string_types):
-                        if FuncName+'(' in line:
+                        if FuncName in line:
                             self.what_calls_what['Source'].append(currentdef)
-                            self.what_calls_what['Target'].append(FuncName)
+                            self.what_calls_what['Target'].append(FuncName[:-1])
                             if currentclass:
                                 self.what_calls_what['Source Type'].append('Class Method')
                             else:
@@ -209,11 +224,11 @@ class Get_PyFile_Data(object):
                             self.what_calls_what['Target Type'].append('Function')
                             self.what_calls_what['Source Class'].append(currentclass)
                             self.what_calls_what['Target Class'].append('')
-                            self.what_calls_what['Line Number'].append(i)
+                            self.what_calls_what['Line Number'].append(i+1)
                     elif MethodName and isinstance(MethodName,string_types):
-                        if MethodName+'(' in line:
+                        if MethodName in line:
                             self.what_calls_what['Source'].append(currentdef)
-                            self.what_calls_what['Target'].append(MethodName)
+                            self.what_calls_what['Target'].append(MethodName[:-1])
                             if currentclass:
                                 self.what_calls_what['Source Type'].append('Class Method')
                             else:
@@ -221,7 +236,7 @@ class Get_PyFile_Data(object):
                             self.what_calls_what['Target Type'].append('Class Method')
                             self.what_calls_what['Source Class'].append(currentclass)
                             self.what_calls_what['Target Class'].append(ClassName)
-                            self.what_calls_what['Line Number'].append(i)
+                            self.what_calls_what['Line Number'].append(i+1)
                             
         return pd.DataFrame(self.what_calls_what)
-                    
+
