@@ -3,13 +3,53 @@
 """
 Created on Sun Feb  9 21:17:38 2020
 
-@author: Carl
+@author: klinetry
 """
 import os,sys
 from six import string_types
 import pandas as pd
+import fnmatch
 
 debug = True
+
+
+def gather_files(sdir,**kwargs):
+        '''
+        Function searches a directory and subdirectories and returns all files.
+        Input:
+                sdir - the top directory to search through
+        Kwargs:
+                ext - A list of patterns -- ['*.txt','*h.h5']
+                maxDepth - Restrict the maximum depth of directories to go down.
+
+        Return:
+                Returns a list of all the gathered files referenced from sdir
+        '''
+        extensions = kwargs.get('ext',['*'])
+        maxDepth = kwargs.get('maxDepth',-1)
+        if not isinstance(extensions,list):
+            if debug:
+                print('The ext argument you passed is not an iterable returning')
+            return sdir,[]
+        if not isinstance(maxDepth,int):
+            if debug:
+                print('the maxDepth argument you passed is not an int, going all the way down!')
+            maxDepth = -1
+        if maxDepth > 0:
+            return sdir,[os.path.join(r,fname)[len(sdir):] for ext in extensions \
+                    for r,p,f in os.walk(sdir,followlinks=False) \
+                    if r[len(sdir):].count(os.sep) < maxDepth\
+                    for fname in f \
+                    if fnmatch.fnmatch(fname,ext)]
+        elif maxDepth == 0:
+            return sdir,[f for ext in extensions \
+                    for f in os.listdir(sdir) \
+                    if fnmatch.fnmatch(f,ext)]
+        else:
+            return sdir,[os.path.join(r,fname)[len(sdir):] for ext in extensions \
+                for r,p,f in os.walk(sdir,followlinks=False) \
+                for fname in f \
+                if fnmatch.fnmatch(fname,ext)]
 
 class Get_PyFile_Data(object):
     def __init__(self,fpath,**kwargs):
@@ -35,10 +75,33 @@ class Get_PyFile_Data(object):
                 self.lines = pf.readlines()
         else:
             self.lines = []
+            
+    def get_repo_python_files(self,repodir):
+        python_files_in_repo = gather_files(repodir, ext=['*.py'])[1]
+        python_files_in_repo = list(map(lambda x: x[1:].replace(os.path.sep,'.').replace('.py','').strip(),python_files_in_repo))
+        
+        return python_files_in_repo
     
-    def get_imports(self):
+    def get_repo_subdirs(self,repodir):
+        repo_dirs = [p for p in os.listdir(repodir) if os.path.isdir(os.path.join(repodir,p))]
+        return repo_dirs
+        
+    
+    def get_imports(self,repodir=''):
         self.imports = {'Package/Module':[],'Alias':[],'Specific Imports':[]}
+        if not isinstance(repodir,string_types):
+            if debug:
+                print('The repodir you passed is not a string.. setting to dirname of fpath')
+            repodir = ''
+        if not os.path.isdir(repodir):
+            if debug:
+                print('The repodir you passed is not a directory.. setting to dirname of fpath')
+            repodir = ''
         if self.fpath and self.lines:
+            if not repodir:
+                repodir = os.path.dirname(self.fpath)
+            repo_subdirs = self.get_repo_subdirs(repodir)
+            print(repo_subdirs)
             for line in self.lines:
                 line = line.strip()
                 if line.startswith('import '):
@@ -56,10 +119,16 @@ class Get_PyFile_Data(object):
                         asLoc = line.find(' as ')
                         wordsEnd = line[asLoc:].split()
                         wordsStart = line.split(None,3)
-                        funcs = list(map(str.strip,wordsStart[3].split(',')))
-                        self.imports['Package/Module'].append(wordsStart[1])
-                        self.imports['Alias'].append(wordsEnd[1])
-                        self.imports['Specific Imports'].append(funcs)
+                        if not wordsStart[1] in repo_subdirs:
+                            funcs = list(map(str.strip,wordsStart[3].split(',')))
+                            self.imports['Package/Module'].append(wordsStart[1])
+                            self.imports['Alias'].append(wordsEnd[1])
+                            self.imports['Specific Imports'].append(funcs)
+                        else: #This else is for repo imports EX from PlotH5 import Plotterator as Plotterator
+                            funcs = list(map(str.strip,wordsStart[3].split(',')))
+                            self.imports['Package/Module'].append(wordsStart[1]+'.'+wordsEnd[1][:asLoc])
+                            self.imports['Alias'].append(wordsEnd[1])
+                            self.imports['Specific Imports'].append(funcs)
                     else: # from x import y
                         words = line.split(None,3)
                         funcs = list(map(str.strip,words[3].split(',')))
@@ -240,3 +309,49 @@ class Get_PyFile_Data(object):
                             
         return pd.DataFrame(self.what_calls_what)
 
+    def get_repo_dependencies(self,repodir=os.path.join(os.path.expanduser('~'),'tools','src'),**kwargs):
+        main = kwargs.get('main',True)
+        if not isinstance(repodir,string_types):
+            if debug:
+                print('The repodir that you passed is not a string')
+            return pd.DataFrame()
+        if not os.path.isdir(repodir):
+            if debug:
+                print('The repodir passed is not a directory')
+            return pd.DataFrame()
+        python_files_in_repo = gather_files(repodir, ext=['*.py'])[1]
+        python_files_in_repo = list(map(lambda x: x[1:].replace(os.path.sep,'.').replace('.py','').strip(),python_files_in_repo))
+        fileimports = self.get_imports(repodir)
+        idx = fileimports['Package/Module'].isin(python_files_in_repo)
+        used = []
+        for row,b in enumerate(idx):
+            if not b:
+                continue
+            used.append(fileimports['Package/Module'].iloc[row])
+        useddir = list(map(lambda x:os.path.join(repodir,x.replace('.',os.path.sep)+'.py'),used))
+        for fpath in useddir:
+            xx = Get_PyFile_Data(fpath)
+            useddir += xx.get_repo_dependencies(repodir,main=False)
+        if not main:
+            return useddir
+        else:
+            return list(pd.unique(useddir))
+        
+# repodir = '/home/klinetry/Desktop/analytix-master/tools/src'
+# fpath = os.path.join(repodir,'PlotH5','Plotter','Plotter.py')
+
+
+# x = Get_PyFile_Data(fpath)  
+# uu = x.get_imports(repodir)
+# y = x.get_repo_dependencies(repodir)
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
