@@ -3,12 +3,13 @@
 """
 Created on Sun Feb  9 21:17:38 2020
 
-@author: klinetry
+@author: Carl
 """
 import os,sys
 from six import string_types
 import pandas as pd
 import fnmatch
+import numpy as np
 
 debug = True
 
@@ -101,7 +102,6 @@ class Get_PyFile_Data(object):
             if not repodir:
                 repodir = os.path.dirname(self.fpath)
             repo_subdirs = self.get_repo_subdirs(repodir)
-            print(repo_subdirs)
             for line in self.lines:
                 line = line.strip()
                 if line.startswith('import '):
@@ -309,7 +309,7 @@ class Get_PyFile_Data(object):
                             
         return pd.DataFrame(self.what_calls_what)
 
-    def get_repo_dependencies(self,repodir=os.path.join(os.path.expanduser('~'),'tools','src'),**kwargs):
+    def get_repo_dependencies(self,repodir=os.path.join(os.path.expanduser('~'),'tools','src'),initusedfiles=[],**kwargs):
         main = kwargs.get('main',True)
         if not isinstance(repodir,string_types):
             if debug:
@@ -328,14 +328,21 @@ class Get_PyFile_Data(object):
             if not b:
                 continue
             used.append(fileimports['Package/Module'].iloc[row])
-        useddir = list(map(lambda x:os.path.join(repodir,x.replace('.',os.path.sep)+'.py'),used))
-        for fpath in useddir:
-            xx = Get_PyFile_Data(fpath)
-            useddir += xx.get_repo_dependencies(repodir,main=False)
-        if not main:
-            return useddir
-        else:
-            return list(pd.unique(useddir))
+        #Get file path of the used python files in the fpath
+        usedfile = list(map(lambda x:os.path.join(repodir,x.replace('.',os.path.sep)+'.py'),used))
+        #if incoming used files differ from this usedfile get more
+        if set(usedfile).difference(set(initusedfiles)):
+            newused = list(set(usedfile).difference(set(initusedfiles)))
+            #add difference to the incoming used files
+            initusedfiles += newused
+            for fpath in newused:
+                xx = Get_PyFile_Data(fpath)
+                moreusedfile = xx.get_repo_dependencies(repodir,initusedfiles,main=False)
+                initusedfiles += moreusedfile
+                initusedfiles = list(pd.unique(initusedfiles))
+        return initusedfiles
+        # else:
+            # return initusedfiles
         
 # repodir = '/home/klinetry/Desktop/analytix-master/tools/src'
 # fpath = os.path.join(repodir,'PlotH5','Plotter','Plotter.py')
