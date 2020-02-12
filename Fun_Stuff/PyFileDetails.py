@@ -3,13 +3,14 @@
 """
 Created on Sun Feb  9 21:17:38 2020
 
-@author: Carl
+@author: klinetry
 """
 import os,sys
 from six import string_types
 import pandas as pd
 import fnmatch
 import numpy as np
+from shutil import copyfile,rmtree
 
 debug = True
 
@@ -74,8 +75,17 @@ class Get_PyFile_Data(object):
         if self.fpath:
             with open(self.fpath,'r') as pf:
                 self.lines = pf.readlines()
+            self.lines = [line for line in self.lines if not self.isCommentLine(line)]
+                
         else:
             self.lines = []
+    
+    def isCommentLine(self,line):
+        line = line.strip()
+        if line.startswith('#'):
+            return True
+        else:
+            return False
             
     def get_repo_python_files(self,repodir):
         python_files_in_repo = gather_files(repodir, ext=['*.py'])[1]
@@ -308,7 +318,31 @@ class Get_PyFile_Data(object):
                             self.what_calls_what['Line Number'].append(i+1)
                             
         return pd.DataFrame(self.what_calls_what)
-
+    
+    def get_UI_file_dependencies(self):
+        ui_files = []
+        if self.fpath and self.lines:
+            for line in self.lines:
+                if ".ui'" in line:
+                    last_quote_pos = line.find(".ui'")
+                    if last_quote_pos > 0:
+                        last_quote_pos+=3
+                    for i,char in enumerate(line[:last_quote_pos]):
+                        if char == "'":
+                            first_quote_pos = i+1
+                elif '.ui"' in line:
+                    last_quote_pos = line.find('.ui"')
+                    if last_quote_pos:
+                        last_quote_pos+=3
+                    for i,char in enumerate(line[:last_quote_pos]):
+                        if char == '"':
+                            first_quote_pos = i+1
+                else:
+                    continue
+                ui_file = line[first_quote_pos:last_quote_pos]
+                ui_files.append(os.path.join(os.path.dirname(self.fpath),ui_file))
+        return ui_files
+    
     def get_repo_dependencies(self,repodir=os.path.join(os.path.expanduser('~'),'tools','src'),initusedfiles=[],**kwargs):
         main = kwargs.get('main',True)
         if not isinstance(repodir,string_types):
@@ -340,19 +374,44 @@ class Get_PyFile_Data(object):
                 moreusedfile = xx.get_repo_dependencies(repodir,initusedfiles,main=False)
                 initusedfiles += moreusedfile
                 initusedfiles = list(pd.unique(initusedfiles))
-        return initusedfiles
-        # else:
-            # return initusedfiles
-        
+            initusedfiles += self.get_UI_file_dependencies()
+        return list(pd.unique(initusedfiles))
+
+    def isolate_repo_dependencies(self,repodir=os.path.join(os.path.expanduser('~'),'tools','src'),outdir=''):
+        #This doesn't grab all of the dependencies??? Not sure why...
+        if not outdir:
+            outdir = os.path.join(os.path.dirname(self.fpath),f'{os.path.basename(self.fpath).split(".py")[0]}_dependencies')
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
+        else:
+            print('You are trying to create an outdir that already exists... reconsider for safety')
+            print('Continuing anyways...')
+            # choice = input(f'Do you want to delete {outdir} and recreate it with the repo dependencies?')
+            # if choice:
+            #This is dangerous if not used correctly.. will just print a statement
+                # rmtree(outdir)
+                # os.makedirs(outdir)
+            # else:
+                # return
+        files_to_move = self.get_repo_dependencies(repodir,[])
+        # return files_to_move
+        for file in files_to_move:
+            if os.path.isfile(file):
+                copyfile(file, os.path.join(outdir,os.path.basename(file)))
+            else:
+                print(f'{file} did not exist... continuing')
+
+
 # repodir = '/home/klinetry/Desktop/analytix-master/tools/src'
 # fpath = os.path.join(repodir,'PlotH5','Plotter','Plotter.py')
 
+# repodir = '/home/klinetry/Desktop/shitrepo'
+# fpath = os.path.join(repodir,'RUTE.py')
 
 # x = Get_PyFile_Data(fpath)  
 # uu = x.get_imports(repodir)
-# y = x.get_repo_dependencies(repodir)
-
-        
+# y = x.get_repo_dependencies(repodir,[])
+# ii = x.isolate_repo_dependencies(repodir)        
         
         
         
