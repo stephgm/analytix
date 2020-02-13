@@ -350,6 +350,16 @@ class Get_PyFile_Data(object):
                 ui_file = line[first_quote_pos:last_quote_pos]
                 ui_files.append(os.path.join(os.path.dirname(self.fpath),ui_file))
         return ui_files
+    def get_any_file_mention(self,repodir):
+        mentioned_files = []
+        if self.fpath and self.lines:
+            all_files = gather_files(repodir)
+            all_fpaths = list(map(lambda x:os.path.join(all_files[0],x),all_files[1]))
+            for line in self.lines:
+                for fpath in all_fpaths:
+                    if os.path.basename(fpath) in line:
+                        mentioned_files.append(fpath)
+        return mentioned_files
     
     def get_file_repo_dependencies(self,repodir=os.path.join(os.path.expanduser('~'),'tools','src'),initusedfiles=[],**kwargs):
         main = kwargs.get('main',True)
