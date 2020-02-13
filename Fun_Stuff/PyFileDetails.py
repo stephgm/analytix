@@ -374,6 +374,7 @@ class Get_PyFile_Data(object):
         python_files_in_repo = gather_files(repodir, ext=['*.py'])[1]
         python_files_in_repo = list(map(lambda x: x[1:].replace(os.path.sep,'.').replace('.py','').strip(),python_files_in_repo))
         fileimports = self.get_imports(repodir)
+        fileimports = self.get_any_file_mention(repodir)
         idx = fileimports['Package/Module'].isin(python_files_in_repo)
         used = []
         for row,b in enumerate(idx):
