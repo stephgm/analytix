@@ -343,7 +343,7 @@ class Get_PyFile_Data(object):
                 ui_files.append(os.path.join(os.path.dirname(self.fpath),ui_file))
         return ui_files
     
-    def get_repo_dependencies(self,repodir=os.path.join(os.path.expanduser('~'),'tools','src'),initusedfiles=[],**kwargs):
+    def get_file_repo_dependencies(self,repodir=os.path.join(os.path.expanduser('~'),'tools','src'),initusedfiles=[],**kwargs):
         main = kwargs.get('main',True)
         if not isinstance(repodir,string_types):
             if debug:
@@ -371,16 +371,16 @@ class Get_PyFile_Data(object):
             initusedfiles += newused
             for fpath in newused:
                 xx = Get_PyFile_Data(fpath)
-                moreusedfile = xx.get_repo_dependencies(repodir,initusedfiles,main=False)
+                moreusedfile = xx.get_file_repo_dependencies(repodir,initusedfiles,main=False)
                 initusedfiles += moreusedfile
                 initusedfiles = list(pd.unique(initusedfiles))
             initusedfiles += self.get_UI_file_dependencies()
         return list(pd.unique(initusedfiles))
 
-    def isolate_repo_dependencies(self,repodir=os.path.join(os.path.expanduser('~'),'tools','src'),outdir=''):
+    def isolate_file_repo_dependencies(self,repodir=os.path.join(os.path.expanduser('~'),'tools','src'),outdir=''):
         #This doesn't grab all of the dependencies??? Not sure why...
         if not outdir:
-            outdir = os.path.join(os.path.dirname(self.fpath),f'{os.path.basename(self.fpath).split(".py")[0]}_dependencies')
+            outdir = os.path.join(os.path.expanduser('~'),f'{os.path.basename(self.fpath).split(".py")[0]}_dependencies','tools','src')
         if not os.path.isdir(outdir):
             os.makedirs(outdir)
         else:
@@ -393,15 +393,20 @@ class Get_PyFile_Data(object):
                 # os.makedirs(outdir)
             # else:
                 # return
-        files_to_move = self.get_repo_dependencies(repodir,[])
+        files_to_move = self.get_file_repo_dependencies(repodir,[])
+        files_to_move.append(self.fpath)
         # return files_to_move
         for file in files_to_move:
             if os.path.isfile(file):
-                copyfile(file, os.path.join(outdir,os.path.basename(file)))
+                nfpath = os.path.join(outdir,file.replace(repodir,'')[1:])
+                if not os.path.isdir(os.path.dirname(nfpath)):
+                    os.makedirs(os.path.dirname(nfpath))
+                copyfile(file, nfpath)
             else:
                 print(f'{file} did not exist... continuing')
-
-
+                
+    
+        
 # repodir = '/home/klinetry/Desktop/analytix-master/tools/src'
 # fpath = os.path.join(repodir,'PlotH5','Plotter','Plotter.py')
 
@@ -410,8 +415,8 @@ class Get_PyFile_Data(object):
 
 # x = Get_PyFile_Data(fpath)  
 # uu = x.get_imports(repodir)
-# y = x.get_repo_dependencies(repodir,[])
-# ii = x.isolate_repo_dependencies(repodir)        
+# y = x.get_file_repo_dependencies(repodir,[])
+# ii = x.isolate_file_repo_dependencies(repodir)        
         
         
         
