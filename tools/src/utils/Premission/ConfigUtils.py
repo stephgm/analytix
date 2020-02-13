@@ -392,8 +392,10 @@ class PathWidget(Widgets.QWidget):
         if self.PathData and event:
             if domaintype in self.PathData and domain in self.PathData[domaintype] and event in self.PathData[domaintype][domain]:
                 phases = list(self.PathData[domaintype][domain][event].keys())
-                if len(phases) > 1:
+                if len(phases) > 1 and self.showPhase:
                     phases = ['']+phases
+                elif len(phases) <= 0 and not self.showPhase:
+                    phases = phases
                 self.PhaseCombo.addItems(phases)
                 index = self.PhaseCombo.findText(ctext)
                 if index < 0:
@@ -528,9 +530,8 @@ class PathWidget(Widgets.QWidget):
         domaintype = self.DomainTypeCombo.currentText()
         domain = self.DomainCombo.currentText()
         event = self.EventCombo.currentText()
-        phase = self.PhaseCombo.currentText()
         
-        if domaintype and domain and event and phase:
+        if domaintype and domain and event:
             itppath = self.ItpPaths[domaintype][domain][event]
         else:
             itppath = ''
