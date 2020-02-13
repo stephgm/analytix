@@ -136,15 +136,23 @@ class Get_PyFile_Data(object):
                             self.imports['Specific Imports'].append(funcs)
                         else: #This else is for repo imports EX from PlotH5 import Plotterator as Plotterator
                             funcs = list(map(str.strip,wordsStart[3].split(',')))
-                            self.imports['Package/Module'].append(wordsStart[1]+'.'+wordsEnd[1][:asLoc])
+                            WordsStartAsLoc = wordsStart[-1].find(' as ')
+                            self.imports['Package/Module'].append(wordsStart[1]+'.'+wordsStart[-1][:WordsStartAsLoc])
                             self.imports['Alias'].append(wordsEnd[1])
                             self.imports['Specific Imports'].append(funcs)
                     else: # from x import y
                         words = line.split(None,3)
                         funcs = list(map(str.strip,words[3].split(',')))
-                        self.imports['Package/Module'].append(words[1])
-                        self.imports['Alias'].append('')
-                        self.imports['Specific Imports'].append(funcs)
+                        if words[1] not in repo_subdirs:
+                            self.imports['Package/Module'].append(words[1])
+                            self.imports['Alias'].append('')
+                            self.imports['Specific Imports'].append(funcs)
+                        else:
+                            print(words)
+                            for f in funcs:
+                                self.imports['Package/Module'].append(words[1]+'.'+f)
+                                self.imports['Alias'].append('')
+                                self.imports['Specific Imports'].append(f)
         return pd.DataFrame(self.imports)
     
     def get_functions(self):
