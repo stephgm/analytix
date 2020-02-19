@@ -156,7 +156,7 @@ def on_pick(event):
             ydata = line.get_ydata()
             ind = event.ind
             ax = line.axes
-            ann = ax.annotate(line.get_label(),(xdata[ind[0]],ydata[ind[0]]))
+            ann = ax.annotate(line.get_label(),(xdata[ind[0]],ydata[ind[0]]),zorder=5000)
             ann_list.append(ann)
             line.figure.canvas.draw()
         elif isinstance(event.artist,matplotlib.collections.PathCollection):
@@ -164,7 +164,7 @@ def on_pick(event):
             ind = event.ind
             xy = collection.get_offsets()
             ax = collection.axes
-            ann = ax.annotate(collection.get_label(),(xy[ind[0]][0],xy[ind[0]][1]))
+            ann = ax.annotate(collection.get_label(),(xy[ind[0]][0],xy[ind[0]][1]),zorder=5000)
             ann_list.append(ann)
             fig = collection.get_figure()
             fig.canvas.draw()
