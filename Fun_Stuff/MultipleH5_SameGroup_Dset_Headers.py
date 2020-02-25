@@ -57,9 +57,8 @@ def Open_Multiple_Files_Same_Grp_Dset_Headers(rdir=os.getcwd(),**kwargs):
     runs = []
 
     widget = Widgets.QDialog()
+    Qt5.loadUi('Multiple_Files_Same_Grps_Dsets_Headers.ui',widget)
     widget.setWindowTitle(title)
-    buttonBox = Widgets.QDialogButtonBox(widget)
-    layout = Widgets.QGridLayout()
     
     def busy():
         Widgets.QApplication.setOverrideCursor(Core.Qt.WaitCursor)
@@ -72,27 +71,27 @@ def Open_Multiple_Files_Same_Grp_Dset_Headers(rdir=os.getcwd(),**kwargs):
         Widgets.QApplication.processEvents()
     
     def reset_widgets():
-        filecombo.clear()
-        groupcombo.clear()
-        runlist.clear()
-        dsettabwidget.clear()
+        widget.filecombo.clear()
+        widget.groupcombo.clear()
+        widget.runlist.clear()
+        widget.dsettabwidget.clear()
     
     def get_directory():
         global directory
-        directory = Widgets.QFileDialog.getExistingDirectory(None,'Select A Directory',rdir,Widgets.QFileDialog.ShowDirsOnly)
+        directory = Widgets.QFileDialog.getExistingDirectory(None,'Select A Directory That Contains Runs',rdir,Widgets.QFileDialog.ShowDirsOnly)
         if os.path.isdir(directory):
             reset_widgets()
-            directorylabel.setText(directory)
+            widget.directorylabel.setText(directory)
             populate_runs()
         
     def populate_runs():
         global directory
         global runs
         runs = []
-        runlist.clear()
+        widget.runlist.clear()
         if directory:
             busy()
-            if gtruns.isChecked():
+            if widget.gtruns.isChecked():
                 rtype = 'groundtest'
             else:
                 rtype = 'other'
@@ -101,7 +100,7 @@ def Open_Multiple_Files_Same_Grp_Dset_Headers(rdir=os.getcwd(),**kwargs):
                 runs = list(map(os.path.basename,runs))
             else:
                 runs = [p for p in os.listdir(directory) if os.path.isdir(os.path.join(directory,p))]
-            runlist.addItems(runs)
+            widget.runlist.addItems(runs)
             ready()
             
     def populate_unique_files():
@@ -109,13 +108,13 @@ def Open_Multiple_Files_Same_Grp_Dset_Headers(rdir=os.getcwd(),**kwargs):
         global nfiles
         global basedir
         global selection
-        filecombo.clear()
-        groupcombo.clear()
-        dsettabwidget.clear()
-        selection = [str(item.text()) for item in runlist.selectedItems()]
+        widget.filecombo.clear()
+        widget.groupcombo.clear()
+        widget.dsettabwidget.clear()
+        selection = [str(item.text()) for item in widget.runlist.selectedItems()]
         if directory and selection:
             busy()
-            maxlevel = recurselevel.value()
+            maxlevel = widget.recurselevel.value()
             if maxlevel >= 0:
                 maxlevel += 2
             basedir,files = PF.gather_files(directory,ext=['*.h5'],maxDepth=maxlevel)
@@ -126,7 +125,7 @@ def Open_Multiple_Files_Same_Grp_Dset_Headers(rdir=os.getcwd(),**kwargs):
                         nfiles.append(file)
             basefiles = list(map(os.path.basename,nfiles))
             unique_files = list(pd.unique(basefiles))
-            filecombo.addItems(unique_files)
+            widget.filecombo.addItems(unique_files)
             ready()
             
     def populate_groups():
@@ -134,12 +133,12 @@ def Open_Multiple_Files_Same_Grp_Dset_Headers(rdir=os.getcwd(),**kwargs):
         global basedir
         global nfiles
         global fpath
-        groupcombo.clear()
-        dsetlist.clear()
-        dsettabwidget.clear()
-        if directory and filecombo.currentText():
+        widget.groupcombo.clear()
+        widget.dsetlist.clear()
+        widget.dsettabwidget.clear()
+        if directory and widget.filecombo.currentText():
             busy()
-            ctext = filecombo.currentText()
+            ctext = widget.filecombo.currentText()
             fpaths = list(map(lambda x: os.path.join(basedir,x),nfiles)) 
             fpath = ''
             for path in fpaths:
@@ -148,38 +147,38 @@ def Open_Multiple_Files_Same_Grp_Dset_Headers(rdir=os.getcwd(),**kwargs):
                     break
             if fpath and os.path.isfile(fpath):
                 grps = PF.get_groups(fpath)
-                groupcombo.addItems(grps)
+                widget.groupcombo.addItems(grps)
             ready()
             
     def populate_dset_list():
         global directory
         global fpath
         global selection
-        dsetlist.clear()
-        dsettabwidget.clear()
-        if directory and filecombo.currentText() and groupcombo.currentText() and selection:
+        widget.dsetlist.clear()
+        widget.dsettabwidget.clear()
+        if directory and widget.filecombo.currentText() and widget.groupcombo.currentText() and selection:
             if fpath and os.path.isfile(fpath):
                 busy()
-                grp = groupcombo.currentText()
+                grp = widget.groupcombo.currentText()
                 dsets = PF.get_dsets(fpath, grp)
-                dsetlist.addItems(dsets)
+                widget.dsetlist.addItems(dsets)
                 ready()
             
     def populate_dset_tabs():
         global directory
         global fpath
         global selection
-        dsettabwidget.clear()
-        if directory and filecombo.currentText() and groupcombo.currentText() and selection:
+        widget.dsettabwidget.clear()
+        if directory and widget.filecombo.currentText() and widget.groupcombo.currentText() and selection:
             if fpath and os.path.isfile(fpath):
                 busy()
-                grp = groupcombo.currentText()
-                dsets = QU.returnListSelection(dsetlist)
+                grp = widget.groupcombo.currentText()
+                dsets = QU.returnListSelection(widget.dsetlist)
                 for dset in dsets:
                     listwidget = Widgets.QListWidget()
                     listwidget.setSelectionMode(Widgets.QAbstractItemView.ExtendedSelection)
                     headers = PF.get_headers(fpath, grp, dset)
-                    dsettabwidget.addTab(listwidget,f'{dset}')
+                    widget.dsettabwidget.addTab(listwidget,f'{dset}')
                     listwidget.addItems(headers)
                 ready()
                 
@@ -194,19 +193,19 @@ def Open_Multiple_Files_Same_Grp_Dset_Headers(rdir=os.getcwd(),**kwargs):
         datadict = {}
         rdict = {}
         
-        if directory and filecombo.currentText() and groupcombo.currentText() and selection:
+        if directory and widget.filecombo.currentText() and widget.groupcombo.currentText() and selection:
             busy()
             fpaths = list(map(lambda x: os.path.join(basedir,x),nfiles))
             cpaths = []
             for path in fpaths:
                 if os.path.basename(fpath) in os.path.basename(path):
                     cpaths.append(path)
-            grp = groupcombo.currentText()
-            for i in range(dsettabwidget.count()):
-                widget = dsettabwidget.widget(i)
-                heads = [str(item.text()) for item in widget.selectedItems()]
+            grp = widget.groupcombo.currentText()
+            for i in range(widget.dsettabwidget.count()):
+                lwidget = widget.dsettabwidget.widget(i)
+                heads = [str(item.text()) for item in lwidget.selectedItems()]
                 if heads:
-                    dsetdict[dsettabwidget.tabText(i)] = heads
+                    dsetdict[widget.dsettabwidget.tabText(i)] = heads
             
             for key in dsetdict:
                 if key not in datadict:
@@ -231,86 +230,22 @@ def Open_Multiple_Files_Same_Grp_Dset_Headers(rdir=os.getcwd(),**kwargs):
         ready()
         return rdict
         
+    dsetsearch = QU.SearchBar(widget=widget.dsetlist,parent=widget)
+    widget.SearchBarLayout.addWidget(dsetsearch)
     
-    directorybutton = Widgets.QPushButton('Select Directory')
-    directorybutton.clicked.connect(lambda:get_directory())
-    
-    directorylabel = Widgets.QLabel()
-    
-    filelabel = Widgets.QLabel('File Selection')
-    
-    filecombo = Widgets.QComboBox()
-    filecombo.currentIndexChanged.connect(lambda x:populate_groups())
-    
-    grouplabel = Widgets.QLabel('Group Selection')
-    
-    groupcombo = Widgets.QComboBox()
-    groupcombo.currentIndexChanged.connect(lambda x:populate_dset_list())
-    
-    runlist = Widgets.QListWidget()
-    runlist.setSelectionMode(Widgets.QAbstractItemView.ExtendedSelection)
-    runlist.itemSelectionChanged.connect(lambda:populate_unique_files())
-    
-    findfilesbutton = Widgets.QPushButton('Find Files')
-    findfilesbutton.clicked.connect(populate_unique_files)
-    
-    dsetlistlabel = Widgets.QLabel('Select Dsets to Show')
-    dsetlist = Widgets.QListWidget()
-    dsetlist.setSelectionMode(Widgets.QAbstractItemView.ExtendedSelection)
-    dsetlist.itemSelectionChanged.connect(lambda:populate_dset_tabs())
-    
-    dsetsearch = QU.SearchBar(widget=dsetlist,parent=widget)
-    
-    dsetlabel = Widgets.QLabel('Dset Tabs')
-    
-    recurselabel = Widgets.QLabel('Search Depth')
-    recurselevel = Widgets.QSpinBox()
-    recurselevel.setMinimum(-1)
-    recurselevel.setMaximum(99)
-    recurselevel.setValue(-1)
-    recurselevel.valueChanged.connect(lambda:populate_unique_files())
-    
-    rungroup = Widgets.QGroupBox()
-    rungrouplabel = Widgets.QLabel('Run Selection Type')
-    gtruns = Widgets.QRadioButton('Ground Test')
-    gtruns.setChecked(True)
-    gtruns.toggled.connect(lambda x: populate_runs() if x else False)
-    genericruns = Widgets.QRadioButton('Generic')
-    genericruns.toggled.connect(lambda x:populate_runs() if x else False)
-    grouplayout = Widgets.QGridLayout()
-    grouplayout.addWidget(rungrouplabel,0,0,1,2)
-    grouplayout.addWidget(gtruns,1,0)
-    grouplayout.addWidget(genericruns,1,1)
-    rungroup.setLayout(grouplayout)
+    widget.directorybutton.clicked.connect(lambda:get_directory())
+    widget.filecombo.currentIndexChanged.connect(lambda x:populate_groups())
+    widget.groupcombo.currentIndexChanged.connect(lambda x:populate_dset_list())
+    widget.runlist.itemSelectionChanged.connect(lambda:populate_unique_files())
+    widget.dsetlist.itemSelectionChanged.connect(lambda:populate_dset_tabs())
+    widget.recurselevel.valueChanged.connect(lambda:populate_unique_files())
+    widget.gtruns.toggled.connect(lambda x: populate_runs() if x else False)
+    widget.genericruns.toggled.connect(lambda x:populate_runs() if x else False)
     
     
-    dsettabwidget = Widgets.QTabWidget()
-    dsettabwidget.setMinimumSize(Core.QSize(400,100))
-    
-    layout.addWidget(rungroup,0,0,1,2)
-    layout.addWidget(recurselabel,1,0)
-    layout.addWidget(recurselevel,1,1)
-    layout.addWidget(directorybutton,2,0)
-    layout.addWidget(directorylabel,2,1)
-    layout.addWidget(runlist,3,0,1,2)
-    layout.addWidget(findfilesbutton,4,0,1,2)
-    layout.addWidget(filelabel,5,0)
-    layout.addWidget(filecombo,5,1)
-    layout.addWidget(grouplabel,6,0)
-    layout.addWidget(groupcombo,6,1)
-    layout.addWidget(dsetlistlabel,7,0,1,2)
-    layout.addWidget(dsetsearch,8,0,1,2)
-    layout.addWidget(dsetlist,9,0,1,2)
-    layout.addWidget(dsetlabel,10,0,1,2)
-    layout.addWidget(dsettabwidget,11,0,1,2)
-    layout.addWidget(buttonBox)
-    
-    widget.setLayout(layout)
-    
-    
-    buttonBox.setStandardButtons(Widgets.QDialogButtonBox.Ok | Widgets.QDialogButtonBox.Cancel)
-    buttonBox.accepted.connect(widget.accept)
-    buttonBox.rejected.connect(widget.reject)
+    widget.buttonBox.setStandardButtons(Widgets.QDialogButtonBox.Ok | Widgets.QDialogButtonBox.Cancel)
+    widget.buttonBox.accepted.connect(widget.accept)
+    widget.buttonBox.rejected.connect(widget.reject)
     ready()
     retval = widget.exec_()
 
@@ -322,3 +257,4 @@ def Open_Multiple_Files_Same_Grp_Dset_Headers(rdir=os.getcwd(),**kwargs):
     
     
 gg = Open_Multiple_Files_Same_Grp_Dset_Headers('/home/klinetry/Desktop/Phobos3')
+print(gg)
