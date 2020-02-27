@@ -13,14 +13,15 @@ def makeDictArray(**kwargs):
     size = kwargs.get('size',20)
     strings = 'What is this sentence about? And why do you care?'.split(' ')
     bools = [True,False]
+    nums = [1.,2.,np.nan,pd.NA]
     bytestrings = list(map(lambda x:bytes(x,encoding='utf-8'),strings))
     data['ByteString'] = np.random.choice(bytestrings, size)
     data['Unicode'] = np.random.choice(strings, size)
     data['Integer'] = np.random.randint(0,10,size)
     data['Float'] = np.random.random(size)
     data['Bool'] = np.random.choice(bools,size)
-    data['Time'] = np.random.choice([100.,101.,102.],size)
-
+    data['Time'] = np.random.choice([100.,101.,102.,pd.NA],size)
+    data['NanIsh'] = np.random.choice(nums,size)
     return data
 
 def makeDF(**kwargs):
@@ -37,27 +38,29 @@ def makeStructArray(**kwargs):
         bullshit[key] = data[key]
     return bullshit
 
-x = makeDF(size=500)
-y = makeDictArray()
-z = makeStructArray()
+if __name__ == '__main__':
 
-xx = {}
-for uid in pd.unique(x['Integer']):
-    idx = x['Integer'] == uid
-    xx[uid] = pd.DataFrame({'Time':x.loc[idx,'Time'],
-                            # 'Integer':x.loc[idx,'Integer'],
-                            f'Float_{uid}':x.loc[idx,'Float']})
-    xx[uid].sort_values('Time',inplace=True)
-
-if len(xx) > 1:
-    keys = list(xx)
-    z = pd.merge(xx[keys[0]],xx[keys[1]],
-                 how='left',on='Time')
-    z.fillna(value=0.,inplace=True)
-    for i in range(2,len(keys)):
-        z = pd.merge(z,xx[keys[i]],how='left',on='Time')
-                     # suffixes=('',f'_{keys[i]}'))
-        z.fillna(value=0.,inplace=True)
-    keys = [key for key in z if key.startswith('Float_')]
-    z['sum'] = z[keys].apply(lambda x: sum(x), axis=1)
-    # z.drop(columns=keys,inplace=True)
+    x = makeDF()
+    # y = makeDictArray()
+    # z = makeStructArray()
+    
+    # xx = {}
+    # for uid in pd.unique(x['Integer']):
+    #     idx = x['Integer'] == uid
+    #     xx[uid] = pd.DataFrame({'Time':x.loc[idx,'Time'],
+    #                             # 'Integer':x.loc[idx,'Integer'],
+    #                             f'Float_{uid}':x.loc[idx,'Float']})
+    #     xx[uid].sort_values('Time',inplace=True)
+    
+    # if len(xx) > 1:
+    #     keys = list(xx)
+    #     z = pd.merge(xx[keys[0]],xx[keys[1]],
+    #                  how='left',on='Time')
+    #     z.fillna(value=0.,inplace=True)
+    #     for i in range(2,len(keys)):
+    #         z = pd.merge(z,xx[keys[i]],how='left',on='Time')
+    #                      # suffixes=('',f'_{keys[i]}'))
+    #         z.fillna(value=0.,inplace=True)
+    #     keys = [key for key in z if key.startswith('Float_')]
+    #     z['sum'] = z[keys].apply(lambda x: sum(x), axis=1)
+    #     # z.drop(columns=keys,inplace=True)

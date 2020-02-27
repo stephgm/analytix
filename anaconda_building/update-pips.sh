@@ -19,4 +19,4 @@ $PREFIX/conda clean -a -y
 
 pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org --upgrade"
 
-$pcmd msgpack argparse urwid construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx orderedset objgraph pandastable altair altair-widgets seaborn-altair altair-recipes yerkes gencharts actdiag blockdiag nwdiag seqdiag arrow dill pathlib terminal-table tabulate pyinstaller removestar flynt ipytree
+$pcmd msgpack argparse urwid construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx orderedset objgraph pandastable altair altair-widgets seaborn-altair altair-recipes yerkes gencharts actdiag blockdiag nwdiag seqdiag arrow dill pathlib terminal-table tabulate pyinstaller removestar flynt ipytree pdfminer PyPDF2
