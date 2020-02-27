@@ -51,6 +51,8 @@ $pcmd actdiag blockdiag nwdiag seqdiag arrow dill pathlib
 #$pcmd modin vega_datasets pdvega
 #$pcmd ggplot pyggplot
 $pcmd terminal-table tabulate pyinstaller removestar flynt ipytree pdfminer PyPDF2
+# fix sphinx width
+sed 's|^body_max_width.*|body_max_width = none|g' /storage/data/local/lib/python3.7/site-packages/sphinx/themes/basic/theme.conf -i
 # for carpopy features
 $PREFIX/conda update --all -y
 $PREFIX/conda clean -a -y
