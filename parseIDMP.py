@@ -36,6 +36,7 @@ def read_IDMP(fpath,**kwargs):
     
     get_all = kwargs.get('get_all',True)
     lines = []
+    DIDs = []
     ladd = lines.append
     if os.path.isfile(fpath) and os.path.splitext(fpath)[-1] == '.pdf' and 'IDMP' in fpath:
         file_content = open(fpath,'rb')
@@ -71,15 +72,22 @@ def read_IDMP(fpath,**kwargs):
                         ladd(l)
             if first_data_items and last_data_items:
                 break
-                
-        RELEVANT_TEXT = lines[first_data_items:last_data_items]
-        
-        DIDs = list(map(lambda x:x.split(' ')[0],RELEVANT_TEXT))
-        if get_all:
-            DIDs = [d for d in DIDs if '-' in d and 'gti' not in d.lower()]
+        if first_data_items and last_data_items:
+            RELEVANT_TEXT = lines[first_data_items:last_data_items]
+            
+            DIDs = list(map(lambda x:x.split(' ')[0],RELEVANT_TEXT))
+            if get_all:
+                DIDs = [d for d in DIDs if '-' in d and 'gti' not in d.lower()]
+            else:
+                DIDs = [d for d in DIDs if '-' in d and 'gti' not in d.lower() and
+                        not '-pre-' in d.lower() and not d.lower().startswith('ee')]
         else:
-            DIDs = [d for d in DIDs if '-' in d and 'gti' not in d.lower() and
-                    not '-pre-' in d.lower() and not d.lower().startswith('ee')]
+            print('Could not find the relevant information needed to parse..  Returning []')
+    else:
+        print(''''The IDMP path given failed one or more of the following:\n 
+              1: not a valid file\n
+              2: not a pdf\n
+              3: the file does not contain the string 'IDMP'. ''')
         
     return DIDs
 
