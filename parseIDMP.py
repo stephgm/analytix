@@ -14,6 +14,8 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
 from pdfminer.layout import LAParams, LTTextBox, LTTextLine
 
+import time
+
 
 def read_IDMP(fpath,**kwargs):
     '''
@@ -34,6 +36,7 @@ def read_IDMP(fpath,**kwargs):
     
     get_all = kwargs.get('get_all',True)
     lines = []
+    ladd = lines.append
     if os.path.isfile(fpath) and os.path.splitext(fpath)[-1] == '.pdf' and 'IDMP' in fpath:
         file_content = open(fpath,'rb')
         
@@ -50,30 +53,28 @@ def read_IDMP(fpath,**kwargs):
         device = PDFPageAggregator(rsrcmgr, laparams=laparams)
         interpreter = PDFPageInterpreter(rsrcmgr, device)
 
+        first_data_items = 0
+        last_data_items = 0
         # Process each page contained in the document.
         for page in doc.get_pages():
             interpreter.process_page(page)
             layout = device.get_result()
             for lt_obj in layout:
                 if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
-                    lines += lt_obj.get_text().splitlines()
-        first_data_items = 0
-        last_data_items = 0
-        for i,thing in enumerate(lines):
-            if thing.lower().startswith('(u) index of data items'):
-                first_data_items = i+1
-                break
-        for i,thing in enumerate(lines):
-            if thing.lower().startswith('1.0 (u) introduction') and i > first_data_items:
-                last_data_items = i
+                    newlines = lt_obj.get_text().splitlines()
+                    for i,l in enumerate(newlines):
+                        if l.lower().startswith('(u) index of data items') and first_data_items == 0:
+                            first_data_items = i + len(lines) -1
+                        if l.lower().startswith('1.0 (u) introduction') and first_data_items\
+                            and len(lines) - 1 + i > first_data_items:
+                            last_data_items = i + len(lines) - 1
+                        ladd(l)
+            if first_data_items and last_data_items:
                 break
                 
         RELEVANT_TEXT = lines[first_data_items:last_data_items]
         
-        DID_Lines = []
-        for item in RELEVANT_TEXT:
-            DID_Lines+=item.splitlines()
-        DIDs = list(map(lambda x:x.split(' ')[0],DID_Lines))
+        DIDs = list(map(lambda x:x.split(' ')[0],RELEVANT_TEXT))
         if get_all:
             DIDs = [d for d in DIDs if '-' in d and 'gti' not in d.lower()]
         else:
@@ -84,6 +85,8 @@ def read_IDMP(fpath,**kwargs):
 
 
 if __name__ == '__main__':
-    fpath = ''
-    uu = read_IDMP(fpath,get_all=True)
+    fpath = '/home/klinetry/Desktop/GTI-07b_EC_Draft_2_IDMP.pdf'
+    start = time.time()
+    jj = read_IDMP(fpath,get_all=True)
+    print(time.time() - start)
     
