@@ -21,7 +21,7 @@ c:\anaconda3-b4\python -m pip --trusted-host pypi.python.org --trusted-host pypi
 rem dont work
 rem c:\anaconda3-b4\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install altair altair-widgets seaborn-altair altair-recipes yerkes gencharts
 :: John Weier's addtitions
-c:\anaconda3-b4\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install actdiag blockdiag nwdiag seqdiag arrow colorcet dill pathlib terminal-table tabulate removestar flynt pdfminer PyPDF2
+c:\anaconda3-b4\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install actdiag blockdiag nwdiag seqdiag arrow colorcet dill pathlib terminal-table tabulate removestar flynt pdfminer3k
 c:\anaconda3-b4\Scripts\conda.exe clean -a -y
 c:\anaconda3-b4\python.exe c:\tools\src\feature_download.py --output \anaconda3-b4\Lib\site-packages\cartopy\data physical
 c:\anaconda3-b4\python.exe c:\tools\src\feature_download.py --output \anaconda3-b4\Lib\site-packages\cartopy\data physical

@@ -39,7 +39,6 @@ cd $PREFIX
 ln -s x86_64-conda_cos6-linux-gnu-gcc ./gcc
 cd -
 $pcmd msgpack argparse urwid
-# pdfminer
 # PyGObject, veusz DNW, spyder-memory-profiler?
 $pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx orderedset objgraph pandastable cx-Freeze
 # upgrading
@@ -50,7 +49,7 @@ $pcmd actdiag blockdiag nwdiag seqdiag arrow dill pathlib
 #$pcmd -U ray
 #$pcmd modin vega_datasets pdvega
 #$pcmd ggplot pyggplot
-$pcmd terminal-table tabulate pyinstaller removestar flynt ipytree pdfminer PyPDF2
+$pcmd terminal-table tabulate pyinstaller removestar flynt ipytree pdfminer3k
 # fix sphinx width
 sed 's|^body_max_width.*|body_max_width = none|g' /storage/data/local/lib/python3.7/site-packages/sphinx/themes/basic/theme.conf -i
 # for carpopy features
