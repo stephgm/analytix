@@ -32,6 +32,7 @@ $PREFIX/conda config --set ssl_verify false
 pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org"
 $pcmd --upgrade pip
 ccmd="$PREFIX/conda install -y"
+$PREFIX/conda update --all -y
 # no R, no cuda stuff cuz it regresses python
 $ccmd gcc_impl_linux-64 gcc_linux-64 gfortran_impl_linux-64 gfortran_linux-64 binutils_linux-64 binutils_impl_linux-64 gsl gxx_impl_linux-64 gxx_linux-64 make cartopy swig line_profiler vispy boost cmake autopep8 hdf4 glib pyqtgraph pyopengl pyopengl-accelerate gobject-introspection pymssql autopep8 geopandas selenium mock nodejs holoviews datashader hvplot graphviz panel param xmltodict
 $ccmd -c spyder-ide spyder=4.0.1
@@ -53,7 +54,6 @@ $pcmd terminal-table tabulate pyinstaller removestar flynt ipytree pdfminer3k
 # fix sphinx width
 sed 's|^body_max_width.*|body_max_width = none|g' /storage/data/local/lib/python3.7/site-packages/sphinx/themes/basic/theme.conf -i
 # for carpopy features
-$PREFIX/conda update --all -y
 $PREFIX/conda clean -a -y
 # just run cartopyFeatures.py in the repo
 #$PREFIX/python feature_download.py --output /storage/data/local/lib/python3.7/site-packages/cartopy/data physical
