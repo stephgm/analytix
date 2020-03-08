@@ -46,15 +46,15 @@ def showSlaved(scale = 2):
     
     # Show Givens
     ax.add_patch(patches.Circle((0,0), radius = .03*scale,color=givencolor))
-    ax.plot([0,w],[0,0],color=givencolor)
-    ax.plot([w,w],[0,h],color=givencolor)
+    ax.plot([-w,w],[0,0],color=givencolor)
+    ax.plot([w,w],[-h,h],color=givencolor)
     
     widthoffsets = -.2*scale
-    ax.annotate('Width', xy=[w/2,.5*widthoffsets], xytext=[w/2,widthoffsets], 
+    ax.annotate('Width', xy=[0,.5*widthoffsets], xytext=[w/2,widthoffsets], 
             ha='center', va='bottom',
             bbox=dict(boxstyle='square', fc='white'),color=givencolor)
     plt.arrow(w/2,widthoffsets,0,-widthoffsets)
-    ax.annotate('Height', xy=[w+.5*widthoffsets,h/2],xytext=[w+widthoffsets,h/2],
+    ax.annotate('Height', xy=[w+.5*widthoffsets,0],xytext=[w+widthoffsets,h/2],
                 ha='center', va='bottom',
                 bbox=dict(boxstyle='square',fc='white'),color=givencolor)
     plt.arrow(w+widthoffsets,h/2,-widthoffsets,0)
