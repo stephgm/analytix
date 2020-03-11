@@ -41,7 +41,10 @@ ln -s x86_64-conda_cos6-linux-gnu-gcc ./gcc
 cd -
 $pcmd msgpack argparse urwid
 # PyGObject, veusz DNW, spyder-memory-profiler?
-$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx orderedset objgraph pandastable cx-Freeze
+$pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx objgraph pandastable
+# These 2 fail on the virtualbox build, dunno why but not that big a deal
+$pcmd orderedset || echo "orderedset failed, womp womp"
+$pcmd cx-Freeze || echo "cx-Freeze failed, womp womp"
 # upgrading
 #pcmd="$PREFIX/pip install --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org -U"
 $pcmd altair altair-widgets seaborn-altair altair-recipes yerkes gencharts

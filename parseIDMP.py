@@ -124,12 +124,12 @@ def read_IDMP(fpath,**kwargs):
 
 if __name__ == '__main__':
     # fpath = '/home/klinetry/Desktop/GTI-07b_EC_Draft_2_IDMP.pdf'
-    if True:
+    if False:
         start = time.time()
         fpath = '/home/klinetry/Desktop/GTI-20_Sprint_2_(JEON)_Draft_3_IDMP.pdf'
         jj = read_IDMP(fpath, get_mapping=True)
         print(time.time()-start)
-    if False:
+    if True:
         start = time.time()
         z = {}
         for path in map(os.path.realpath,sys.argv[1:]):
