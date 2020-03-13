@@ -2,3 +2,5 @@
 
 # to reset, equivalent to "hg update -C"
 # git reset --hard HEAD
+# DI2E repo
+# git clone https://bitbucket.di2e.net/scm/esia/esi-test-20200312.git
