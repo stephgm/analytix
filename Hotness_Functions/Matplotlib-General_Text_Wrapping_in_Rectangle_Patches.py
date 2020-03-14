@@ -229,10 +229,9 @@ def reshape_annotation_in_patch(annotation,patch,renderer):
             annotation.set_size(fontsize)
             
     
-def fix_text(event):
+def fix_text(axs):
     start = time.time()
     patchesdict = {}
-    axs = event.canvas.figure.axes
     #Make a mapping for each of the texts and patches
     for ax in axs:
         children = ax.properties()['children']
@@ -284,6 +283,7 @@ if __name__ == '__main__':
     ax.set_ylim((-0,gridsize))
     ax.get_xaxis().set_ticks([])
     ax.get_yaxis().set_ticks([])
+    fix_text(fig.get_axes())
     # plt.connect('resize_event', fix_text)
     plt.show()
 
