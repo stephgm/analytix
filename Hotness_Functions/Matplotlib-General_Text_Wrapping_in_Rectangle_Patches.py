@@ -9,7 +9,51 @@ import numpy as np
 import re
 from itertools import combinations
 import time
+import matplotlib.pyplot as plt
+import matplotlib
 
+plt.rcParams['toolbar'] = 'toolmanager'
+from matplotlib.backend_tools import ToolBase
+
+class FixStrings(ToolBase):
+    '''Fix words inside rectangle patches'''
+    # keyboard shortcut
+    default_keymap = 'w'
+    description = 'Wrap Text'
+
+    def trigger(self, *args, **kwargs):
+        axs = self.figure.get_axes()
+        start = time.time()
+        patchesdict = {}
+        #Make a mapping for each of the texts and patches
+        for ax in axs:
+            children = ax.properties()['children']
+            for child in children:
+                #extract the rectangle patches
+                if isinstance(child,matplotlib.patches.Rectangle):
+                    patchesdict[child] = []
+                #AFAIK everything after the spines is useless
+                if isinstance(child, matplotlib.spines.Spine):
+                    break
+            for patch in patchesdict:
+                #get the bounds of the patch
+                patchbbox = patch.get_bbox()
+                for child in children:
+                    #If its an annotation, check to see if it is inside the patch
+                    if isinstance(child,matplotlib.text.Annotation):
+                        annx,anny = child.get_position()
+                        if patchbbox.contains(annx,anny):
+                            patchesdict[patch].append(child)
+            print('setup done',time.time()-start)
+            start = time.time()
+            renderer = ax.figure.canvas.get_renderer()
+            for patch in patchesdict:
+                ## Looping over all annotations.. but hoping for just 1
+                #only supports 1 annotation currently...
+                for ann in patchesdict[patch]:
+                    reshape_annotation_in_patch(ann,patch,renderer)
+            print('reshaped',time.time()-start)
+        self.figure.canvas.draw()
 def get_max_lines(annotation,patch,renderer):
     '''
     Simple function... after a few hours of thinking about it.
@@ -220,14 +264,13 @@ def fix_text(event):
                 
                         
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    import matplotlib
     
     fig,ax = plt.subplots()
     
     rstrings = ['This is a long sentence written by Carl','This sentence contains a long word: Supercalifragilisticexpialidocious',
                 'This sentence contains normal size words','I am a short','what is this life']
-    
+    fig.canvas.manager.toolmanager.add_tool('Heatmap Word Wrap', FixStrings)
+    fig.canvas.manager.toolbar.add_tool('Heatmap Word Wrap', 'navigation', 1)
     width = 1
     height = 1
     gridsize = 4
@@ -241,7 +284,7 @@ if __name__ == '__main__':
     ax.set_ylim((-0,gridsize))
     ax.get_xaxis().set_ticks([])
     ax.get_yaxis().set_ticks([])
-    plt.connect('resize_event', fix_text)
+    # plt.connect('resize_event', fix_text)
     plt.show()
 
 
