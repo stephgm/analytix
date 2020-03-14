@@ -1,0 +1,17 @@
+these are the basic steps i took to get started
+
+django-admin startproject otaar
+
+cd otaar
+
+python manage.py runserver
+
+CTRL-C
+
+python manage.py startapp polls
+
+# edit polls/view.py
+python manage.py createsuperuser
+# browser http://localhost:8000/polls
+# browser http://localhost:8000/admin
+
