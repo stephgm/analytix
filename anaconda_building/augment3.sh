@@ -42,6 +42,7 @@ cd -
 $pcmd msgpack argparse urwid
 # PyGObject, veusz DNW, spyder-memory-profiler?
 $pcmd construct hexdump sysv_ipc pypcapfile python-pcapng avro python-pptx objgraph pandastable
+$pcmd sysv_ipc || echo "sysv_ipc failed, womp womp"
 # These 2 fail on the virtualbox build, dunno why but not that big a deal
 $pcmd orderedset || echo "orderedset failed, womp womp"
 $pcmd cx-Freeze || echo "cx-Freeze failed, womp womp"
