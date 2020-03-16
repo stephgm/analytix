@@ -13,8 +13,9 @@ Matplotlib Utils.  Contains a class that adds doodads to the mpl toolbar
 '''
 import sys
 import os
+import matplotlib.pyplot as plt
+plt.rcParams['toolbar'] = 'toolmanager'
 from matplotlib.backend_tools import ToolBase, ToolToggleBase
-
     
 if not hasattr(sys, 'frozen'):
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -23,7 +24,6 @@ if not hasattr(sys, 'frozen'):
         sys.path.pop(0)
 else:
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(sys.executable))
-print(RELATIVE_LIB_PATH)
 from PlotH5 import mplInteractive
 from PlotH5.mplUtils import PatchWordWrap
 
@@ -35,6 +35,7 @@ class FixStrings(ToolBase):
     # keyboard shortcut
     default_keymap = 'w'
     description = 'Wrap Text'
+    image = os.path.join(RELATIVE_LIB_PATH,'PlotH5','mplUtils','toolbarIcons','wordwrap.png')
 
     def trigger(self, *args, **kwargs):
         axs = self.figure.get_axes()
@@ -48,6 +49,7 @@ class EnableEditing(ToolToggleBase):
     default_keymap = 'E'
     description = 'Enable Editing for the current Figure'
     default_toggled = False
+    image = os.path.join(RELATIVE_LIB_PATH,'PlotH5','mplUtils','toolbarIcons','plotedit.png')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,6 +85,7 @@ class EnableEditing(ToolToggleBase):
         
 def add_Tool(fig,tools=[],**kwargs):
     if 'Heatmap Word Wrap' in tools:
+        print(fig.canvas.manager.toolmanager)
         fig.canvas.manager.toolmanager.add_tool('Heatmap Word Wrap', FixStrings)
         fig.canvas.manager.toolbar.add_tool('Heatmap Word Wrap', 'navigation', 3)
     if 'Editor' in tools:
