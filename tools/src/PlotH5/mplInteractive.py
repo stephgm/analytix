@@ -148,7 +148,7 @@ class TextOptions(Widgets.QDialog):
         self.artist.set_text(self.widgets['Text'].text())
         self.artist.set_color(namedcolorsRGBlookup[self.widgets['Text Color'].ColorCombo.currentText()])
         self.artist.set_fontsize(self.widgets['Text Size'].text())
-        self.artist.set_fontname({self.widgets['Text Font'].currentText()})
+        self.artist.set_fontname(self.widgets['Text Font'].currentText())
         self.artist.figure.canvas.draw()
         self.close()
 
@@ -392,53 +392,55 @@ class PatchesOptions(Widgets.QDialog):
         self.close()
 
 
-
-# fig,ax = plt.subplots()
-ann = []
-def on_pick(event):
-    if event.mouseevent.button == 1:
-        if isinstance(event.artist,matplotlib.text.Text):
-            text = event.artist
-            dialog = TextOptions(text)
-            dialog.exec_()
-
-        elif isinstance(event.artist,matplotlib.lines.Line2D):
-            line = event.artist
-            legend = event.artist.axes.legend()
-            dialog = Line2DOptions(line,legend)
-            dialog.exec_()
-
-        elif isinstance(event.artist,matplotlib.collections.PathCollection):
-            collection = event.artist
-            legend = event.artist.axes.legend()
-            dialog = CollectionsOptions(collection,legend)
-            dialog.exec_()
-
-        elif isinstance(event.artist,matplotlib.collections.PolyCollection):
-            patch = event.artist
-            dialog = PatchesOptions(patch)
-            dialog.exec_()
-
-        else:
-            print(event.artist)
-    elif event.mouseevent.button == 2:
-        try:
-            line = event.artist
-            xdata = line.get_xdata()
-            ydata = line.get_ydata()
-            ind = event.ind
-            ax = line.axes
-            ann = ax.annotate(line.get_label(),(xdata[ind[0]],ydata[ind[0]]))
-            ann_list.append(ann)
-            line.figure.canvas.draw()
-        except:
-            pass
+class Editing_Picker(object):
+    def __init__(self,*args,**kwargs):
+        self.ann_list = []
         
-def on_release(event):
-    for ann in ann_list:
-        ann.remove()
-        ann_list.remove(ann)
-    event.canvas.draw()
+    def on_pick(self,event):
+        if event.mouseevent.button == 1:
+            if isinstance(event.artist,matplotlib.text.Text):
+                text = event.artist
+                dialog = TextOptions(text)
+                dialog.exec_()
+    
+            elif isinstance(event.artist,matplotlib.lines.Line2D):
+                line = event.artist
+                legend = event.artist.axes.legend()
+                dialog = Line2DOptions(line,legend)
+                dialog.exec_()
+    
+            elif isinstance(event.artist,matplotlib.collections.PathCollection):
+                collection = event.artist
+                legend = event.artist.axes.legend()
+                dialog = CollectionsOptions(collection,legend)
+                dialog.exec_()
+    
+            elif isinstance(event.artist,matplotlib.collections.PolyCollection):
+                patch = event.artist
+                dialog = PatchesOptions(patch)
+                dialog.exec_()
+    
+            else:
+                print(event.artist)
+        elif event.mouseevent.button == 2:
+            try:
+                line = event.artist
+                xdata = line.get_xdata()
+                ydata = line.get_ydata()
+                ind = event.ind
+                ax = line.axes
+                ann = ax.annotate(line.get_label(),(xdata[ind[0]],ydata[ind[0]]))
+                self.ann_list.append(ann)
+                line.figure.canvas.draw()
+            except:
+                pass
+    
+    def on_release(self,event):
+        for ann in self.ann_list:
+            ann.remove()
+            self.ann_list.remove(ann)
+        event.canvas.draw()
+    
 
 # ax.scatter([1,2,3,4],[4,5,6,7],picker=5,label='FUN',c='red',cmap=None)
 # sc = ax.scatter([5,6,7,8],[4,5,6,7],picker=5,label='Not Fun',c=[1,2,3,4],cmap=plt.cm.get_cmap('flag'))
