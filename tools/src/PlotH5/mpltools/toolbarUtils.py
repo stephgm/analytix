@@ -426,7 +426,7 @@ class TextOptions(Widgets.QDialog):
         self.artist.set_text(self.widgets['Text'].text())
         self.artist.set_color(namedcolorsRGBlookup[self.widgets['Text Color'].ColorCombo.currentText()])
         self.artist.set_fontsize(self.widgets['Text Size'].text())
-        self.artist.set_fontname({self.widgets['Text Font'].currentText()})
+        self.artist.set_fontname(self.widgets['Text Font'].currentText())
         self.artist.figure.canvas.draw()
         self.close()
 
