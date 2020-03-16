@@ -81,8 +81,8 @@ else:
     RELATIVE_LIB_PATH = os.path.dirname(sys.executable)
 
 from misc_functions.numpy_utils import multiDims
-from PlotH5.mplInteractive import on_pick as mplIon_pick
-from PlotH5.mplInteractive import on_release as mplIon_release
+
+from PlotH5 import mplInteractive
 
 if not os.path.isfile(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy')):
     np.save(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy'),plt.imread(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.png')))
@@ -654,8 +654,9 @@ class Plotter(object):
                 fig.canvas.mpl_connect('pick_event',on_pick)
                 fig.canvas.mpl_connect('button_release_event',on_release)
             elif self.fig['picker_type'] == 'interactive':
-                fig.canvas.mpl_connect('pick_event',mplIon_pick)
-                fig.canvas.mpl_connect('button_release_event',mplIon_release)
+                xx = mplInteractive.Editing_Picker()
+                fig.canvas.mpl_connect('pick_event',xx.on_pick)
+                fig.canvas.mpl_connect('button_release_event',xx.on_release)
         if not self.fig['loose']:
             fig.tight_layout(rect=(0,0.03,1,0.97))
         if CANVAS:
