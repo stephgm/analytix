@@ -12,3 +12,4 @@ if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 import numpy
 import pandas
+from RandomStructGenerator import makeDF
