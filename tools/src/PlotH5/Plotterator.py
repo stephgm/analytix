@@ -81,7 +81,7 @@ else:
     RELATIVE_LIB_PATH = os.path.dirname(sys.executable)
 
 from misc_functions.numpy_utils import multiDims
-
+from PlotH5.mpltools.toolbarUtils import add_Tool
 from PlotH5 import mplInteractive
 
 if not os.path.isfile(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy')):
@@ -239,6 +239,8 @@ class Plotter(object):
         '''
         Initiates figure with some commonly used defaults.  Use kwargs to override.
         '''
+        self.tools = kwargs.get('tools',[])
+        
         self.fig = {'commands':[]}
         self.sub = {}
         self.lines = []
@@ -662,6 +664,8 @@ class Plotter(object):
         if CANVAS:
             return fig
         if PERSIST:
+            if self.tools:
+                add_Tool(fig,self.tools)
             fig.show()
         else:
             if SAVEPNG:
