@@ -9,7 +9,7 @@ Date            Author              Version Number          Modification
 26 NOV 2019     C.Marlow            1.1                     Added new picker type and kwarg for fig
 """
 
-versionNumber = 1.1
+versionNumber = 1.2
 
 import sys
 import os
@@ -239,8 +239,6 @@ class Plotter(object):
         '''
         Initiates figure with some commonly used defaults.  Use kwargs to override.
         '''
-        self.tools = kwargs.get('tools',[])
-        
         self.fig = {'commands':[]}
         self.sub = {}
         self.lines = []
@@ -261,6 +259,7 @@ class Plotter(object):
         self.fig['customlegend'] = None
         # list of axis that will share (zooming, panning, etc.)
         self.fig['sharing'] = []
+        self.fig['tools'] = kwargs.get('tools',[])
         # Whether or not to use tight layout
         self.fig['loose'] = kwargs.get('loose',False)
 
@@ -374,6 +373,9 @@ class Plotter(object):
                         self.sub[rowcol]['mapimg'] = 'bluemarblesd'
         if self.version < 1.1:
             self.fig['picker_type'] = 'original'
+        
+        if self.version < 1.2:
+            self.fig['tools'] = []
         self.version = versionNumber #updating Plot version.  Happens after all necessary changes happen
 
         # This ends the version discrepency handlin' as best we know, dingleberries remain below
@@ -665,7 +667,7 @@ class Plotter(object):
             return fig
         if PERSIST:
             if self.tools:
-                add_Tool(fig,self.tools)
+                add_Tool(fig,self.fig['tools'])
             fig.show()
         else:
             if SAVEPNG:
