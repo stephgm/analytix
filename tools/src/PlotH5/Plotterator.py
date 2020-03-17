@@ -375,7 +375,7 @@ class Plotter(object):
             self.fig['picker_type'] = 'original'
         
         if self.version < 1.2:
-            self.fig['tools'] = []
+            self.fig['tools'] = ['Editor']
         self.version = versionNumber #updating Plot version.  Happens after all necessary changes happen
 
         # This ends the version discrepency handlin' as best we know, dingleberries remain below
