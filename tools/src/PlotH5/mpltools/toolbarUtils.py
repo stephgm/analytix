@@ -25,7 +25,7 @@ if not hasattr(sys, 'frozen'):
 else:
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(sys.executable))
 from PlotH5 import mplInteractive
-from PlotH5.mplUtils import PatchWordWrap
+from PlotH5.mpltools import PatchWordWrap
 
 ### Heatmap Word Wrapping Toolbar
 
@@ -35,7 +35,7 @@ class FixStrings(ToolBase):
     # keyboard shortcut
     default_keymap = 'w'
     description = 'Wrap Text'
-    image = os.path.join(RELATIVE_LIB_PATH,'PlotH5','mplUtils','toolbarIcons','wordwrap.png')
+    image = os.path.join(RELATIVE_LIB_PATH,'PlotH5','mpltools','toolbarIcons','wordwrap.png')
 
     def trigger(self, *args, **kwargs):
         axs = self.figure.get_axes()
@@ -49,7 +49,7 @@ class EnableEditing(ToolToggleBase):
     default_keymap = 'E'
     description = 'Enable Editing for the current Figure'
     default_toggled = False
-    image = os.path.join(RELATIVE_LIB_PATH,'PlotH5','mplUtils','toolbarIcons','plotedit.png')
+    image = os.path.join(RELATIVE_LIB_PATH,'PlotH5','mpltools','toolbarIcons','plotedit.png')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -85,7 +85,6 @@ class EnableEditing(ToolToggleBase):
         
 def add_Tool(fig,tools=[],**kwargs):
     if 'Heatmap Word Wrap' in tools:
-        print(fig.canvas.manager.toolmanager)
         fig.canvas.manager.toolmanager.add_tool('Heatmap Word Wrap', FixStrings)
         fig.canvas.manager.toolbar.add_tool('Heatmap Word Wrap', 'navigation', 3)
     if 'Editor' in tools:

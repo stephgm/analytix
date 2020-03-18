@@ -666,7 +666,7 @@ class Plotter(object):
         if CANVAS:
             return fig
         if PERSIST:
-            if self.tools:
+            if self.fig['tools']:
                 add_Tool(fig,self.fig['tools'])
             fig.show()
         else:
@@ -1251,14 +1251,14 @@ class Plotter(object):
 
 if __name__ == '__main__':
     if True:
-        pltr = Plotter(combinelegend=True)
+        pltr = Plotter(combinelegend=True,picker=False,tools=['Editor'])
         ax = pltr.add_subplot()
         x = np.random.randint(0,100,20)
         y = np.random.randint(0,100,20)
         z = np.random.randint(0,100,20)
         pltr.plot(x,y,label='FML')
 #        pltr.parseCommand(ax,'text',[[.5,.5,'CarlIsAnIdiot']])
-        pltr.add_text(ax,'',[[.5,.5,'CarlIsAnIdiot']])
+        # pltr.add_text(ax,'',[[.5,.5,'CarlIsAnIdiot']])
                       #,c=x,cmap='jet')
 #        pltr.add_colorbar((0,0),'jet','Mine',x)
 #        pltr.parseCommand((0,0),'legend',[[]])
