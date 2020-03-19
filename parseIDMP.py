@@ -95,7 +95,7 @@ def read_IDMP(fpath,**kwargs):
                         value = line.split('(')[-1].split(')')[0]
                         if value[-1] in CapAlphabet:
                             value = value[:-1]
-                        key = DID.split('-')[-1][:2]
+                        key = DID.split('-')[-1][:-2]
                         mapdict['OSF'][key] = value
                     if '(' in line and ')...' in line and ('tpy2-' in DID.lower() or 'typ2-' in DID.lower()) and '-pre-' not in DID.lower():
                         value = line.split('(')[-1].split(')')[0]
@@ -136,10 +136,10 @@ if __name__ == '__main__':
             if os.path.isdir(path):
                 for infile in glob.glob(os.path.join(path,'*.pdf')):
                     print(infile)
-                    z[os.path.basename(infile)] = read_IDMP(infile,get_all=True)
-        # jj = read_IDMP(fpath,get_all=True)
+                    z[os.path.basename(infile)] = read_IDMP(infile,get_all=True,get_mapping=True)
+        # jj = read_IDMP(fpath,get_all=True,get_mapping=True)
         print(time.time() - start)
-        jj = []
-        for key in z:
-            jj.extend(z[key])
-        jj = sorted(map(str.lower,set(jj)))
+        # jj = []
+        # for key in z:
+        #     jj.extend(z[key])
+        # jj = sorted(map(str.lower,set(jj)))
