@@ -10,8 +10,8 @@ import numpy as np
 import re
 from itertools import combinations
 import matplotlib
-        
-        
+
+
 def create_bbox(blcorner,trcorner):
     '''
     Some patches in mpl do not have a .get_bbox call.. So this will make one
@@ -27,11 +27,11 @@ def get_max_lines(annotation,patch,renderer):
     the ideal scenario of splitting the text up with newlines.  If the ideal
     split is less than the number of words, we are onto something.  Else, this
     tells me that our maximum number of lines is the number of words - 1.
-    
+
     Input:
         annotation - the annotation class object from matplotlib
         patch - the Rectangle patch (Maybe the only one that works) class object form mpl
-    
+
     Kwargs:
         N/A
     Returns:
@@ -59,7 +59,7 @@ def get_max_lines(annotation,patch,renderer):
         blcorner = [center[0]-a/np.sqrt(2),center[1]-b/np.sqrt(2)]
         trcorner = [center[0]+a/np.sqrt(2),center[1]+b/np.sqrt(2)]
         patch_extent = create_bbox(blcorner, trcorner)
-        
+
     patch_width = patch_extent.width
     ogtext = annotation.get_text()
     stripped_text = ogtext.replace('\n',' ').replace('  ',' ').replace('  ',' ')
@@ -73,24 +73,24 @@ def get_max_lines(annotation,patch,renderer):
         return int(ideal_lines)
     else:
         return numwords-1
-    
-                
+
+
 
 def replace_substring_occurences(string,substring,replacement,occurences=[],**kwargs):
     '''
     This function replaces certain substring occurences with a replacement text
-    
+
     Input:
         string - the original string
         substring - the substring that you want to replace
         replacement - the string you want to substitute in
         occurences - list of ints of the occurence number that you want to replace
                      This is not zero indexed
-    
+
     Kwargs:
         allcombs - do every combination of occurences
         combs - do every combination of the passed occurences
-    
+
     Return:
         Returns a list of strings that follow the criteria.  Returns a list
         based solely on the fact of the combination kwargs
@@ -131,8 +131,8 @@ def replace_substring_occurences(string,substring,replacement,occurences=[],**kw
         y = f'{before}{replacement}{after}'
     slist.append(y)
     return slist
-                
-        
+
+
 def reshape_annotation_in_patch(annotation,patch,renderer):
     '''
     The goal of this function is to minimize the text in such a way that it
@@ -142,7 +142,7 @@ def reshape_annotation_in_patch(annotation,patch,renderer):
     #set the alignments to center
     annotation.set_horizontalalignment('center')
     annotation.set_verticalalignment('center')
-    
+
     #Get the extent of the patch in terms of matplotlib points
     if isinstance(patch,matplotlib.patches.Rectangle):
         goalbbox = patch.get_extents()
@@ -166,9 +166,9 @@ def reshape_annotation_in_patch(annotation,patch,renderer):
         blcorner = [center[0]-a/np.sqrt(2),center[1]-b/np.sqrt(2)]
         trcorner = [center[0]+a/np.sqrt(2),center[1]+b/np.sqrt(2)]
         goalbbox = create_bbox(blcorner, trcorner)
-    
+
     #set the annotation bbox center equal to the patches bbox center
-    
+
     if isinstance(patch,matplotlib.patches.Rectangle):
         offsets = np.array((patch.get_width(),patch.get_height()))
         blcorner = np.array(patch.get_xy())
@@ -177,26 +177,26 @@ def reshape_annotation_in_patch(annotation,patch,renderer):
         center = patch.center
     annotation.set_x(center[0])
     annotation.set_y(center[1])
-    
-    #Get the original text and fontsize in case we just want to reset everything 
+
+    #Get the original text and fontsize in case we just want to reset everything
     # when no solution is found
     ogtext = annotation.get_text()
     # ogfontsize = annotation.get_size()
-    
+
     #Strip all the new lines from the text, and make sure there are no double spaces
     stripped_text = ogtext.replace('\n',' ').replace('  ',' ').replace('  ',' ')
     annotation.set_text(stripped_text)
-    
-    
-    #setting the fontsize to 30.. this is the maximum font size that will show up
+
+
+    #setting the fontsize to 20.. this is the maximum font size that will show up
     #This also may be the greatest source of slowdown.. smaller = better
-    fontsize = 30
+    fontsize = 20
     annotation.set_size(fontsize)
-    
+
     #Assuming that the resulting annotation bounding box does not fit in the patch bounding box
     fits = False
     while fontsize > 2 and not fits:
-        
+
         #Getting the maximum number of lines
         maxlines = get_max_lines(annotation, patch, renderer)
         # if maxlines == 0:
@@ -205,13 +205,13 @@ def reshape_annotation_in_patch(annotation,patch,renderer):
         # else:
         #Finding all the locations of spaces (These have potential to be newlines)
         spacelocs = [m.start() for m in re.finditer(' ',stripped_text)]
-        
+
         #Get the length of text with no newlines
         phrase_len = len(stripped_text)
-        
+
         #This will house the occurences of spaces we want to convert to newlines
         occurences = []
-        
+
         #Loop over the maxlines... Find the ideal splitting location for a newline..
         #This may not be acceptable, because it could try to split a word..
         #So we find the space location that is closest to ideal split location
@@ -220,10 +220,13 @@ def reshape_annotation_in_patch(annotation,patch,renderer):
             ideal_split = (i*phrase_len)/maxlines
             index = np.argmin(np.abs(np.array(spacelocs)-ideal_split))
             occurences.append(index)
-            
+
         #Based on our split positions... we replace those occurences with newlines
-        nstring = replace_substring_occurences(stripped_text, ' ', '\n', occurences)[0]
-        
+        if occurences:
+            nstring = replace_substring_occurences(stripped_text, ' ', '\n', occurences)[0]
+        else:
+            nstring = stripped_text
+
         #Set the annotation text to this new string so we can get the Matplotlib
         #font point coordinates to test if it now fits inside the patch bounding box
         annotation.set_text(nstring)
@@ -233,15 +236,19 @@ def reshape_annotation_in_patch(annotation,patch,renderer):
             if not goalbbox.contains(corner[0],corner[1]):
                 fits = False
                 break
-            
+
         #If it doesn't fit... reduce fontsize by 1... and do it all again.
         if not fits:
             fontsize -= 1
             annotation.set_size(fontsize)
-            
-    
+        if fontsize == 2:
+            fits = True
+
+
 def fix_text(axs):
     patchesdict = {}
+    colfont = []
+    rowfont = []
     #Make a mapping for each of the texts and patches
     for ax in axs:
         renderer = ax.figure.canvas.get_renderer()
@@ -249,7 +256,10 @@ def fix_text(axs):
         for child in children:
             #extract the rectangle patches
             if isinstance(child,(matplotlib.patches.Rectangle,matplotlib.patches.Circle,matplotlib.patches.Ellipse)):
-                patchesdict[child] = []
+                bbox = child.get_bbox()
+                # Hack beacuse heatmaps aren't good
+                if bbox.containsx(0.5) or bbox.containsy(0.5):
+                    patchesdict[child] = []
             #AFAIK everything after the spines is useless
             if isinstance(child, matplotlib.spines.Spine):
                 break
@@ -268,7 +278,7 @@ def fix_text(axs):
                 blcorner = [center[0]-patch.width/2,center[1]-patch.height/2]
                 trcorner = [center[0]+patch.width/2,center[1]+patch.height/2]
                 patchbbox = create_bbox(blcorner,trcorner)
-                
+
             for child in children:
                 #If its an annotation, check to see if it is inside the patch
                 if isinstance(child,matplotlib.text.Annotation):
@@ -278,7 +288,21 @@ def fix_text(axs):
                 if isinstance(child, matplotlib.spines.Spine):
                     break
         for patch in patchesdict:
+            bbox = patch.get_bbox()
             ## Looping over all annotations.. but hoping for just 1
             #only supports 1 annotation currently...
             for ann in patchesdict[patch]:
                 reshape_annotation_in_patch(ann,patch,renderer)
+                if bbox.containsx(0.5):
+                    colfont.append(ann.get_size())
+                if bbox.containsy(0.5):
+                    rowfont.append(ann.get_size())
+        mincolfont = min(colfont)
+        minrowfont = min(rowfontfont)
+        for patch in patchesdict:
+            bbox = patch.get_bbox()
+            for ann in patchesdict[patch]:
+                if bbox.containsx(0.5):
+                    ann.set_size(mincolfont)
+                if bbox.containsy(0.5):
+                    ann.set_size(minrowfont)

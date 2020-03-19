@@ -373,7 +373,7 @@ class Plotter(object):
                         self.sub[rowcol]['mapimg'] = 'bluemarblesd'
         if self.version < 1.1:
             self.fig['picker_type'] = 'original'
-        
+
         if self.version < 1.2:
             self.fig['tools'] = ['Editor']
         self.version = versionNumber #updating Plot version.  Happens after all necessary changes happen
@@ -658,9 +658,8 @@ class Plotter(object):
                 fig.canvas.mpl_connect('pick_event',on_pick)
                 fig.canvas.mpl_connect('button_release_event',on_release)
             elif self.fig['picker_type'] == 'interactive':
-                xx = mplInteractive.Editing_Picker()
-                fig.canvas.mpl_connect('pick_event',xx.on_pick)
-                fig.canvas.mpl_connect('button_release_event',xx.on_release)
+                fig.canvas.mpl_connect('pick_event',mplInteractive.on_pick)
+                fig.canvas.mpl_connect('button_release_event',mplInteractive.on_release)
         if not self.fig['loose']:
             fig.tight_layout(rect=(0,0.03,1,0.97))
         if CANVAS:

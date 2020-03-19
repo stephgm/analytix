@@ -16,7 +16,7 @@ import os
 import matplotlib.pyplot as plt
 plt.rcParams['toolbar'] = 'toolmanager'
 from matplotlib.backend_tools import ToolBase, ToolToggleBase
-    
+
 if not hasattr(sys, 'frozen'):
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     if __name__ == '__main__':
@@ -41,7 +41,7 @@ class FixStrings(ToolBase):
         axs = self.figure.get_axes()
         PatchWordWrap.fix_text(axs)
         self.figure.canvas.draw()
-        
+
 ### Editor
 
 class EnableEditing(ToolToggleBase):
@@ -54,10 +54,10 @@ class EnableEditing(ToolToggleBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.connectionmade = False
+        self.xx = mplInteractive.Editing_Picker()
 
     def makeConnection(self):
         if not self.connectionmade:
-            self.xx = mplInteractive.Editing_Picker()
             self.figure.canvas.mpl_connect('pick_event',self.xx.on_pick)
             self.figure.canvas.mpl_connect('button_release_event',self.xx.on_release)
             self.connectionmade = True
@@ -78,12 +78,14 @@ class EnableEditing(ToolToggleBase):
             for child in children:
                 if 'set_picker' in child.__dir__():
                     child.set_picker(None)
-                    
-        
-        
+
+
+
 ### Add Tool to Toolbar Section
-        
+
 def add_Tool(fig,tools=[],**kwargs):
+    if not isinstance(tools,list):
+        tools = [tools]
     if 'Heatmap Word Wrap' in tools:
         fig.canvas.manager.toolmanager.add_tool('Heatmap Word Wrap', FixStrings)
         fig.canvas.manager.toolbar.add_tool('Heatmap Word Wrap', 'navigation', 3)

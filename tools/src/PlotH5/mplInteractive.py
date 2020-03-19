@@ -274,7 +274,7 @@ class Line2DOptions(Widgets.QDialog):
 
         self.widgets['Line Color'] = RGBAWidget(self.artist.get_color(),alpha=False,rgba=False)
 
-        self.buildCombo('Marker',['','.','*'],self.artist.get_marker())
+        self.buildCombo('Marker',['','o','x',',','*'],self.artist.get_marker())
         self.widgets['Marker Face Color'] = RGBAWidget(self.artist.get_markerfacecolor(),alpha=False,rgba=False)
         self.widgets['Marker Edge Color'] = RGBAWidget(self.artist.get_markeredgecolor(),alpha=False,rgba=False)
         self.widgets['Marker Size'] = Widgets.QLineEdit(str(self.artist.get_markersize()))
@@ -395,31 +395,31 @@ class PatchesOptions(Widgets.QDialog):
 class Editing_Picker(object):
     def __init__(self,*args,**kwargs):
         self.ann_list = []
-        
+
     def on_pick(self,event):
         if event.mouseevent.button == 1:
             if isinstance(event.artist,matplotlib.text.Text):
                 text = event.artist
                 dialog = TextOptions(text)
                 dialog.exec_()
-    
+
             elif isinstance(event.artist,matplotlib.lines.Line2D):
                 line = event.artist
                 legend = event.artist.axes.legend()
                 dialog = Line2DOptions(line,legend)
                 dialog.exec_()
-    
+
             elif isinstance(event.artist,matplotlib.collections.PathCollection):
                 collection = event.artist
                 legend = event.artist.axes.legend()
                 dialog = CollectionsOptions(collection,legend)
                 dialog.exec_()
-    
+
             elif isinstance(event.artist,matplotlib.collections.PolyCollection):
                 patch = event.artist
                 dialog = PatchesOptions(patch)
                 dialog.exec_()
-    
+
             else:
                 print(event.artist)
         elif event.mouseevent.button == 2:
@@ -434,13 +434,13 @@ class Editing_Picker(object):
                 line.figure.canvas.draw()
             except:
                 pass
-    
+
     def on_release(self,event):
         for ann in self.ann_list:
             ann.remove()
             self.ann_list.remove(ann)
         event.canvas.draw()
-    
+
 
 # ax.scatter([1,2,3,4],[4,5,6,7],picker=5,label='FUN',c='red',cmap=None)
 # sc = ax.scatter([5,6,7,8],[4,5,6,7],picker=5,label='Not Fun',c=[1,2,3,4],cmap=plt.cm.get_cmap('flag'))
