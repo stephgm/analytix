@@ -11,6 +11,7 @@ import sys
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
+import pandas as pd
 
 
 if not hasattr(sys, 'frozen'):
@@ -23,105 +24,136 @@ else:
 
 from PlotH5 import Plotterator
 
-def Spider_Plot(dictionary,outdir='',**kwargs):
+
+
+
+def Spider_Plot(metric_df,criteria,label,outdir='',**kwargs):
     '''
-    This function creates a spider plot.  Takes a dictionary of the form
-    d = {Label:{Metric Name1:value, Metric Name2:value2}, Label2: etc..}
+    This function creates a spider plot.  Takes a dataframe with the metrics as
+    the column names.  These values will be normalized with respect to the maximum
+    values for each metric.  The criteria is a dictionary with keys as the metrics,
+    which will contain a list of 2 values a minimum accepted value and maximum accepted
+    value.  These will be normalized wrt to the maximum values of the metric_df
+    and will be used to create the polygon patch in the plot.
     
     Input:
-        dictionary - a nested dictionary of the metric name then label (maybe missile_name)
-                     then the values (Which correspond to a ration pass/total)
-        outdir - The full path to save the pklplot
-        Kwargs:
-            outline - Make a circle outline to indicate 100% success, else create a line at 90 degrees
-            show - Show make the plot persist from plotterator
-            perp_annotation - make annotations perpindicular to the spokes, else parallel
-            **kwargs - Plotterator kwargs
-        Returns:
-            Returns nothing, just opens a plot.
+        metric_df - a dataframe that contains metrics as column names
+        criteria - a dictionary with metrics as keys that contain an iterable of min and max
+                   acceptable values.  criteria = {'Metric1':[min,max],'Metric2':[min,max]...}
+        outdir - the full path to the directory you want to save the pklplt and or xlsx file
+        
+    Kwargs:
+        outline - Make a circle outline to indicate the maximum value boundary
+        show - make the plot persist in plotterator
+        perp_annotation - make annotations perpindicular to the spokes, else parallel
+        export - True/False export the normalized dataframe to an xlsx file
+        **kwargs - Plotterator kwargs
+    Returns:
+        Returns nothing, makes a plotterated plot
     '''
+
     outline = kwargs.get('outline',True)
-    show = kwargs.get('show',True)
+    show = kwargs.get('show',False)
     perp_annotation = kwargs.get('perp_annotation',True)
-    if dictionary:
-        metric_num = len(dictionary[list(dictionary.keys())[0]])
-        item_num = len(dictionary.keys())
-        if metric_num:
-            totals = [0]*metric_num
-            angles = np.linspace(0,2*np.pi,metric_num+1)
-            # make the spokes
-            pltr = Plotterator.Plotter(**kwargs)
-            pax = pltr.add_subplot()
-            for angle in angles:
-                x = np.cos(angle)
-                y = np.sin(angle)
-                pltr.plot([0,x],[0,y],axid=pax,lw=2,ls='-',color='k')
-            if not outline:
-                pltr.plot([0,0],[0,1],axid=pax,lw=2,ls='--',color=(0,0,0,.5))
-                pltr.parseCommand(pax,'annotate',[['100%',(0,1)],dict(ha='center',va='bottom')])
-            else:
-                pltr.add_patch(pax, 'Circle', [[(0,0),1],dict(lw=1,edgecolor=(0,0,0,.5),label='100% Success',fill=False)])
-            for j,key in enumerate(dictionary):
-                xs = []
-                ys = []
-                for i,key2 in enumerate(dictionary[key]):
-                    if j == 0:
-                        textx = 1.4*np.cos(angles[i])
-                        texty = 1.4*np.sin(angles[i])
-                        rot = np.rad2deg(angles[i])
-                        if perp_annotation:
-                            if rot > 180 and rot < 360:
-                                rot += 180
-                            rot -= 90
-                            textx = 1.4*np.cos(angles[i])
-                            texty = 1.4*np.sin(angles[i])
-                            ha = 'center'
-                            va = 'center'
-                        else:
-                            if rot > 90 and rot < 270:
-                                rot += 180
-                            textx = 1.1*np.cos(angles[i])
-                            texty = 1.1*np.sin(angles[i])
-                            if angles[i] > np.pi/2 and angles[i] < 3*np.pi/2:
-                                ha = 'right'
-                                va = 'center'
-                            else:
-                                ha = 'left'
-                                va = 'center'
-                        
-                        pltr.parseCommand(pax,'annotate',[[key2,(textx,texty)],dict(rotation=rot,va=va,ha=ha,rotation_mode='anchor',zorder=2)])
-                    x = dictionary[key][key2]*np.cos(angles[i])
-                    y = dictionary[key][key2]*np.sin(angles[i])
-                    xs.append(x)
-                    ys.append(y)
-                    totals[i] += dictionary[key][key2]
-                xs.append(xs[0])
-                ys.append(ys[0])
-                pltr.plot(xs,ys,axid=pax,label=key,zorder=1)
-            #make the polygon of the averages
-            xs = []
-            ys = []
-            for i,total in enumerate(totals):
-                avg = total/item_num
-                x = avg*np.cos(angles[i])
-                y = avg*np.sin(angles[i])
-                xs.append(x)
-                ys.append(y)
-            pltr.add_patch(pax, 'Polygon', [[np.array([xs,ys]).T],dict(closed=True,facecolor=(1,0,1,1),edgecolor='k',lw=1)])
-            
-            pltr.parseCommand(pax,'set_aspect',[['equal']])
-            pltr.parseCommand(pax, 'set_xlim', [[-3,3]])
-            pltr.parseCommand(pax, 'set_ylim', [[-3,3]])
-            pltr.parseCommand(pax, 'legend', [[]])
-            pltr.parseCommand(pax, 'get_xaxis().set_visible',[[False]])
-            pltr.parseCommand(pax, 'get_yaxis().set_visible',[[False]])
-            save = os.path.isdir(os.path.dirname(outdir))
-            pltr.createPlot(outdir, PERSIST=show,SAVEPKL=save,SAVEPNG=save)
+    export = kwargs.get('export',True)
+    
+    if metric_df.shape[0]:
+        stat_df = metric_df.describe()
+        max_df = stat_df.loc['max']
+        min_df = stat_df.loc['min']
+        range_df = max_df - min_df
+        normalized_df = pd.DataFrame()
+        for metric in range_df.index:
+            normalized_df[metric] = (metric_df[metric] - min_df.loc[metric]) / range_df.loc[metric]
+        normalized_df = normalized_df.fillna(0)
+        polys = {}
+        metric_list = list(metric_df)
+        for metric in criteria:
+            if metric in metric_list:
+                metric_list.remove(metric)
+            if metric in min_df:
+                polys[metric] = (np.array(criteria[metric]) - min_df[metric])/range_df[metric]
+    
+        poly_df = pd.DataFrame(polys)
+        poly_df = poly_df.fillna(0)
+        num_metrics = poly_df.shape[1]
+        angles = np.linspace(0,2*np.pi,num_metrics+1)[:-1]
+        title = kwargs.pop('title',f'{label} Metric Evaluation')
+        pltr = Plotterator.Plotter(title=title,**kwargs)
+        pax = pltr.add_subplot()
+        for angle in angles:
+            x = np.cos(angle)
+            y = np.sin(angle)
+            pltr.plot([0,x],[0,y],axid=pax,lw=2,ls='-',color='k')
+        if not outline:
+            pltr.plot([0,0],[0,1],axid=pax,lw=2,ls='--',color=(0,0,0,.5))
+            pltr.parseCommand(pax,'annotate',[['Max Range',(0,1)],dict(ha='center',va='bottom')])
+        else:
+            pltr.add_patch(pax, 'Circle', [[(0,0),1],dict(lw=1,edgecolor=(0,0,0,.5),label='Max Boundary',fill=False)])
+        
+        for i in range(normalized_df.shape[0]):
+            vals = normalized_df.iloc[i].values
+            xs = list(vals*np.cos(angles))
+            ys = list(vals*np.sin(angles))
+            xs.append(xs[0])
+            ys.append(ys[0])
+            pltr.plot(xs,ys,axid=pax)
+        
+        min_poly = np.min(poly_df).values
+        max_poly = np.max(poly_df).values
+        
+        minpxs = min_poly*np.cos(angles)
+        minpys = min_poly*np.sin(angles)
+        maxpxs = max_poly*np.cos(angles)
+        maxpys = max_poly*np.sin(angles)
+        
+        pltr.add_patch(pax, 'Polygon', [[np.array([maxpxs,maxpys]).T],dict(closed=True,facecolor=(1,0,1,1),edgecolor='k',lw=1)])
+        pltr.add_patch(pax, 'Polygon', [[np.array([minpxs,minpys]).T],dict(closed=True,facecolor=(1,1,1,1),edgecolor='k',lw=1)])        
+    
+        pltr.parseCommand(pax,'set_aspect',[['equal']])
+        pltr.parseCommand(pax, 'set_xlim', [[-3,3]])
+        pltr.parseCommand(pax, 'set_ylim', [[-3,3]])
+        pltr.parseCommand(pax, 'legend', [[]])
+        pltr.parseCommand(pax, 'get_xaxis().set_visible',[[False]])
+        pltr.parseCommand(pax, 'get_yaxis().set_visible',[[False]])
+        save = os.path.isdir(outdir)
+        if save:
+            outfile = os.path.join(outdir,f'{label}_Metric_SpiderPlot.pklplt')
+            if export:
+                outxlsx = os.path.join(outdir,f'{label}_Normalized_Metrics.xlsx')
+        else:
+            outfile = ''
+            if export:
+                outxlsx = os.path.join(os.path.expanduser('~'),f'{label}_Normalized_Metrics.xlsx')
+                print('No valid out directory was given, but you still want to export the normalized values.  Exporting to {outxlsx}')
+        if export:
+            for metric in metric_list:
+                normalized_df[metric] = metric_df[metric]
+            normalized_df.to_excel(outxlsx)
+        pltr.createPlot(outdir, PERSIST=show,SAVEPKL=save,SAVEPNG=save)
+    
+        pltr.createPlot('', PERSIST=True)
+
+        return poly_df
+
 
 if __name__ == '__main__':
-    d = {'Scud-b':{'TOF':.3,'Burnout Time':.4,'Apogee':1.0,'Incredibly Long Title':.5,'HiggletyPiggley':.6},
-         'Scud-c':{'TOF':.5,'Burnout Time':.8,'Apogee':1.0,'Incredibly Long Title':.5,'HiggletyPiggley':.2}}
-    Spider_Plot(d,title='Spyder Plot for Missile IDs',tools=['Editor'],perp_annotation=False)
+    # d = {'Scud-b':{'TOF':.3,'Burnout Time':.4,'Apogee':1.0,'Incredibly Long Title':.5,'HiggletyPiggley':.6},
+         # 'Scud-c':{'TOF':.5,'Burnout Time':.8,'Apogee':1.0,'Incredibly Long Title':.5,'HiggletyPiggley':.2}}
+    # Spider_Plot(d,title='Spyder Plot for Missile IDs',tools=['Editor'],perp_annotation=False)
+    d = {}
+    criteria = {}
+    size = 1000
+    for key in 'Apogee Burnout TOF Precession_Rate Orientation'.split():
+        d[key] = np.random.randint(-10,5000,size)
+        criteria[key] = [np.average(d[key])*1.05,np.average(d[key])*.95]
+    metric_df = pd.DataFrame(d)
+    mname = ['ScudB']*size
+    mname[-1] = 'ScudC'
+    metric_df['Missile Name'] = np.array(mname)
+    
+    print(metric_df)
+    xx = Spider_Plot2(metric_df, criteria, 'Test',outdir = '/home/marlowcj/Desktop',export=True)
                         
                         
                         
