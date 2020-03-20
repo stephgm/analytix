@@ -140,10 +140,10 @@ def general_format_coord(current,other=None,llabel='',rlabel='',**kwargs):
             inv = other.transData.inverted()
             ax_coord = inv.transform(display_coord)
             coords = [tuple(ax_coord)+(llabel,),(x,y,rlabel)]
-            fcoords = ['{}: ({:.3f}, {:3f})'.format(l,tx,ty) for tx,ty,l in coords]
-            return ('{:<40}{}{:>}'.format(fcoords[0],space,fcoords[1]))
+            fcoords = [f'{l}: ({tx:.3f}, {ty:3f})' for tx,ty,l in coords]
+            return (f'{fcoords[0]:<40}{space}{fcoords[1]:>}')
         else:
-            return ('{:<40}'.format('{}: ({:.3f}, {:.3f})'.format(rlabel,x,y)))
+            return (f"{f'{rlabel}: ({x:.3f}, {y:.3f})':<40}")
     return format_coord
 
 ann_list = []
@@ -428,7 +428,7 @@ class Plotter(object):
                 elif 'mapplot' in self.sub[rowcol] and self.sub[rowcol]['mapplot']:
                     theaxes[rowcol] = fig.add_subplot(gs[rowcol[0]:rowcol[0]+self.sub[rowcol]['rowspan'],
                                                          rowcol[1]:rowcol[1]+self.sub[rowcol]['colspan']],
-                                                      projection=eval('ccrs.{}'.format(self.sub[rowcol]['mapproj']),{'ccrs':ccrs}))
+                                                      projection=eval(f"ccrs.{self.sub[rowcol]['mapproj']}",{'ccrs':ccrs}))
                     lonScale = None
                     if 'central_longitude' in self.sub[rowcol]['mapproj']:
                         cloc = self.sub[rowcol]['mapproj'].find('central_longitude')+len('central_longitude')+1
@@ -459,7 +459,7 @@ class Plotter(object):
                     if 'cmap' in line and line['cmap']:
                         line['cmap'] = plt.cm.get_cmap(line['cmap'])
                     if 'transform' in line:
-                        line['transform'] = eval('ccrs.{}'.format(line['transform']),{'ccrs':ccrs})
+                        line['transform'] = eval(f"ccrs.{line['transform']}",{'ccrs':ccrs})
                     sc = self.plotCall(theaxes[rowcol],line)
                     if line['plottype'] == 'plot':
                         setformat = True
@@ -470,7 +470,7 @@ class Plotter(object):
                             exec(execString,{'ccrs':ccrs},{'thisax':theaxes[rowcol]})
                 if 'patches' in self.sub[rowcol] and self.sub[rowcol]['patches']:
                     for patch in self.sub[rowcol]['patches']:
-                        execString = 'thisax.add_patch(mpatches.{})'.format(self.buildExecString(patch))
+                        execString = f'thisax.add_patch(mpatches.{self.buildExecString(patch)})'
                         thepatch = eval(execString,{'ccrs':ccrs,'mpatches':mpatches},{'thisax':theaxes[rowcol]})
                         if 'commands' in patch and patch['commands']:
                             for command in patch['commands']:
@@ -478,7 +478,7 @@ class Plotter(object):
                                 exec(execString,{'ccrs':ccrs,'mpatches':mpatches},{'thepatch':thepatch})
                 if 'texts' in self.sub[rowcol] and self.sub[rowcol]['texts']:
                     for text in self.sub[rowcol]['texts']:
-                        execString = 'thisax.text{}'.format(self.buildExecString(text))
+                        execString = f'thisax.text{self.buildExecString(text)}'
                         thetext = eval(execString,{'ccrs':ccrs},{'thisax':theaxes[rowcol]})
                         if 'commands' in text and text['commands']:
                             for command in text['commands']:
@@ -490,7 +490,7 @@ class Plotter(object):
                             if 'cmap' in line and line['cmap']:
                                 line['cmap'] = plt.cm.get_cmap(line['cmap'])
                             if 'transform' in line:
-                                line['transform'] = eval('ccrs.{}'.format(line['transform']),{'ccrs':ccrs})
+                                line['transform'] = eval(f"ccrs.{line['transform']}",{'ccrs':ccrs})
                             sc = self.plotCall(othAx[t],line)
                             if line['plottype'] == 'plot':
                                 setformat = True
@@ -501,7 +501,7 @@ class Plotter(object):
                                     exec(execString,{'ccrs':ccrs},{'othAx':othAx,'t':t})
                         if 'patches' in self.sub[t] and self.sub[t]['patches']:
                             for patch in self.sub[t]['patches']:
-                                execString = 'othAx[t].add_patch(mpatches.{})'.format(self.buildExecString(patch))
+                                execString = f'othAx[t].add_patch(mpatches.{self.buildExecString(patch)})'
                                 thepatch = eval(execString,{'ccrs':ccrs,'mpatches':mpatches},{'othAx':othAx,'t':t})
                                 if 'commands' in patch and patch['commands']:
                                     for command in patch['commands']:
@@ -509,7 +509,7 @@ class Plotter(object):
                                         exec(execString,{'ccrs':ccrs,'mpatches':mpatches},{'thepatch':thepatch})
                         if 'texts' in self.sub[rowcol] and self.sub[rowcol]['texts']:
                             for text in self.sub[rowcol]['texts']:
-                                execString = 'othAx[t].text{}'.format(self.buildExecString(text))
+                                execString = f'othAx[t].text{self.buildExecString(text)}'
                                 thetext = eval(execString,{'ccrs':ccrs},{'othAx':othAx,'t':t})
                                 if 'commands' in text and text['commands']:
                                     for command in text['commands']:
@@ -534,7 +534,7 @@ class Plotter(object):
                         l+=l1
                 if 'customlegend' in self.sub[rowcol] and self.sub[rowcol]['customlegend']:
                     h,l = self.sub[rowcol]['customlegend']
-                    h = [eval('Line2D(hndl[0],hndl[1],{})'.format(self.buildKwargs(hndl[2])[:-1]),{'Line2D':Line2D},{'hndl':hndl})
+                    h = [eval(f'Line2D(hndl[0],hndl[1],{self.buildKwargs(hndl[2])[:-1]})',{'Line2D':Line2D},{'hndl':hndl})
                               for hndl in h]
                 if self.sub[rowcol]['commands']:
                     for command in self.sub[rowcol]['commands']:
@@ -584,12 +584,12 @@ class Plotter(object):
                 if 'mapplot' in self.sub[rowcol] and 'features' in self.sub[rowcol] and self.sub[rowcol]['features']:
                     for feature in self.sub[rowcol]['features']:
                         featOfStrength = cfeature.ShapelyFeature(Reader(os.path.join(CfgDir,feature['fname'])).geometries(),
-                                                                 eval('ccrs.{}'.format(feature['transform']),{'ccrs':ccrs}),
+                                                                 eval(f"ccrs.{feature['transform']}",{'ccrs':ccrs}),
                                                                  **feature['kwargs'])
                         theaxes[rowcol].add_feature(featOfStrength)
                 if 'mapplot' in self.sub[rowcol] and 'cfeatures' in self.sub[rowcol] and self.sub[rowcol]['cfeatures']:
                     for feature in self.sub[rowcol]['cfeatures']:
-                        featOfStrength = eval('cfeature.{}'.format(feature['fname']),{'cfeature':cfeature})
+                        featOfStrength = eval(f"cfeature.{feature['fname']}",{'cfeature':cfeature})
                         theaxes[rowcol].add_feature(featOfStrength)
                 if 'table' in self.sub[rowcol] and self.sub[rowcol]['table']:
                     self.fig['loose'] = True
@@ -613,7 +613,7 @@ class Plotter(object):
         figl = []
         if 'customlegend' in self.fig and self.fig['customlegend']:
             figh, figl = self.fig['customlegend']
-            figh = [eval('Line2D(hndl[0],hndl[1],{})'.format(self.buildKwargs(hndl[2])[:-1]),{'Line2D':Line2D},{'hndl':hndl})
+            figh = [eval(f'Line2D(hndl[0],hndl[1],{self.buildKwargs(hndl[2])[:-1]})',{'Line2D':Line2D},{'hndl':hndl})
                     for hndl in figh]
         if self.fig['commands']:
             for command in self.fig['commands']:
@@ -651,7 +651,7 @@ class Plotter(object):
         if 'sharing' in self.fig and self.fig['sharing']:
             for share in self.fig['sharing']:
                 if share['source'] in self.sub and share['target'] in self.sub:
-                    execString = 'ax1.get_shared_{}_axes().join(ax1,ax2)'.format(share['axis'])
+                    execString = f"ax1.get_shared_{share['axis']}_axes().join(ax1,ax2)"
                     exec(execString,{},{'ax1':theaxes[share['target']],'ax2':theaxes[share['source']]})
         if self.fig['picker']:
             if self.fig['picker_type'] == 'original':
@@ -978,7 +978,7 @@ class Plotter(object):
                     cnt += 1
             newref = axid+(cnt,)
             self.initAxes(newref, 1, 1)
-            self.parseCommand(newref,'twin{}'.format(axis),[kwargs])
+            self.parseCommand(newref,f'twin{axis}',[kwargs])
             return newref
         else:
             print('Invalid axis reference')
@@ -998,7 +998,7 @@ class Plotter(object):
 
     def add_map(self,filename,axid=(0,0),**kwargs):
         if filename.lower() not in BlueMarbleImg:
-            print('{} not in dictionary'.format(filename.lower()))
+            print(f'{filename.lower()} not in dictionary')
         elif axid not in self.sub:
             print('Invalid axis reference')
         elif not self.sub[axid]['mapplot']:
@@ -1047,7 +1047,7 @@ class Plotter(object):
 
     def add_feature(self,filename,transform,axid=(0,0),**kwargs):
         if not os.path.isfile(os.path.join(CfgDir,filename[lenCfgDir:])):
-            print('{} not in cartopy config dir'.format(filename))
+            print(f'{filename} not in cartopy config dir')
         elif axid not in self.sub:
             print('Invalid axis reference')
         elif not self.sub[axid]['mapplot']:

@@ -43,7 +43,7 @@ if __name__ == '__main__':
     x = makeDF()
     # y = makeDictArray()
     # z = makeStructArray()
-    
+
     # xx = {}
     # for uid in pd.unique(x['Integer']):
     #     idx = x['Integer'] == uid
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     #                             # 'Integer':x.loc[idx,'Integer'],
     #                             f'Float_{uid}':x.loc[idx,'Float']})
     #     xx[uid].sort_values('Time',inplace=True)
-    
+
     # if len(xx) > 1:
     #     keys = list(xx)
     #     z = pd.merge(xx[keys[0]],xx[keys[1]],
