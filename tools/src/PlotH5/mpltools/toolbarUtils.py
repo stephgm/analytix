@@ -58,14 +58,20 @@ class EnableEditing(ToolToggleBase):
 
     def makeConnection(self):
         if not self.connectionmade:
-            self.figure.canvas.mpl_connect('pick_event',self.xx.on_pick)
-            self.figure.canvas.mpl_connect('button_release_event',self.xx.on_release)
+            self.cid_pe = self.figure.canvas.mpl_connect('pick_event',self.xx.on_pick)
+            self.cid_bre = self.figure.canvas.mpl_connect('button_release_event',self.xx.on_release)
             self.connectionmade = True
 
     def enable(self, *args):
         self.makeConnection()
         axs = self.figure.get_axes()
+        fig_children = self.figure.properties()['children']
+        for child in fig_children:
+            if 'set_picker' in child.__dir__():
+                child.set_picker(5)
         for ax in axs:
+            ax.set_ylabel(ax.get_ylabel(),picker=5)
+            ax.set_xlabel(ax.get_xlabel(),picker=5)
             children = ax.properties()['children']
             for child in children:
                 if 'set_picker' in child.__dir__():
@@ -73,12 +79,20 @@ class EnableEditing(ToolToggleBase):
 
     def disable(self, *args):
         axs = self.figure.get_axes()
+        fig_children = self.figure.properties()['children']
+        for child in fig_children:
+            if 'set_picker' in child.__dir__():
+                child.set_picker(None)
         for ax in axs:
+            ax.set_ylabel(ax.get_ylabel(),picker=None)
+            ax.set_xlabel(ax.get_ylabel(),picker=None)
             children = ax.properties()['children']
             for child in children:
                 if 'set_picker' in child.__dir__():
                     child.set_picker(None)
-
+        self.figure.canvas.mpl_disconnect(self.cid_pe)
+        self.figure.canvas.mpl_disconnect(self.cid_bre)
+        self.connectionmade = False
 
 
 ### Add Tool to Toolbar Section

@@ -28,344 +28,7 @@ else:
     RELATIVE_LIB_PATH = os.path.dirname(sys.executable)
 
 from PlotH5 import Plotterator
-
-
-
-marker_to_array = {'.': np.array([[ 0.        , -0.25      ],
-        [ 0.06630078, -0.25      ],
-        [ 0.12989497, -0.22365842],
-        [ 0.1767767 , -0.1767767 ],
-        [ 0.22365842, -0.12989497],
-        [ 0.25      , -0.06630078],
-        [ 0.25      ,  0.        ],
-        [ 0.25      ,  0.06630078],
-        [ 0.22365842,  0.12989497],
-        [ 0.1767767 ,  0.1767767 ],
-        [ 0.12989497,  0.22365842],
-        [ 0.06630078,  0.25      ],
-        [ 0.        ,  0.25      ],
-        [-0.06630078,  0.25      ],
-        [-0.12989497,  0.22365842],
-        [-0.1767767 ,  0.1767767 ],
-        [-0.22365842,  0.12989497],
-        [-0.25      ,  0.06630078],
-        [-0.25      ,  0.        ],
-        [-0.25      , -0.06630078],
-        [-0.22365842, -0.12989497],
-        [-0.1767767 , -0.1767767 ],
-        [-0.12989497, -0.22365842],
-        [-0.06630078, -0.25      ],
-        [ 0.        , -0.25      ],
-        [ 0.        , -0.25      ]]), 
-    ',': np.array([[-0.49999, -0.49999],
-        [ 0.50001, -0.49999],
-        [ 0.50001,  0.50001],
-        [-0.49999,  0.50001],
-        [-0.49999, -0.49999]]), 
-    'o': np.array([[ 0.        , -0.5       ],
-        [ 0.13260155, -0.5       ],
-        [ 0.25978994, -0.44731685],
-        [ 0.35355339, -0.35355339],
-        [ 0.44731685, -0.25978994],
-        [ 0.5       , -0.13260155],
-        [ 0.5       ,  0.        ],
-        [ 0.5       ,  0.13260155],
-        [ 0.44731685,  0.25978994],
-        [ 0.35355339,  0.35355339],
-        [ 0.25978994,  0.44731685],
-        [ 0.13260155,  0.5       ],
-        [ 0.        ,  0.5       ],
-        [-0.13260155,  0.5       ],
-        [-0.25978994,  0.44731685],
-        [-0.35355339,  0.35355339],
-        [-0.44731685,  0.25978994],
-        [-0.5       ,  0.13260155],
-        [-0.5       ,  0.        ],
-        [-0.5       , -0.13260155],
-        [-0.44731685, -0.25978994],
-        [-0.35355339, -0.35355339],
-        [-0.25978994, -0.44731685],
-        [-0.13260155, -0.5       ],
-        [ 0.        , -0.5       ],
-        [ 0.        , -0.5       ]]), 
-    'v': np.array([[-6.123234e-17, -5.000000e-01],
-        [ 5.000000e-01,  5.000000e-01],
-        [-5.000000e-01,  5.000000e-01],
-        [-6.123234e-17, -5.000000e-01]]), 
-    '^': np.array([[ 0. ,  0.5],
-        [-0.5, -0.5],
-        [ 0.5, -0.5],
-        [ 0. ,  0.5]]), 
-    '<': np.array([[-5.000000e-01,  3.061617e-17],
-        [ 5.000000e-01, -5.000000e-01],
-        [ 5.000000e-01,  5.000000e-01],
-        [-5.000000e-01,  3.061617e-17]]), 
-    '>': np.array([[ 5.00000000e-01, -9.18485099e-17],
-        [-5.00000000e-01,  5.00000000e-01],
-        [-5.00000000e-01, -5.00000000e-01],
-        [ 5.00000000e-01, -9.18485099e-17]]), 
-    '1': np.array([[ 0.  ,  0.  ],
-        [ 0.  , -0.5 ],
-        [ 0.  ,  0.  ],
-        [ 0.4 ,  0.25],
-        [ 0.  ,  0.  ],
-        [-0.4 ,  0.25]]), 
-    '2': np.array([[ 0.000000e+00,  0.000000e+00],
-        [ 6.123234e-17,  5.000000e-01],
-        [ 0.000000e+00,  0.000000e+00],
-        [-4.000000e-01, -2.500000e-01],
-        [ 0.000000e+00,  0.000000e+00],
-        [ 4.000000e-01, -2.500000e-01]]), 
-    '3': np.array([[ 0.00000000e+00,  0.00000000e+00],
-        [-5.00000000e-01,  9.18485099e-17],
-        [ 0.00000000e+00,  0.00000000e+00],
-        [ 2.50000000e-01, -4.00000000e-01],
-        [ 0.00000000e+00,  0.00000000e+00],
-        [ 2.50000000e-01,  4.00000000e-01]]), 
-    '4': np.array([[ 0.000000e+00,  0.000000e+00],
-        [ 5.000000e-01, -3.061617e-17],
-        [ 0.000000e+00,  0.000000e+00],
-        [-2.500000e-01,  4.000000e-01],
-        [ 0.000000e+00,  0.000000e+00],
-        [-2.500000e-01, -4.000000e-01]]), 
-    '8': np.array([[-0.19134172,  0.46193977],
-        [-0.46193977,  0.19134172],
-        [-0.46193977, -0.19134172],
-        [-0.19134172, -0.46193977],
-        [ 0.19134172, -0.46193977],
-        [ 0.46193977, -0.19134172],
-        [ 0.46193977,  0.19134172],
-        [ 0.19134172,  0.46193977],
-        [-0.19134172,  0.46193977]]), 
-    's': np.array([[-0.5, -0.5],
-        [ 0.5, -0.5],
-        [ 0.5,  0.5],
-        [-0.5,  0.5],
-        [-0.5, -0.5]]), 
-    'p': np.array([[ 3.06161700e-17,  5.00000000e-01],
-        [-4.75528258e-01,  1.54508497e-01],
-        [-2.93892626e-01, -4.04508497e-01],
-        [ 2.93892626e-01, -4.04508497e-01],
-        [ 4.75528258e-01,  1.54508497e-01],
-        [ 1.53080850e-16,  5.00000000e-01]]), 
-    '*': np.array([[ 3.06161700e-17,  5.00000000e-01],
-        [-1.12256991e-01,  1.54508493e-01],
-        [-4.75528258e-01,  1.54508497e-01],
-        [-1.81635627e-01, -5.90169926e-02],
-        [-2.93892626e-01, -4.04508497e-01],
-        [-3.50830079e-17, -1.90983000e-01],
-        [ 2.93892626e-01, -4.04508497e-01],
-        [ 1.81635627e-01, -5.90169926e-02],
-        [ 4.75528258e-01,  1.54508497e-01],
-        [ 1.12256991e-01,  1.54508493e-01],
-        [ 1.53080850e-16,  5.00000000e-01]]), 
-    'h': np.array([[ 3.06161700e-17,  5.00000000e-01],
-        [-4.33012702e-01,  2.50000000e-01],
-        [-4.33012702e-01, -2.50000000e-01],
-        [-9.18485099e-17, -5.00000000e-01],
-        [ 4.33012702e-01, -2.50000000e-01],
-        [ 4.33012702e-01,  2.50000000e-01],
-        [ 1.53080850e-16,  5.00000000e-01]]), 
-    'H': np.array([[-2.50000000e-01,  4.33012702e-01],
-        [-5.00000000e-01,  2.22044605e-16],
-        [-2.50000000e-01, -4.33012702e-01],
-        [ 2.50000000e-01, -4.33012702e-01],
-        [ 5.00000000e-01, -3.05311332e-16],
-        [ 2.50000000e-01,  4.33012702e-01],
-        [-2.50000000e-01,  4.33012702e-01]]), 
-    '+': np.array([[-0.5,  0. ],
-        [ 0.5,  0. ],
-        [ 0. , -0.5],
-        [ 0. ,  0.5]]), 
-    'x': np.array([[-0.5, -0.5],
-        [ 0.5,  0.5],
-        [-0.5,  0.5],
-        [ 0.5, -0.5]]), 
-    'D': np.array([[-5.55111512e-17, -7.07106781e-01],
-        [ 7.07106781e-01,  0.00000000e+00],
-        [ 5.55111512e-17,  7.07106781e-01],
-        [-7.07106781e-01,  1.11022302e-16],
-        [-5.55111512e-17, -7.07106781e-01]]), 
-    'd': np.array([[-3.33066907e-17, -7.07106781e-01],
-        [ 4.24264069e-01,  0.00000000e+00],
-        [ 2.22044605e-17,  7.07106781e-01],
-        [-4.24264069e-01,  1.11022302e-16],
-        [-3.33066907e-17, -7.07106781e-01]]), 
-    '|': np.array([[ 0. , -0.5],
-        [ 0. ,  0.5]]), 
-    '_': np.array([[ 5.000000e-01, -3.061617e-17],
-        [-5.000000e-01,  3.061617e-17]]), 
-    'P': np.array([[-0.16666667, -0.5       ],
-        [ 0.16666667, -0.5       ],
-        [ 0.16666667, -0.16666667],
-        [ 0.5       , -0.16666667],
-        [ 0.5       ,  0.16666667],
-        [ 0.16666667,  0.16666667],
-        [ 0.16666667,  0.5       ],
-        [-0.16666667,  0.5       ],
-        [-0.16666667,  0.16666667],
-        [-0.5       ,  0.16666667],
-        [-0.5       , -0.16666667],
-        [-0.16666667, -0.16666667],
-        [-0.16666667, -0.5       ]]), 
-    'X': np.array([[-0.25, -0.5 ],
-        [ 0.  , -0.25],
-        [ 0.25, -0.5 ],
-        [ 0.5 , -0.25],
-        [ 0.25,  0.  ],
-        [ 0.5 ,  0.25],
-        [ 0.25,  0.5 ],
-        [ 0.  ,  0.25],
-        [-0.25,  0.5 ],
-        [-0.5 ,  0.25],
-        [-0.25,  0.  ],
-        [-0.5 , -0.25],
-        [-0.25, -0.5 ]])}
-
-
-
-
-
-def determineMarker(lineObj):
-    '''
-    Function takes in a line object from axes.properties()['children'],
-    but specifically this object must be a path.PathCollection (or scatter plot).
-    Since the markers are stored as class instances, we need to compare them with
-    extracted values.
-    Input:
-        lineObj - path.PathCollection object
-    Kwargs:
-        N/A
-    Return:
-        Returns the marker type of a scatter plot.  If it cannot be discerned 'o' will
-        be returned
-    '''
-    arr = lineObj.get_paths()[0].vertices
-    for symb in marker_to_array:
-        if not arr.shape == marker_to_array[symb].shape:
-            continue
-        idx = np.allclose(marker_to_array[symb],arr)
-        if idx :
-            return symb
-    return 'o'
-
-def getTickLabels(axesobj,axes):
-    '''
-    This will look at an axes ticklabels and return the list of normal string values
-    
-    Input:
-        axesobj - Matpltolib axes object
-        axes - either 'x' or 'y' for x or y ticklabels
-    Kwargs:
-        N/A
-        
-    '''
-    textobjs = eval(f'axesobj.get_{axes}ticklabels()')
-    labels = []
-    rt = False
-    for t in textobjs:
-        labels.append(t._text)
-    for label in labels:
-        if label:
-            rt = True
-            break
-    if rt:
-        return labels
-    else:
-        return []
-    
-def getAxid(geometry):
-    '''
-    This function takes an Axes geometry, which is found in the 
-    axes.properties()['geometry']
-    and returns the gridspec Id in terms that Plotterator stores it's axid
-    
-    Input:
-        geometry - axes.properties()['geometry'] tuple
-    Kwargs:
-        N/A
-    Returns:
-        The row and column in which the plot should be located in a Plotterator fig.
-    '''
-    rows = geometry[0]
-    cols = geometry[1]
-    pos = geometry[2]
-    npos = pos
-    j = 0
-    while npos > cols:
-        npos = npos - cols
-        j+=1
-    else:
-        npos = npos - cols
-        j+=1
-    row = j-1
-    col = npos + cols - 1
-    return (row,col)
-
-def getSpan(subgridspec,geometry):
-    rows = geometry[0]
-    cols = geometry[1]
-    start = subgridspec.num1+1
-    end = subgridspec.num2+1
-    s = getAxid([rows,cols,start])
-    e = getAxid([rows,cols,end])
-    return tuple(np.array(e)-np.array(s)+1)
-
-def getGetsandSets(obj):
-    sets = []
-    attrdict = {}
-    for o in dir(obj):
-        if o.startswith('_set') or o.startswith('set'):
-            if 'set_data' in o:
-                continue
-            if '_setstate' in o:
-                continue
-            if 'set_paths' in o:
-                continue
-            if o == 'set':
-                continue
-            sets.append(o)
-    for s in sets:
-        for o in dir(obj):
-            if s.startswith('_set'):
-                checkstr = s.split('_set_')[-1]
-            elif s.startswith('set'):
-                checkstr = s.split('set_')[-1]
-            if o.startswith('_get'):
-                checkdir = o.split('_get_')[-1]
-            elif o.startswith('get'):
-                checkdir = o.split('get_')[-1]
-            else:
-                checkdir = o
-            if checkdir == checkstr:
-                attrdict[o] = s
-            
-            # Stupid special cases that I've noticed
-            # For wedges
-            if o == 'r' and checkstr == 'radius':
-                attrdict[o] = s
-    return attrdict
-                
-def has_twin(ax):
-    '''
-    Currently just tells if there is a twin or not..  Doesn't tell x or y.
-    
-    Loops over the axes in the figure and sees if the bounding box of the passed
-    axes is equivalent to any of the other axes.  If so, I'm assuming that they are
-    twinned.
-    Input:
-        ax - Matplotlib axes to check whether it has a twin
-    Kwargs:
-        N/A
-    Return:
-        Return [True,False]
-    '''
-    for other_ax in ax.figure.axes:
-        if other_ax is ax:
-            continue
-        if other_ax.bbox.bounds == ax.bbox.bounds:
-            return True
-    return False
+from PlotH5.mpltools import mplUtils as mplu
 
 def setFigAxes(obj,cmd,PlotteratorObj,attr):
     '''
@@ -471,54 +134,6 @@ def setPatch(axid,obj,cmd,PlotteratorObj,attr):
         if debug:
             print(f'{cmd} failed')
             
-def determineAxesType(axes):
-    '''
-    This function takes in a matplotlib axes object.  Determines the type of axes
-    that it is.
-    
-    Input:
-        axes - Matpotlib axes object
-    Kwargs:
-        N/A
-    Returns:
-        Returns a string based off the axes type.
-        3D - A 3D axes
-        geo - a cartopy axes
-        normal - neither of the other two
-    '''
-    if '3D' in str(type(axes)):
-        return '3D'
-    elif isinstance(axes,cartopy.mpl.geoaxes.GeoAxesSubplot):
-        return 'geo'
-    else:
-        return 'normal'
-    
-def parseCartopyTransform(child):
-    '''
-    This should only get called if mapplot = True, thus the following
-    code should work, however, I have noticed that some objects don't have
-    a _a.source_projection attribute.
-    
-    Input:
-        child - A child from an axes.properties()['children'] list
-        
-    Kwargs:
-        N/A
-    
-    Return:
-        Returns the string of the cartopy projection in a way plotterator wants it.
-        Returns PlateCarree if it cannot be discerned
-    '''
-    
-    try:
-        proj = str(type(child._transform._a.source_projection)).split(' object')[0]
-        proj = proj.split('.')[-1][:-2]+'()'
-        return proj
-    except:
-        return 'PlateCarree()'
-    
-    
-
 def PlotterateFig(fig):
     '''
     This function will take in a matplotlib figure object and Plotterate it.
@@ -563,7 +178,7 @@ def PlotterateFig(fig):
         # return axes
         mapplot = False
         excludes = []
-        axesGetSets = getGetsandSets(axes)
+        axesGetSets = mplu.getGetsandSets(axes)
         yy = axes.properties()
         # return yy
         '''
@@ -573,10 +188,10 @@ def PlotterateFig(fig):
         if isinstance(yy['children'][0],matplotlib.collections.QuadMesh):
             continue
         # return yy
-        Id = getAxid(yy['geometry'])
+        Id = mplu.getAxid(yy['geometry'])
         
-        rowspan,colspan = getSpan(yy['subplotspec'], yy['geometry'])
-        axType = determineAxesType(axes)
+        rowspan,colspan = mplu.getSpan(yy['subplotspec'], yy['geometry'])
+        axType = mplu.determineAxesType(axes)
         if axType == 'normal':
             pax = pltr.add_subplot(Id,rowspan,colspan)
         elif axType == '3D':
@@ -589,12 +204,12 @@ def PlotterateFig(fig):
                              'get_xlim','get_ylim','get_xbound','get_ybound','_get_view'])
             pax = pltr.add_subplot(Id,rowspan,colspan,mapplot=True,mapproj=projection)
         
-        if Id in twindict and has_twin(axes):
+        if Id in twindict and mplu.has_twin(axes):
             pax = pltr.twin(Id)
-        elif Id in twindict and not has_twin(axes):
+        elif Id in twindict and not mplu.has_twin(axes):
             pass
         else:
-            twindict[Id] = has_twin(axes)
+            twindict[Id] = mplu.has_twin(axes)
         
         for cmd in axesGetSets:
             if cmd in excludes:
@@ -641,7 +256,7 @@ def PlotterateFig(fig):
             
         for child in yy['children']:
             if mapplot:
-                proj = parseCartopyTransform(child)
+                proj = mplu.parseCartopyTransform(child)
             else:
                 proj = None
             # return child
@@ -666,7 +281,7 @@ def PlotterateFig(fig):
             elif isinstance(child,mpl_toolkits.mplot3d.art3d.Path3DCollection):
                 # return child
                 patch = False
-                marker = determineMarker(child)
+                marker = mplu.determineMarker(child)
                 x,y,z = child._offsets3d
                 array = child.get_array()
                 if isinstance(array,np.ndarray):
@@ -701,7 +316,7 @@ def PlotterateFig(fig):
                 # return child
                 patch = False
                 array = child.get_array()
-                marker = determineMarker(child)
+                marker = mplu.determineMarker(child)
                 if isinstance(array,np.ndarray):
                     color = child.get_facecolors()
                     ec = child.get_edgecolors()
@@ -828,7 +443,7 @@ def PlotterateFig(fig):
                 continue
             else:
                 continue
-            childGetSets = getGetsandSets(child)
+            childGetSets = mplu.getGetsandSets(child)
             # return childGetSets
             for cmd in childGetSets:
                 if cmd in excludes:
@@ -842,8 +457,8 @@ def PlotterateFig(fig):
         '''
         Set the x,y tick objs after all the plots have been set
         '''
-        xticklabels = getTickLabels(axes,'x')
-        yticklabels = getTickLabels(axes,'y')
+        xticklabels = mplu.getTickLabels(axes,'x')
+        yticklabels = mplu.getTickLabels(axes,'y')
         if xticklabels:        
             pltr.parseCommand(pax,'set_xticklabels',[[xticklabels]])
         if yticklabels:
