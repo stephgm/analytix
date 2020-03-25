@@ -93,9 +93,6 @@ class edit_subplot_options(Widgets.QDialog):
                 try:
                     oldax = self.ax
                     self.ax.set_xlim(float(lx),float(ux))
-                    print(lx,ux)
-                    print(self.ax.get_xlim())
-                    print(self.ax==oldax)
                 except:
                     pass
         elif axis in ['y','Y'] and self.ax:
