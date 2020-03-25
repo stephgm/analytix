@@ -26,6 +26,7 @@ else:
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(sys.executable))
 from PlotH5 import mplInteractive
 from PlotH5.mpltools import PatchWordWrap
+from PlotH5.mpltools import SubplotOptions
 
 ### Heatmap Word Wrapping Toolbar
 
@@ -40,6 +41,17 @@ class FixStrings(ToolBase):
     def trigger(self, *args, **kwargs):
         axs = self.figure.get_axes()
         PatchWordWrap.fix_text(axs)
+        self.figure.canvas.draw()
+        
+class SubPlotOptions(ToolBase):
+    '''Enable Editing of a few options for axes'''
+    default_keymap = 'A'
+    description = 'Subplot options for current Figure (Eg. Set X limit)'
+    image = os.path.join(RELATIVE_LIB_PATH,'PlotH5','mpltools','toolbarIcons','settings.jpg')
+    
+    def trigger(self,*args,**kwargs):
+        SubplotOptions.edit_subplots(self.figure)
+        print(self.figure.axes[0].get_xlim())
         self.figure.canvas.draw()
 
 ### Editor
@@ -106,3 +118,6 @@ def add_Tool(fig,tools=[],**kwargs):
     if 'Editor' in tools:
         fig.canvas.manager.toolmanager.add_tool('Plot Editor', EnableEditing)
         fig.canvas.manager.toolbar.add_tool('Plot Editor', 'navigation',3)
+    if 'SubplotOptions' in tools:
+        fig.canvas.manager.toolmanager.add_tool('Subplot Options',SubPlotOptions)
+        fig.canvas.manager.toolbar.add_tool('Subplot Options', 'navigation',3)

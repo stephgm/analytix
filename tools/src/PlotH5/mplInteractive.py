@@ -546,7 +546,7 @@ if __name__ == '__main__':
     jj = ax.annotate('whhhhhat',(5,5),label='when')
     jj.set_bbox(dict(facecolor='green'))
     ax.text(3,3,'whoooo')
-    ax.bar([1,2,3],[3,4,2])
+    # ax.bar([1,2,3],[3,4,2])
     ax.stackplot([1,2,3,4],[4,5,6,7],picker=5,color='blue',labels=['what'])
     ax.legend()
     fig.suptitle('what')
@@ -555,7 +555,7 @@ if __name__ == '__main__':
     ax.set_title('This is a Plot')
     ax.set_picker(5)
     from PlotH5.mpltools import toolbarUtils
-    toolbarUtils.add_Tool(fig, ['Editor'])
+    toolbarUtils.add_Tool(fig, ['Editor','SubplotOptions'])
     
     plt.show()
 
