@@ -626,7 +626,10 @@ class Plotter(object):
                 if command['cmd'] == 'legend':
                     if figh:
                         execString = 'fig.legend(figh,figl,'+self.buildExecString(command)[:7]
-                        figlng = eval(execString,{'ccrs':ccrs},{'fig':fig,'figh':figh,'figl':figl})
+                        try:
+                            figlng = eval(execString,{'ccrs':ccrs},{'fig':fig,'figh':figh,'figl':figl})
+                        except:
+                            figlng = None
                     else:
                         execString = 'fig.'+self.buildExecString(command)
                         figlng = eval(execString,{'ccrs':ccrs},{'fig':fig})
