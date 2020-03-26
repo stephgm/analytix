@@ -588,7 +588,7 @@ if __name__ == '__main__':
             # ax.add_feature(cfeature.BORDERS)
             # ax.add_feature(cfeature.LAKES)
             # ax.add_feature(cfeature.RIVERS)
-            add_Tool(fig, ['CartopyOptions'])
+            add_Tool(fig, ['CartopyOptions','SubplotOptions'])
             plt.show()
             
         if False:
