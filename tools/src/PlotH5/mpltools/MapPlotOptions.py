@@ -53,7 +53,6 @@ class map_plot_options(Widgets.QDialog):
         self.axlist = []
         self.makeConnections()
         self.populate_axes_combo()
-        self.populate_options(0)
         
     def makeConnections(self):
         self.AxesCombo.currentIndexChanged.connect(self.populate_options)
@@ -67,9 +66,9 @@ class map_plot_options(Widgets.QDialog):
         self.OceanChk.toggled.connect(lambda trash:self.set_cfeatures())
         self.LandChk.toggled.connect(lambda trash:self.set_cfeatures())
         self.CoastlinesChk.toggled.connect(lambda trash:self.set_cfeatures())
-        self.BlueMarbleHD.toggled.connect(lambda trash:self.populate_cfeatures())
-        self.BlueMarbleSD.toggled.connect(lambda trash:self.populate_cfeatures())
-        self.CartopyFeatures.toggled.connect(lambda trash:self.populate_cfeatures())
+        self.BlueMarbleHD.toggled.connect(lambda trash:self.populate_cfeatures() if self.BlueMarbleHD.isChecked() else False)
+        self.BlueMarbleSD.toggled.connect(lambda trash:self.populate_cfeatures() if self.BlueMarbleSD.isChecked() else False)
+        self.CartopyFeatures.toggled.connect(lambda trash:self.populate_cfeatures() if self.CartopyFeatures.isChecked() else False)
     
     def special_options(self):
         lonval = Gui.QDoubleValidator()
@@ -134,7 +133,6 @@ class map_plot_options(Widgets.QDialog):
             self.special_options()
             self.populate_extents()
             self.check_feature_type()
-            self.populate_cfeatures()
         self.Signals(False)
             
     def populate_extents(self):
