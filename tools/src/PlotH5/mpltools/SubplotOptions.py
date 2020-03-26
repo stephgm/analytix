@@ -87,7 +87,7 @@ class edit_subplot_options(Widgets.QDialog):
                     self.axlookup[ax] = str(mplu.getSpan(y['subplotspec'], y['geometry']))
                 self.axlist.append(ax)
         for i,ax in enumerate(self.axlist):
-            if ax.get_ylabel() and ax.get_xlabel():
+            if self.axlookup[ax]:
                 self.AxisCombo.addItem(self.axlookup[ax])
             else:
                 self.AxisCombo.addItem(str(i))

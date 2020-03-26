@@ -120,7 +120,7 @@ class map_plot_options(Widgets.QDialog):
                         self.axlookup[ax] = str(mplu.getSpan(y['subplotspec'], y['geometry']))
                     self.axlist.append(ax)
         for i,ax in enumerate(self.axlist):
-            if ax.get_ylabel() and ax.get_xlabel():
+            if self.axlookup[ax]:
                 self.AxesCombo.addItem(self.axlookup[ax])
             else:
                 self.AxesCombo.addItem(str(i))
