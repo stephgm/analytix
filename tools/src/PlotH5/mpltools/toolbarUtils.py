@@ -27,9 +27,9 @@ else:
 from PlotH5 import mplInteractive
 from PlotH5.mpltools import PatchWordWrap
 from PlotH5.mpltools import SubplotOptions
+from PlotH5.mpltools import MapPlotOptions
 
 ### Heatmap Word Wrapping Toolbar
-
 
 class FixStrings(ToolBase):
     '''Fix words inside rectangle patches'''
@@ -43,6 +43,8 @@ class FixStrings(ToolBase):
         PatchWordWrap.fix_text(axs)
         self.figure.canvas.draw()
         
+### Subplot Options
+
 class SubPlotOptions(ToolBase):
     '''Enable Editing of a few options for axes'''
     default_keymap = 'A'
@@ -51,7 +53,18 @@ class SubPlotOptions(ToolBase):
     
     def trigger(self,*args,**kwargs):
         SubplotOptions.edit_subplots(self.figure)
-        print(self.figure.axes[0].get_xlim())
+        self.figure.canvas.draw()
+        
+### Cartopy Options
+
+class CartopyOptions(ToolBase):
+    '''Enable Options for Cartopy Plots'''
+    default_keymap = 'M'
+    description = 'Map Plot Options for Current Axes'
+    image = os.path.join(RELATIVE_LIB_PATH,'PlotH5','mpltools','toolbarIcons','globe.png')
+    
+    def trigger(self,*args,**kwargs):
+        MapPlotOptions.edit_map(self.figure)
         self.figure.canvas.draw()
 
 ### Editor
@@ -121,3 +134,6 @@ def add_Tool(fig,tools=[],**kwargs):
     if 'SubplotOptions' in tools:
         fig.canvas.manager.toolmanager.add_tool('Subplot Options',SubPlotOptions)
         fig.canvas.manager.toolbar.add_tool('Subplot Options', 'navigation',3)
+    if 'CartopyOptions' in tools:
+        fig.canvas.manager.toolmanager.add_tool('Cartopy Options',CartopyOptions)
+        fig.canvas.manager.toolbar.add_tool('Cartopy Options','navigation',3)

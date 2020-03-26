@@ -27,7 +27,7 @@ else:
 
 from PlotH5.mpltools import mplDefaults as mpld
 
-def get_cloeset_name_rgb(rgb):
+def get_closest_name_rgb(rgb):
     '''
     This function takes in an rgb value and returns the closest named color
     that is in the mpld.namecolorsNAMElookup dictionary
@@ -296,6 +296,31 @@ def parseCartopyTransform(child):
         proj = str(type(child._transform._a.source_projection)).split(' object')[0]
         proj = proj.split('.')[-1][:-2]+'()'
         return proj
+    except:
+        return 'PlateCarree()'
+    
+def parseAxesCartopyTransform(axes):
+    '''
+    This function gets the axes cartopy transform and puts it in a format that
+    Plotterator wants.
+    
+    Input:
+        axes - a matplotlib axes object
+    Kwargs:
+        N/A
+    Return:
+        Returns the string of the cartopy projection in a way plotterator wants it.
+        Returns PlateCarree if it cannot discern
+    '''
+    
+    try:
+        proj = str(type(axes.projection))
+        if 'cartopy.crs' in proj:
+            proj = proj.split('.')[-1]
+            proj = f'{proj}()'
+            return proj
+        else:
+            return 'PlateCarree()'
     except:
         return 'PlateCarree()'
     

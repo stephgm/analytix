@@ -15,7 +15,29 @@ import matplotlib.pyplot as plt
 import matplotlib
 import mpl_toolkits
 import numpy as np
-import cartopy
+
+
+try:
+    import cartopy
+    import cartopy.crs as ccrs
+    from cartopy import config
+    from cartopy.io.shapereader import Reader
+    import cartopy.feature as cfeature
+    if os.name == 'posix':
+        cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/cartopy'
+    else:
+        cartopy.config['data_dir'] = os.path.join(os.path.dirname(sys.executable),'Lib','site-packages','cartopy')
+except:
+    ccrs = None
+
+print(cartopy.config['data_dir'])
+
+if ccrs:
+    CfgDir = config['repo_data_dir']
+    lenCfgDir = len(CfgDir)+1
+    resolution = '10m'
+
+
 
 debug = False
 
@@ -29,6 +51,7 @@ else:
 
 from PlotH5 import Plotterator
 from PlotH5.mpltools import mplUtils as mplu
+from PlotH5.mpltools.toolbarUtils import add_Tool
 
 def setFigAxes(obj,cmd,PlotteratorObj,attr):
     '''
@@ -497,8 +520,8 @@ if __name__ == '__main__':
             if False:
                 ax.plot(xs,ys,zs,marker=m)
     
-    if False:
-        fig,ax = plt.subplots()
+    if True:
+        # fig,ax = plt.subplots()
         x = np.random.randint(0,20,200)
         y = np.random.randint(0,25,200)
         
@@ -521,14 +544,10 @@ if __name__ == '__main__':
             plcolor = cmap(np.linspace(0.,1.,3))
             ax.pie([10,23,32],autopct='%.2f%%',colors=plcolor)
             
-        if False:
+        if True:
             #basemap plot ugh here we go
-            import cartopy
-            import cartopy.crs as ccrs
             fig = plt.figure()
-            ax = plt.axes(projection=ccrs.PlateCarree())
-            ax.stock_img()
-
+            ax = plt.axes(projection=ccrs.NorthPolarStereo())
             ny_lon, ny_lat = -75, 43
             delhi_lon, delhi_lat = 77.23, 28.61
             
@@ -556,7 +575,21 @@ if __name__ == '__main__':
             plt.text(delhi_lon + 3, delhi_lat - 12, 'Delhi',
                       horizontalalignment='left',
                       transform=ccrs.Geodetic())
-            ax.set_extent([-50,50,-50,50])
+            # ax.set_extent([-180,180,-90,90])
+            EARTH_IMG = np.load(os.path.join(RELATIVE_LIB_PATH,'data','bluemarble_21600x10800.npy'))
+            ax.set_global()
+            ax.imshow(EARTH_IMG,
+                      origin = 'upper',
+                      transform = ccrs.PlateCarree(),
+                      extent=[-180,180,-90,90])
+            # ax.add_feature(cfeature.COASTLINE)
+            # ax.add_feature(cfeature.OCEAN)
+            # ax.add_feature(cfeature.LAND)
+            # ax.add_feature(cfeature.BORDERS)
+            # ax.add_feature(cfeature.LAKES)
+            # ax.add_feature(cfeature.RIVERS)
+            add_Tool(fig, ['CartopyOptions'])
+            plt.show()
             
         if False:
             #bar chart
@@ -580,7 +613,6 @@ if __name__ == '__main__':
             ax.annotate('What',(1,10),color='b')
             
             ax.legend((rects1[0], rects2[0]), ('Men', 'Women'))
-            
             
             def autolabel(rects):
                 """
@@ -631,5 +663,5 @@ if __name__ == '__main__':
             plt.grid(True)
         
     
-    if fig:
-        z = PlotterateFig(fig)
+    # if fig:
+        # z = PlotterateFig(fig)

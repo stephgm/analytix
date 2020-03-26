@@ -19,6 +19,7 @@ import binascii
 from six import string_types
 plt.rcParams['toolbar'] = 'toolmanager'
 
+
 if not hasattr(sys, 'frozen'):
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     if __name__ == '__main__':
@@ -102,10 +103,10 @@ class RGBAWidget(Widgets.QWidget):
             if len(origvalue) == 4:
                 self.alphaval = str(origvalue[-1])
                 origvalue = origvalue[:-1]
-            self.color_name = mplu.get_cloeset_name_rgb(origvalue)
+            self.color_name = mplu.get_closest_name_rgb(origvalue)
         elif isinstance(origvalue, string_types):
             origvalue = mplu.convert_hex_to_rgb(origvalue)
-            self.color_name = mplu.get_cloeset_name_rgb(origvalue)
+            self.color_name = mplu.get_closest_name_rgb(origvalue)
 
         self.layout = Widgets.QGridLayout()
         self.setLayout(self.layout)
@@ -121,7 +122,6 @@ class RGBAWidget(Widgets.QWidget):
             self.AlphaLine.setText(self.alphaval)
 
     def buildCombo(self,items,origval):
-        print(origval)
         widget = Widgets.QComboBox()
         widget.addItems(items)
         index = widget.findText(origval)
@@ -536,24 +536,24 @@ def on_release(event):
         event.canvas.draw()
 
 if __name__ == '__main__':
-    fig,ax = plt.subplots()
-    ax.scatter([1,2,3,4],[4,5,6,7],picker=5,label='FUN',c='red',cmap=None)
-    sc = ax.scatter([5,6,7,8],[4,5,6,7],picker=5,label='Not Fun',c=[1,2,3,4],cmap=plt.cm.get_cmap('flag'))
+    fig,ax = plt.subplots(ncols=2)
+    ax[0].scatter([1,2,3,4],[4,5,6,7],picker=5,label='FUN',c='red',cmap=None)
+    sc = ax[0].scatter([5,6,7,8],[4,5,6,7],picker=5,label='Not Fun',c=[1,2,3,4],cmap=plt.cm.get_cmap('flag'))
     fig.colorbar(sc).set_label('nol',picker=5)
-    ax.plot([5,6,10,11],[10,11,12,13],picker=5,label='Not Funy',c='#0000FF')
+    ax[1].plot([5,6,10,11],[10,11,12,13],picker=5,label='Not Funy',c='#0000FF')
     patch = matplotlib.patches.Rectangle((9,3), 1, 1, facecolor='yellow')
-    ax.add_patch(patch)
-    jj = ax.annotate('whhhhhat',(5,5),label='when')
+    ax[1].add_patch(patch)
+    jj = ax[0].annotate('whhhhhat',(5,5),label='when')
     jj.set_bbox(dict(facecolor='green'))
-    ax.text(3,3,'whoooo')
+    ax[0].text(3,3,'whoooo')
     # ax.bar([1,2,3],[3,4,2])
-    ax.stackplot([1,2,3,4],[4,5,6,7],picker=5,color='blue',labels=['what'])
-    ax.legend()
+    ax[0].stackplot([1,2,3,4],[4,5,6,7],picker=5,color='blue',labels=['what'])
+    ax[0].legend()
     fig.suptitle('what')
-    ax.set_ylabel('Yes')
-    ax.set_xlabel('No')
-    ax.set_title('This is a Plot')
-    ax.set_picker(5)
+    ax[0].set_ylabel('Yes')
+    ax[0].set_xlabel('No')
+    ax[0].set_title('This is a Plot')
+    ax[0].set_picker(5)
     from PlotH5.mpltools import toolbarUtils
     toolbarUtils.add_Tool(fig, ['Editor','SubplotOptions'])
     

@@ -4,6 +4,14 @@
 Created on Thu Jun  6 21:28:25 2019
 
 @author: hollidayh
+
+Carl Notes:  To get this to work out of the box with cfeatures 
+run the command with
+-o {Path to Anaconda Folder}/Lib/site-packages/cartopy
+
+cfeatures LAND COASTLINE OCEAN RIVERS LAKES require the 'physical' group
+cfeature BORDERS requires 'cultural' group
+None of the other built in cfeatures [STATES,COLORS] work with any of these groups
 """
 
 from __future__ import (absolute_import, division, print_function)
