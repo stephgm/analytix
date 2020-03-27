@@ -157,6 +157,31 @@ def setPatch(axid,obj,cmd,PlotteratorObj,attr):
         if debug:
             print(f'{cmd} failed')
             
+def handle_images(axid,PlotteratorObj,ax,**kwargs):
+    '''
+    This function will take images from an axes object and parse the command
+    in plotterator through the imshow function.
+    
+    Inputs:
+        axid - The plotterator axis ID
+        PlotteratorObj - The Plotter class instance of Plotterator
+        ax - The matplotlib axes object
+    Kwargs:
+        mapplot - True/False if the plot is a mapplot or not
+    Return:
+        None
+    '''
+    mapplot = kwargs.get('mapplot',False)
+    for image in ax.images:
+        extent = image.get_extent()
+        if mapplot:
+            transform = 'PlateCarree()'
+        else:
+            transform = None
+        origin = image.origin
+        arr = image.get_array()
+        PlotteratorObj.parseCommand(axid,'imshow',[[arr],dict(origin=origin,transform=transform,extent=extent)])
+    
 def PlotterateFig(fig):
     '''
     This function will take in a matplotlib figure object and Plotterate it.
@@ -276,7 +301,12 @@ def PlotterateFig(fig):
         lgnd = axes.get_legend()
         if lgnd:
             pltr.parseCommand(pax,'legend',[[]])
-            
+        
+        if mapplot:
+            handle_images(pax,pltr,axes,mapplot=True)
+        else:
+            handle_images(pax,pltr,axes)
+        
         for child in yy['children']:
             if mapplot:
                 proj = mplu.parseCartopyTransform(child)
@@ -379,8 +409,6 @@ def PlotterateFig(fig):
             
             elif isinstance(child,matplotlib.text.Text):
                 patch = None
-                print(proj)
-                # return child
                 text = child._text
                 x = child._x
                 y = child._y
@@ -450,8 +478,6 @@ def PlotterateFig(fig):
                 points = paths[-1].vertices
                 ec = child.get_edgecolor()
                 fc = child.get_facecolor()[0]
-                print(fc[0])
-                print(ec)
                 if not ec:
                     ec = fc
                 else:
@@ -476,7 +502,7 @@ def PlotterateFig(fig):
                     setPatch(pax,line, childGetSets[cmd], pltr,attr)
                 else:
                     setLines(pax, line, childGetSets[cmd], pltr, attr)
-                    
+        
         '''
         Set the x,y tick objs after all the plots have been set
         '''
@@ -547,7 +573,7 @@ if __name__ == '__main__':
         if True:
             #basemap plot ugh here we go
             fig = plt.figure()
-            ax = plt.axes(projection=ccrs.NorthPolarStereo())
+            ax = plt.axes(projection=ccrs.PlateCarree())
             ny_lon, ny_lat = -75, 43
             delhi_lon, delhi_lat = 77.23, 28.61
             
@@ -663,5 +689,5 @@ if __name__ == '__main__':
             plt.grid(True)
         
     
-    # if fig:
-        # z = PlotterateFig(fig)
+    if fig:
+        z = PlotterateFig(fig)

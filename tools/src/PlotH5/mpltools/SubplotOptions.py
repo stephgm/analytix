@@ -47,6 +47,7 @@ class edit_subplot_options(Widgets.QDialog):
         
     def makeConnections(self):
         self.AxisCombo.currentIndexChanged.connect(self.populate_options)
+        self.AspectCombo.currentIndexChanged.connect(lambda:self.update_aspect())
         self.XUpperLim.textChanged.connect(lambda trash:self.update_limits('x'))
         self.XLowerLim.textChanged.connect(lambda trash:self.update_limits('x'))
         self.YUpperLim.textChanged.connect(lambda trash:self.update_limits('y'))
@@ -99,6 +100,17 @@ class edit_subplot_options(Widgets.QDialog):
         self.XLowerLim.blockSignals(state)
         self.YUpperLim.blockSignals(state)
         self.YLowerLim.blockSignals(state)
+        self.AspectCombo.blockSignals(state)
+        
+    def populate_aspect(self):
+        self.AspectCombo.clear()
+        aspect_items = ['auto','equal']
+        aspect = self.ax.get_aspect()
+        if aspect not in aspect_items:
+            aspect_items.append(str(aspect))
+        self.AspectCombo.addItems(aspect_items)
+        index = self.AspectCombo.findText(aspect)
+        self.AspectCombo.setCurrentIndex(index)
         
     def populate_background_colors(self):
         self.AxisFacecolor.clear()
@@ -167,8 +179,17 @@ class edit_subplot_options(Widgets.QDialog):
             self.YLowerLim.setText(str(ylims[0]))
             self.populate_background_colors()
             self.set_scale_group()
+            self.populate_aspect()
         self.Signals(False)
         
+    def update_aspect(self):
+        ctext = self.AspectCombo.currentText()
+        try:
+            val = float(ctext)
+        except:
+            val = ctext
+        self.ax.set_aspect(val)
+            
     def update_limits(self,axis):
         if axis in ['x','X']:
             ux = self.XUpperLim.text()
