@@ -156,8 +156,28 @@ def setPatch(axid,obj,cmd,PlotteratorObj,attr):
     except:
         if debug:
             print(f'{cmd} failed')
-            
-def handle_images(axid,PlotteratorObj,ax,**kwargs):
+
+def handle_cartopy_features(axid,PlotteratorObj,ax,**kwargs):
+    '''
+    
+    '''
+    for art in ax.artists:
+        if isinstance(art,cartopy.mpl.feature_artist.FeatureArtist):
+            name = art._feature.name
+            if name == 'coastline':
+                PlotteratorObj.add_cfeature('COASTLINE')
+            elif name == 'ocean':
+                PlotteratorObj.add_cfeature('OCEAN')
+            elif name == 'land':
+                PlotteratorObj.add_cfeature('LAND')
+            elif 'boundary' in name:
+                PlotteratorObj.add_cfeature('BORDERS')
+            elif 'lakes' == name:
+                PlotteratorObj.add_cfeature('LAKES')
+            elif 'rivers' in name:
+                PlotteratorObj.add_cfeature('RIVERS')     
+       
+def handle_images(axid, PlotteratorObj, ax, **kwargs):
     '''
     This function will take images from an axes object and parse the command
     in plotterator through the imshow function.
@@ -304,6 +324,7 @@ def PlotterateFig(fig):
         
         if mapplot:
             handle_images(pax,pltr,axes,mapplot=True)
+            handle_cartopy_features(pax,pltr,axes)
         else:
             handle_images(pax,pltr,axes)
         
@@ -608,12 +629,12 @@ if __name__ == '__main__':
                       origin = 'upper',
                       transform = ccrs.PlateCarree(),
                       extent=[-180,180,-90,90])
-            # ax.add_feature(cfeature.COASTLINE)
+            ax.add_feature(cfeature.COASTLINE)
             # ax.add_feature(cfeature.OCEAN)
-            # ax.add_feature(cfeature.LAND)
-            # ax.add_feature(cfeature.BORDERS)
-            # ax.add_feature(cfeature.LAKES)
-            # ax.add_feature(cfeature.RIVERS)
+            ax.add_feature(cfeature.LAND)
+            ax.add_feature(cfeature.BORDERS)
+            ax.add_feature(cfeature.LAKES)
+            ax.add_feature(cfeature.RIVERS)
             add_Tool(fig, ['CartopyOptions','SubplotOptions'])
             plt.show()
             
