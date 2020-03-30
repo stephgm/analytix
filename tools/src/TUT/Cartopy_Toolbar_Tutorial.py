@@ -9,19 +9,6 @@ Created on Mon Mar 30 11:22:24 2020
 import os
 import sys
 
-try:
-    import cartopy
-    import cartopy.crs as ccrs
-    from cartopy import config
-    from cartopy.io.shapereader import Reader
-    import cartopy.feature as cfeature
-    if os.name == 'posix':
-        cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/cartopy'
-    else:
-        cartopy.config['data_dir'] = os.path.join(os.path.dirname(sys.executable),'Lib','site-packages','cartopy')
-except:
-    ccrs = None
-
 if not hasattr(sys, 'frozen'):
     RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     if __name__ == '__main__':
@@ -74,6 +61,7 @@ if __name__ == '__main__':
     and look near the bottom where it says 'Cartopy Features'.  Those check boxes
     indicate certain features that can be turned on and turned off.  Just mess
     around with it.  
+    
     '''
     
     
