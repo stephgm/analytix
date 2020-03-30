@@ -29,7 +29,7 @@ def CCprint(msg,origin=''):
     For debugging purposes.  Will print where the function was called from
     along with the debug message found in this file.  Args are self explanitory.
     '''
-    print('{} from [{}] -> [{}]'.format(msg,origin,inspect.stack()[1][3]))
+    print(f'{msg} from [{origin}] -> [{inspect.stack()[1][3]}]')
 
 def isIterable(iItem,**kwargs):
     '''
@@ -107,7 +107,12 @@ def handleValue(iItem,header,value):
             except:
                 return None
         else:
-            value = str(value)
+            # these are object arrays, can have mixed data types
+            # especially if pd.NA are present
+            if isinstance(value,(float,int)):
+                return value
+            else:
+                value = str(value)
     else:
         return None
     return value
@@ -158,7 +163,7 @@ def SortFields(iItem,fieldnames,**kwargs):
         return failValue
     elif isinstance(iItem,(list,tuple)):
         if debug:
-            CCprint('{} type is not supported for this function'.format(type(iItem)),origin)
+            CCprint(f'{type(iItem)} type is not supported for this function',origin)
         return failValue
     elif isinstance(iItem,np.ndarray) and len(iItem.dtype) == 0:
         if debug:
@@ -195,7 +200,7 @@ def SortFields(iItem,fieldnames,**kwargs):
                 oItem = oItem[oItem[field]>0]
     elif fieldnames not in oItem:
         if debug:
-            CCprint('Field:"{}" was not in the item passed'.format(fieldnames),origin)
+            CCprint(f'Field:"{fieldnames}" was not in the item passed',origin)
         return failValue
     elif gtzero and oItem[fieldnames].dtype.kind in ['i','u','f']:
         oItem = oItem[oItem[fieldnames]>0]
@@ -208,7 +213,7 @@ def SortFields(iItem,fieldnames,**kwargs):
         return oItem.reset_index(drop=True)
     else:
         if debug:
-            CCprint('You passed something that was not accounted for of type {}'.format(type(iItem)),origin)
+            CCprint(f'You passed something that was not accounted for of type {type(iItem)}',origin)
         return oItem.reset_index(drop=True)
 
 def SetOperations(iItem1,iItem2,**kwargs):
@@ -248,7 +253,7 @@ def SetOperations(iItem1,iItem2,**kwargs):
                 return rtype(set(iItem2) - set(iItem1))
         else:
             if debug:
-                CCprint('The how kwarg you passed:{} was unrecognized'.format(how),origin)
+                CCprint(f'The how kwarg you passed:{how} was unrecognized',origin)
             return failValue
     #Should be safe to turn iItem1 and iItem2 into dataframes
     oItem1 = pd.DataFrame(iItem1)
@@ -263,7 +268,7 @@ def SetOperations(iItem1,iItem2,**kwargs):
         oItem = oItem2.merge(oItem1,indicator = True, how='left').loc[lambda x : x['_merge']!='both'].drop(columns='_merge')
     else:
         if debug:
-            CCprint('The how kwarg you passed:{} was unrecognized'.format(how),origin)
+            CCprint(f'The how kwarg you passed:{how} was unrecognized',origin)
         return failValue
     if isinstance(iItem1,(dict,np.ndarray,pd.DataFrame)) and isinstance(iItem2,dict):
         return handleMixedDictTypes(iItem2,oItem[oItem2.columns].to_dict(orient='list'))
@@ -273,7 +278,7 @@ def SetOperations(iItem1,iItem2,**kwargs):
         return oItem[oItem2.columns].reset_index(drop=True)
     else:
         if debug:
-            CCprint('You passed something that was not accounted for of type1 {} and type2 {}'.format(type(iItem1),type(iItem2)),origin)
+            CCprint(f'You passed something that was not accounted for of type1 {type(iItem1)} and type2 {type(iItem2)}',origin)
         return oItem[oItem2.columns].reset_index(drop=True)
 
 def FilterOnField(iItem, fieldname, logical, value='',**kwargs):
@@ -306,7 +311,7 @@ def FilterOnField(iItem, fieldname, logical, value='',**kwargs):
         return failValue
     elif isinstance(iItem,(list,tuple)):
         if debug:
-            CCprint('{} type is not supported for this function'.format(type(iItem)),origin)
+            CCprint(f'{type(iItem)} type is not supported for this function',origin)
         return failValue
     elif isinstance(iItem,np.ndarray) and len(iItem.dtype) == 0:
         if debug:
@@ -316,7 +321,7 @@ def FilterOnField(iItem, fieldname, logical, value='',**kwargs):
     oItem = pd.DataFrame(iItem)
     if logical not in ['==','<','<=','>','>=','<>','!=','nonan']:
         if debug:
-            CCprint('Unrecognized logical:{}'.format(logical),origin)
+            CCprint(f'Unrecognized logical:{logical}',origin)
         return failValue
     if isIterable(fieldname):
         if debug:
@@ -324,7 +329,7 @@ def FilterOnField(iItem, fieldname, logical, value='',**kwargs):
         return failValue
     elif not fieldname in oItem:
         if debug:
-            CCprint('Field:{} was not in the passed item'.format(fieldname),origin)
+            CCprint(f'Field:{fieldname} was not in the passed item',origin)
         return failValue
     if isIterable(value):
         #This only makes sense if logical is in ['==','!=','<>']
@@ -337,13 +342,14 @@ def FilterOnField(iItem, fieldname, logical, value='',**kwargs):
             oItem = oItem[idx]
         else:
             if debug:
-                CCprint('Unsupported logical:{} for multiple values'.format(logical),origin)
+                CCprint(f'Unsupported logical:{logical} for multiple values',origin)
             return failValue
     else:
         value = handleValue(oItem,fieldname,value)
         #Stolen from Hamilton.... This is smart.
         if logical not in ['nonan']:
-            idx = eval('oItem[fieldname]{}value'.format(logical))
+            # idx = eval('oItem[fieldname]{}{}'.format(logical,value))
+            idx = eval(f'oItem[fieldname]{logical}value')
             oItem = oItem[idx]
         else:
             idx = oItem[fieldname].notnull()
@@ -365,7 +371,7 @@ def FilterOnField(iItem, fieldname, logical, value='',**kwargs):
             return oItem.reset_index(drop=True)
     else:
         if debug:
-            CCprint('You passed something that was not accounted for of type {}'.format(type(iItem)),origin)
+            CCprint(f'You passed something that was not accounted for of type {type(iItem)}',origin)
         if ridx:
             return oItem,oItem.index
         else:
@@ -402,7 +408,7 @@ def FilterOnIdx(iItem,idx,**kwargs):
         return failValue
     elif isinstance(iItem,(list,tuple)):
         if debug:
-            CCprint('{} type is not supported for this function'.format(type(iItem)),origin)
+            CCprint(f'{type(iItem)} type is not supported for this function',origin)
         return failValue
     elif isinstance(iItem,np.ndarray) and len(iItem.dtype) == 0:
         if debug:
@@ -427,7 +433,7 @@ def FilterOnIdx(iItem,idx,**kwargs):
         return oItem.reset_index(drop=True)
     else:
         if debug:
-            CCprint('You passed something that was not accounted for of type {}'.format(type(iItem)),origin)
+            CCprint(f'You passed something that was not accounted for of type {type(iItem)}',origin)
         return oItem.reset_index(drop=True)
 
 def UniqueOnField(iItem,fieldname,**kwargs):
@@ -457,7 +463,7 @@ def UniqueOnField(iItem,fieldname,**kwargs):
         return failValue
     elif isinstance(iItem,(list,tuple)):
         if debug:
-            CCprint('{} type is not supported for this function'.format(type(iItem)),origin)
+            CCprint(f'{type(iItem)} type is not supported for this function',origin)
         return failValue
     elif isinstance(iItem,np.ndarray) and len(iItem.dtype) == 0:
         if debug:
@@ -467,7 +473,7 @@ def UniqueOnField(iItem,fieldname,**kwargs):
     oItem = pd.DataFrame(iItem)
     if not fieldname in oItem:
         if debug:
-            CCprint('Field:{} was not in the passed item'.format(fieldname),origin)
+            CCprint(f'Field:{fieldname} was not in the passed item',origin)
         return failValue
     oItem.drop_duplicates(subset=fieldname,keep=keep,inplace=True)
     if sort:
@@ -480,7 +486,7 @@ def UniqueOnField(iItem,fieldname,**kwargs):
         return oItem.reset_index(drop=True)
     else:
         if debug:
-            CCprint('You passed something that was not accounted for of type {}'.format(type(iItem)),origin)
+            CCprint(f'You passed something that was not accounted for of type {type(iItem)}',origin)
         return oItem.reset_index(drop=True)
 
 #This is a map from the old functionmatlab functions to these
@@ -540,19 +546,19 @@ def MapColumns(iItem1,iItem2,mapcols='',left_on='index',right_on='index',**kwarg
             mapcols.pop(mapcols.index(right_on))
     if mapcols and not set(list(mapcols)).issubset(set(oItem2.columns)):
         if debug:
-            CCprint('Field:{} not in iItem2'.format(mapcols),origin)
+            CCprint(f'Field:{mapcols} not in iItem2',origin)
         return failValue
 
     if not (left_on in oItem1 and right_on in oItem2):
         if debug:
-            CCprint('Either {} not in iItem1 or {} not in iItem2'.format(left_on,right_on),origin)
+            CCprint(f'Either {left_on} not in iItem1 or {right_on} not in iItem2',origin)
         return failValue
 
     oItem2.set_index(right_on,inplace=True)
 
     for col in mapcols:
         if col in oItem1:
-            lcol = '{}_right'.format(col)
+            lcol = f'{col}_right'
         else:
             lcol = col
         if not fillna:

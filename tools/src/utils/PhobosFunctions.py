@@ -1055,3 +1055,5 @@ if True:
                 for fname in f \
                 if fnmatch.fnmatch(fname,ext)]
 
+def ChangeEndian(x):
+    return x
