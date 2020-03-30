@@ -11,6 +11,7 @@ c:\anaconda3-2020.02b2\Scripts\conda.exe update -n base conda -y
 c:\anaconda3-2020.02b2\Scripts\conda.exe update --all -y
 c:\anaconda3-2020.02b2\python -m pip --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org install --upgrade pip
 c:\anaconda3-2020.02b2\Scripts\conda.exe install -y R cartopy swig pyopengl pyopengl-accelerate pyqtgraph traitlets vispy hdf4 pymssql boost cudatoolkit cmake line_profiler cython cairo pyopengl pyopengl-accelerate plotly autopep8 geopandas selenium mock nodejs holoviews datashader hvplot graphviz panel param xmltodict django
+c:\anaconda3-2020.02b2\Scripts\conda.exe install -y c conda-forge vitables
 :: c:\anaconda3-2020.02b2\Scripts\conda.exe install -y -c spyder-ide spyder=4.0.1
 :: failures : pyculib
 :: glib gobject-introspection
@@ -28,17 +29,17 @@ c:\anaconda3-2020.02b2\python.exe c:\tools\src\feature_download.py --output \ana
 c:\anaconda3-2020.02b2\python.exe c:\tools\src\feature_download.py --output \anaconda3-2020.02b2\Lib\site-packages\cartopy\data cultural
 c:\anaconda3-2020.02b2\python.exe c:\tools\src\feature_download.py --output \anaconda3-2020.02b2\Lib\site-packages\cartopy\data cultural-extra
 c:\anaconda3-2020.02b2\python.exe c:\tools\src\feature_download.py --output \anaconda3-2020.02b2\Lib\site-packages\cartopy\data gshhs
-cd C:\tools\natural_earth
-mkdir C:\anaconda3-2020.02b2\Lib\site-packages\cartopy\data\shapefiles\natural_earth
-robocopy . C:\anaconda3-2020.02b2\Lib\site-packages\cartopy\data\shapefiles\natural_earth /s /e
-cd ..
-copy  NE1_HR_LC_SR_W_DR.png C:\anaconda3-2020.02b2\Lib\site-packages\cartopy\data\raster\natural_earth
-cd c:\tools
-7z x ViTables-3.0.0.tar 
-cd ViTables-3.0.0
-c:\anaconda3-2020.02b2\python setup.py install
-cd ..
-rmdir /s /q ViTables-3.0.0
+:: cd C:\tools\natural_earth
+:: mkdir C:\anaconda3-2020.02b2\Lib\site-packages\cartopy\data\shapefiles\natural_earth
+:: robocopy . C:\anaconda3-2020.02b2\Lib\site-packages\cartopy\data\shapefiles\natural_earth /s /e
+:: cd ..
+:: copy  NE1_HR_LC_SR_W_DR.png C:\anaconda3-2020.02b2\Lib\site-packages\cartopy\data\raster\natural_earth
+:: cd c:\tools
+:: 7z x ViTables-3.0.0.tar 
+:: cd ViTables-3.0.0
+:: c:\anaconda3-2020.02b2\python setup.py install
+:: cd ..
+:: rmdir /s /q ViTables-3.0.0
 @pause
 :: done the below at work
 endlocal
