@@ -60,7 +60,8 @@ try:
     from cartopy.io.shapereader import Reader
     import cartopy.feature as cfeature
     if os.name == 'posix':
-        cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/cartopy'
+        # cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/cartopy'
+        cartopy.config['data_dir'] = f'{os.path.dirname(os.path.dirname(sys.executable))}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/cartopy'
     else:
         cartopy.config['data_dir'] = os.path.join(os.path.dirname(sys.executable),'Lib','site-packages','cartopy')
 except:
