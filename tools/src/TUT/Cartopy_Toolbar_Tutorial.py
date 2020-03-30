@@ -63,6 +63,7 @@ if __name__ == '__main__':
     pltr.add_patch(pax,'Polygon',[[list(zip(LA_lons,LA_lats))],dict(color='red')])
     pltr.parseCommand(pax,'set_global',[[]])
     pltr.createPlot('',PERSIST=True)
+    input('enter2exit')
 
 
     '''
