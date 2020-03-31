@@ -97,13 +97,13 @@ if True:
     def correct_string_dtypes(iItem):
         '''
         Corrents string dtypes [O,S] and converts them to unicode
-        
+
         Input:
             iItem - pandas series or dataframe
-        
+
         Kwargs:
             N/A
-        
+
         Return:
             Returns the corrected iItem
         '''
@@ -112,11 +112,11 @@ if True:
                 print('The passed argument is not a series or dataframe, giving it back.')
             return iItem
         checktypes = ['S','O']
-        
+
         if isinstance(iItem,pd.Series) and iItem.dtype.kind in checktypes:
             return iItem.astype('U')
-        
-        elif isinstance(iItem,pd.DataFrame): 
+
+        elif isinstance(iItem,pd.DataFrame):
             for header in iItem:
                 if iItem[header].dtype.kind in checktypes:
                     iItem[header] = iItem[header].astype('U')
@@ -166,7 +166,6 @@ if True:
         sortHeader = kwargs.get('sortHeader','')
         numpoints = kwargs.get('numpoints',0)
         dtype = None
-        seconddtype = None
         if not isIterable(array):
             if debug:
                 print('The array passed is not iterable')
@@ -210,6 +209,8 @@ if True:
                 return array
         #Should be safe to turn into dataframe
         oArray = pd.DataFrame(array)
+        if not oArray.shape[0]:
+            return array
         if sortHeader:
             if sortHeader in oArray:
                 oArray = oArray.sort_values(sortHeader)
@@ -276,18 +277,18 @@ if True:
 
         if os.path.isfile(fpath):
             with h5py.File(fpath,'r') as hf:
-                data['file'] = pd.DataFrame({k:v for k,v in hf.attrs.items()})
+                data['file'] = pd.DataFrame({k:(v.astype('U') if v.dtype.kind in ['S','O'] else v) for k,v in hf.attrs.items()})
                 if grp and grp in hf:
-                    data['grp'] = pd.DataFrame({k:v for k,v in hf[grp].attrs.items()})
+                    data['grp'] = pd.DataFrame({k:(v.astype('U') if v.dtype.kind in ['S','O'] else v) for k,v in hf[grp].attrs.items()})
                     if dset and dset in hf[grp]:
-                        data['dset'] = pd.DataFrame({k:v for k,v in hf[grp][dset].attrs.items()})
+                        data['dset'] = pd.DataFrame({k:(v.astype('U') if v.dtype.kind in ['S','O'] else v) for k,v in hf[grp][dset].attrs.items()})
                     else:
                         if debug:
                             print('{} is not in the h5 file {}, ommiting'.format(dset,fpath))
                 else:
                     if debug:
                         print('{} is not in the h5 file {}, omitting'.format(grp,fpath))
-            for key in data:
+            for key in list(data.keys()):
                 if data[key].shape[0] == 0:
                     data.pop(key)
                     continue
@@ -386,10 +387,16 @@ if True:
                             getheaders.append(sortHeader)
                     else:
                         getheaders = fheaders
-                    if isinstance(section,tuple):
-                        data = {header:hf[grp][dset][header][section[0]:section[1]] for header in getheaders if header in fheaders}
+                    if isinstance(hdf[grp][dset],h5py.Group):
+                        if isinstance(section,tuple):
+                            data = {header:hf[grp][dset][header][section[0]:section[1]] for header in getheaders if header in hf[grp][dset]}
+                        else:
+                            data = {header:hf[grp][dset][header][...] for header in getheaders if header in hf[grp][dset]}
                     else:
-                        data = {header:hf[grp][dset][header][...] for header in getheaders if header in fheaders}
+                        if isinstance(section,tuple):
+                            data = {header:hf[grp][dset][header][section[0]:section[1]] for header in getheaders if header in hf[grp][dset].dtype.names}
+                        else:
+                            data = {header:hf[grp][dset][header][...] for header in getheaders if header in hf[grp][dset].dtype.names}
                 else:
                     if debug:
                         print('{} dataset is not in {}'.format(dset,fpath))
@@ -398,6 +405,13 @@ if True:
                 if debug:
                     print('{} group is not in {}'.format(grp,fpath))
                 return pd.DataFrame()
+        for key in data:
+            data[key] = ChangeEndian(data[key])
+            if data[key].dtype.kind in ['S','O']:
+                try:
+                    data[key] = np.array(data[key],dtype=np.str)
+                except:
+                    data[key] = np.vectorize(lambda trash:trash.decode('utf-8','ignore'))(data[key])
         y = pd.DataFrame(data)
         if sortHeader:
             if not sortHeader in y:
@@ -430,7 +444,7 @@ if True:
         Input:
                 fpath - The full path to the h5 file
                 grp - The group that the datasets are in
-                dsets - list of datasets inside the group to open
+                dsets - list of datasets inside the group to open or "*" to gather all datasets
         Kwargs:
                 gatherpcts - The percent of data you want to return
                 sortHeaders - The header you want to sort on
@@ -460,7 +474,8 @@ if True:
         addRun  = kwargs.get('addRun',False)
         addCustom = kwargs.get('addCustom',{})
         append = kwargs.get('append',True)
-
+        if dsets == '*':
+            dsets = get_dsets(fpath,grp)
         if isinstance(dsets,string_types):
             dsets = [dsets]
         dsetslen = len(dsets)
@@ -532,7 +547,7 @@ if True:
                         print('{} not in group'.format(dset))
                 fheaders = get_headers(fpath,grp,dset)
                 if headers:
-                    getheaders=headers
+                    getheaders=headers[i]
                     if sortHeaders[i] and sortHeaders[i] not in getheaders:
                         getheaders.append(sortHeaders[i])
                 else:
@@ -541,6 +556,8 @@ if True:
                     data = {header:hf[grp][dset][header][sections[i][0]:sections[i][1]] for header in getheaders if header in fheaders}
                 else:
                     data = {header:hf[grp][dset][header][...] for header in getheaders if header in fheaders}
+                for key in data:
+                    data[key] = ChangeEndian(data[key])
                 data = pd.DataFrame(data)
                 if sortHeaders[i]:
                     if not sortHeaders[i] in data:
@@ -563,12 +580,22 @@ if True:
                 if addCustom and isinstance(addCustom,dict):
                     for custom in addCustom:
                         data[custom] = addCustom[custom]
+                for key in data:
+                    if data[key].dtype.kind in ['S','O']:
+                        try:
+                            data[key] = np.array(data[key],dtype=np.str)
+                        except:
+                            data[key] = np.vectorize(lambda trash:trash.decode('utf-8','ignore'))(data[key])
                 dflist.append(data)
-            if not append:
-                return dflist
+            if append:
+                if len(dflist) > 1:
+                    return dflist[0].append(dflist[1:],ignore_index=True,sort=False)
+                elif len(dflist) == 1:
+                    return dflist[0]
+                else:
+                    return pd.DataFrame()
             else:
-                return dflist[0].append(dflist[1:],ignore_index=True)
-
+                return dflist
 
 #    def get_multiple_datasets(fpath,grp,dsets,**kwargs):
 #        '''
@@ -618,6 +645,7 @@ if True:
                 minrows - The minimum number or rows to return from over-thinned data
         '''
         dflist = []
+        append = kwargs.get('append',True)
         if not isinstance(grps,list):
             if debug:
                 print('The passed grps arg was not a list')
@@ -629,10 +657,22 @@ if True:
         kwargs['addGrp'] = True
         for grp in grps:
             dflist.append(get_h5_data(fpath,grp,dset,**kwargs))
-        return pd.concat(dflist,ignore_index=True).reset_index(drop=True)
+        if append:
+            if len(dflist) > 1:
+                return dflist[0].append(dflist[1:],ignore_index=True,sort=False)
+            elif len(dflist) == 1:
+                return dflist[0]
+            else:
+                return pd.DataFrame()
+        else:
+            return dflist
 
     def get_multiple_files(fpaths,grp,dset,**kwargs):
+        '''
+        Lots of documentation
+        '''
         dflist = []
+        append = kwargs.get('append',True)
         if not isinstance(fpaths,list):
             if debug:
                 print('The passed fpaths args was not a list')
@@ -641,7 +681,15 @@ if True:
         kwargs['addRun'] = True
         for fpath in fpaths:
             dflist.append(get_h5_data(fpath,grp,dset,**kwargs))
-        return pd.concat(dflist,ignore_index=True).reset_index(drop=True)
+        if append:
+            if len(dflist) > 1:
+                return dflist[0].append(dflist[1:],ignore_index=True,sort=False)
+            elif len(dflist) == 1:
+                return dflist[0]
+            else:
+                return pd.DataFrame()
+        else:
+            return dflist
 
     def get_multiple_everything(fpaths,grps,dsets,**kwargs):
         dflist=[]
@@ -698,7 +746,7 @@ if True:
                 if debug:
                     print('The iteration items of the headers Kwarg are not strings. Gathering all Data')
 
-        y = pd.read_excel(fpath,sheet_name=sheetname)
+        y = pd.read_excel(fpath,sheet_name=sheetname,**kwargs)
         if headers:
             if sortHeader and sortHeader not in headers:
                 headers.append(sortHeader)
@@ -758,7 +806,7 @@ if True:
                 if debug:
                     print('The iteration items of the headers Kwarg are not strings. Gathering all Data')
 
-        y = pickle.load(open(fpath,'rb'))
+        y = pickle.load(open(fpath,'rb'),encoding='latin1')
         if headers:
             if sortHeader and not sortHeader in headers and sortHeader in y:
                 headers.append(sortHeader)
@@ -797,13 +845,14 @@ if True:
         Return:
                 Returns a list of group names
         '''
+        useDsdict = kwargs.get('useDsdict',True)
         if not os.path.isfile(fpath):
             if debug:
                 print('{} is not a valid file'.format(fpath))
             return []
         extension = os.path.splitext(fpath)[-1].strip().lower()
         if extension in ['.h5','.hdf5']:
-            if not os.path.isfile(fpath.split(extension)[0]+'.json'):
+            if not os.path.isfile(fpath.split(extension)[0]+'.json') or not useDsdict:
                 if debug:
                     print('{} does not have a json generated'.format(fpath))
                 with h5py.File(fpath,'r') as hf:
@@ -813,7 +862,7 @@ if True:
                     else:
                         return ['/']
             else:
-                with open(fpath.split(extension)[0]+'.json','r') as jf:
+                with open(fpath.split(extension)[0]+'.json','rb') as jf:
                     grps = list(json.load(jf).keys())
                 return grps
         elif extension in ['.csv','.xlsx','.pkl']:
@@ -835,13 +884,14 @@ if True:
         Return:
                 Returns a list of datasets
         '''
+        useDsdict = kwargs.get('useDsdict',True)
         if not os.path.isfile(fpath):
             if debug:
                 print('{} is not a valid file'.format(fpath))
             return []
         extension = os.path.splitext(fpath)[-1].strip().lower()
         if extension in ['.h5','.hdf5']:
-            if not os.path.isfile(fpath.split(extension)[0]+'.json'):
+            if not os.path.isfile(fpath.split(extension)[0]+'.json') or not useDsdict:
                 if debug:
                     print('{} does not have a json generated'.format(fpath))
                 with h5py.File(fpath,'r') as hf:
@@ -859,7 +909,10 @@ if True:
                 with open(fpath.split(extension)[0]+'.json','rb') as fid:
                     dsdict = json.load(fid)
                     if grp in dsdict:
-                        dsets = [dset for dset in dsdict[grp] if dset not in ['commoncol','type']]
+                        if dsdict[grp]['commoncol']:
+                            dsets = dsdict[grp]['objs']
+                        else:
+                            dsets = [dset for dset in dsdict[grp] if dset not in ['commoncol','type']]
                     else:
                         if debug:
                             print('{} was not in the json file'.format(grp))
@@ -889,13 +942,14 @@ if True:
         Return:
                 Returns a list of headers
         '''
+        useDsdict = kwargs.get('useDsdict',True)
         if not os.path.isfile(fpath):
             if debug:
                 print('{} is not a valid file'.format(fpath))
             return []
         extension = os.path.splitext(fpath)[-1].strip().lower()
         if extension in ['.h5','.hdf5']:
-            if not os.path.isfile(fpath.split(extension)[0]+'.json'):
+            if not os.path.isfile(fpath.split(extension)[0]+'.json') or not useDsdict:
                 if debug:
                     print('{} does not have a json generated'.format(fpath))
                 with h5py.File(fpath,'r') as hf:
@@ -915,13 +969,18 @@ if True:
             else:
                 with open(fpath.split(extension)[0]+'.json','rb') as fid:
                     dsdict = json.load(fid)
+                    headers = []
                     if grp in dsdict:
-                        if dset in dsdict[grp]:
-                            headers = dsdict[grp][dset]
+                        if dsdict[grp]['commoncol']:
+                            if dset in dsdict[grp]['objs']:
+                                headers = dsdict[grp]['cols']
                         else:
-                            if debug:
-                                print('{} not in the json file'.format(dset))
-                            headers = []
+                            if dset in dsdict[grp]:
+                                headers = dsdict[grp][dset]
+                            else:
+                                if debug:
+                                    print('{} not in the json file'.format(dset))
+                                headers = []
                     else:
                         if debug:
                             print('{} not in the json file'.format(grp))
@@ -929,7 +988,7 @@ if True:
                 return headers
         elif extension in ['.pkl']:
             #TODO I'm assuming the pickled object is a dataframe
-            return list(pickle.load(open(fpath,'rb')))
+            return list(pickle.load(open(fpath,'rb'),encoding='latin1'))
         elif extension in ['.csv']:
             return list(pd.read_csv(fpath))
         elif extension in ['.xlsx']:
@@ -954,6 +1013,7 @@ if True:
         '''
         extensions = kwargs.get('ext',['*'])
         maxDepth = kwargs.get('maxDepth',-1)
+        deeperAndDeeper = kwargs.get('followlinks',False)
         if not isIterable(extensions):
             if debug:
                 print('The ext argument you passed is not an iterable returning')
@@ -962,9 +1022,26 @@ if True:
             if debug:
                 print('the maxDepth argument you passed is not an int, going all the way down!')
             maxDepth = -1
+        if os.path.isfile(os.path.join(sdir,'.fileHelper.json')):
+            helperfiles = json.load(os.path.join(sdir,'.fileHelper.json'))
+            if maxDepth == -1:
+                pass
+            elif maxDepth == 0:
+                helperfiles = [p for p in helperfiles if '/' not in p]
+            else:
+                helperfiles = [p for p in helperfiles if p.count('/') <= maxDepth]
+            if '*' in extensions:
+                rfiles = helperfiles
+            else:
+                rfiles = []
+                for f in helperfiles:
+                    for ext in extensions:
+                        if fnmatch.fnmatch(f,ext):
+                            rfiles.append(f)
+            return sdir,rfiles
         if maxDepth > 0:
             return sdir,[os.path.join(r,fname)[len(sdir):] for ext in extensions \
-                    for r,p,f in os.walk(sdir,followlinks=False) \
+                    for r,p,f in os.walk(sdir,followlinks=deeperAndDeeper) \
                     if r[len(sdir):].count(os.sep) < maxDepth\
                     for fname in f \
                     if fnmatch.fnmatch(fname,ext)]
@@ -974,7 +1051,9 @@ if True:
                     if fnmatch.fnmatch(f,ext)]
         else:
             return sdir,[os.path.join(r,fname)[len(sdir):] for ext in extensions \
-                for r,p,f in os.walk(sdir,followlinks=False) \
+                for r,p,f in os.walk(sdir,followlinks=deeperAndDeeper) \
                 for fname in f \
                 if fnmatch.fnmatch(fname,ext)]
 
+def ChangeEndian(x):
+    return x

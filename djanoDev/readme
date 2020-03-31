@@ -13,6 +13,8 @@ python manage.py startapp polls
 # edit polls/view.py
 python manage.py createsuperuser
 # browser http://localhost:8000/polls
+# browser http://localhost:8000/polls/45/results
+# browser http://localhost:8000/polls/45/vote
 # browser http://localhost:8000/admin
 
 

@@ -4,6 +4,8 @@ Created on Wed Sep 11 18:07:25 2019
 
 @author: Jordan
 """
+import os
+import sys
 
 import matplotlib.pyplot as plt
 import matplotlib
@@ -15,88 +17,114 @@ import numpy as np
 import struct
 import binascii
 from six import string_types
+plt.rcParams['toolbar'] = 'toolmanager'
 
-mplcolors = ['black','green','red','blue','orange','white','yellow']
-cmaps = sorted(m for m in plt.cm.datad if not m.endswith("_r"))
 
-namedcolorsRGBlookup = {}
-x = matplotlib.colors.get_named_colors_mapping()
-for key in x:
-    if not isinstance(x[key],tuple):
-        namedcolorsRGBlookup[key.replace('xkcd:','')]=matplotlib.colors.to_rgb(x[key])
-    elif isinstance(x[key],tuple) and isinstance(x[key][0],str) and '#' in x[key][0]:
-        namedcolorsRGBlookup[key.replace('xkcd:','')]=tuple(map(lambda x: np.array(x)/255.,struct.unpack('BBB',x[key][0].strip('#'))))
-    else:
-        namedcolorsRGBlookup[key.replace('xkcd:','')]=tuple(map(float,x[key]))
+if not hasattr(sys, 'frozen'):
+    RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    if __name__ == '__main__':
+        sys.path.append(RELATIVE_LIB_PATH)
+        sys.path.pop(0)
+else:
+    RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(sys.executable))
 
-namedcolorsHEXlookupfromNAME = {}
-for key in x:
-    namedcolorsHEXlookupfromNAME[key.replace('xkcd:','')] = matplotlib.colors.to_hex(x[key])
-#    if isinstance(x[key],string_types):
-#        namedcolorsHEXlookupfromNAME[key.replace('xkcd:','')]=x[key]
-#    elif isinstance(x[key],tuple):
-#        break
-#        val = np.array(x[key])*255.
-#        val = '#%02x%02x%02x' % tuple(val)
-#        namedcolorsHEXlookupfromNAME[key.replace('xkcd:','')]=val
+from PlotH5.mpltools import mplDefaults as mpld
+from PlotH5.mpltools import mplUtils as mplu
 
-namedcolorsNAMElookupfromHEX = {}
-for k,v in namedcolorsHEXlookupfromNAME.items():
-    namedcolorsNAMElookupfromHEX[str(v)] = k
+def update_legend(axes,label,oldlabel,symbol=''):
+    '''
+    This function will update the legend by finding the old label in the legend
+    and replacing it with the new label.
+    '''
+    legend_handle_labels = axes.properties()['legend_handle_labels']
+    for lhl in legend_handle_labels:
+        handle_list =  lhl[-1]
+        for i,handle in enumerate(handle_list):
+            if handle == oldlabel:
+                handle_list[i] = label
 
-namedcolorsNAMElookup = {}
-for k,v in namedcolorsRGBlookup.items():
-    namedcolorsNAMElookup[str(v)]=k
-
+class DoubleTupleWidget(Widgets.QWidget):
+    def __init__(self,origvalue,mainlabel,labels,parent=None,**kwargs):
+        super(DoubleTupleWidget,self).__init__(parent)
+        
+        if not isinstance(origvalue,(tuple,list)):
+            print('this is not an accepted iterable')
+        if len(origvalue) != len(labels):
+            print(origvalue,labels)
+            print('the iterable of values was not equal to the number of labels given')
+            
+        self.layout = Widgets.QGridLayout()
+        self.setLayout(self.layout)
+        
+        self.Label = Widgets.QLabel(mainlabel)
+        self.args = []
+        for i,val in enumerate(origvalue):
+            label = Widgets.QLabel(labels[i])
+            widget = Widgets.QLineEdit(str(val))
+            widget.setValidator(Gui.QDoubleValidator())
+            self.args.append(widget)
+            self.layout.addWidget(label,i,0)
+            self.layout.addWidget(widget,i,1)
 
 def makeRGBAfromReturn(cname,alpha,**kwargs):
-    rgb = namedcolorsRGBlookup[cname]
+    '''
+    Function creates an rgba value from a named color by looking up
+    the color name in a dictionary and returning the rgb value.  And appends on
+    the alpha value as a float.
+    
+    Input:
+        cname - color name (must be in the mpl color names found in mplDefaults)
+        alpha - float (0 - 1) opaqueness of the color
+    Kwargs:
+        N/A
+    Return:
+        returns the rgba tuple
+    '''
+    rgb = mpld.NametoRGB[cname]
     rgba = tuple(rgb,) + tuple([float(alpha)])
     return rgba
 
 class RGBAWidget(Widgets.QWidget):
     def __init__(self,origvalue,parent=None,**kwargs):
         super(RGBAWidget,self).__init__(parent)
+        self.makeAlpha = kwargs.get('makeAlpha',True)
+        self.alphaval = kwargs.get('alphaval','1.0')
+        if not self.alphaval:
+            self.alphaval = '1.0'
+        if not isinstance(self.alphaval,string_types):
+            self.alphaval = str(self.alphaval)
+        #This is a named color
+        if isinstance(origvalue,string_types) and '#' not in origvalue and isinstance(eval('origvalue'),string_types):        
+            self.color_name = mplu.get_closest_name_name(origvalue)
+        #This is string tuple.. should never come here
+        elif (isinstance(origvalue, string_types) and '#' not in origvalue and isinstance(eval('origvalue'),tuple)) or isinstance(origvalue,tuple):
+            if isinstance(origvalue, string_types):
+                origvalue = eval(origvalue)
+            if len(origvalue) == 4:
+                self.alphaval = str(origvalue[-1])
+                origvalue = origvalue[:-1]
+            self.color_name = mplu.get_closest_name_rgb(origvalue)
+        elif isinstance(origvalue, string_types):
+            origvalue = mplu.convert_hex_to_rgb(origvalue)
+            self.color_name = mplu.get_closest_name_rgb(origvalue)
 
-        if isinstance(origvalue,string_types) and '#' not in origvalue and isinstance(eval('origvalue'),string_types):
-            origvalue = namedcolorsRGBlookup[origvalue]
-        elif isinstance(origvalue,string_types) and '#' not in origvalue and isinstance(eval('origvalue'),tuple):
-            origvalue = eval(origvalue)
-        elif isinstance(origvalue,string_types):
-            origvalue = namedcolorsNAMElookupfromHEX[origvalue]
-            origvalue = namedcolorsRGBlookup[origvalue]
-        if not isinstance(origvalue,tuple):
-            print('thhis is not a tuple')
-
-
-        self.makeAlpha = kwargs.get('alpha',True)
-        self.givenAlpha = kwargs.get('rgba',True)
         self.layout = Widgets.QGridLayout()
         self.setLayout(self.layout)
 
-        self.ColorCombo = self.buildCombo(namedcolorsRGBlookup.keys(),origvalue)
+        self.ColorCombo = self.buildCombo(mpld.NametoRGB.keys(),self.color_name)
         self.layout.addWidget(self.ColorCombo,0,0)
-
         if self.makeAlpha:
-            self.layout.addWidget(Widgets.QLabel('Alpha'),0,1)
+            self.layout.addWidget(Widgets.QLabel('Alpha'),1,0)
             self.AlphaLine = Widgets.QLineEdit()
-            self.AlphaLine.setReadOnly(True)
+            self.AlphaLine.setReadOnly(False)
             self.AlphaLine.setValidator(Gui.QDoubleValidator())
             self.layout.addWidget(self.AlphaLine)
-            if self.givenAlpha:
-                self.AlphaLine.setText(str(origvalue[-1]))
-            else:
-                self.AlphaLine.setText('1.')
+            self.AlphaLine.setText(self.alphaval)
 
     def buildCombo(self,items,origval):
         widget = Widgets.QComboBox()
         widget.addItems(items)
-        #do a reverse lookup since you will be given rgba
-        if self.givenAlpha:
-            #Strip off the alpha part
-            origval = origval[:-1]
-        reversedlookup = namedcolorsNAMElookup[str(origval)]
-        index = widget.findText(reversedlookup)
+        index = widget.findText(origval)
         widget.setCurrentIndex(index)
         return widget
 
@@ -130,7 +158,8 @@ class TextOptions(Widgets.QDialog):
     def setupTextOptions(self):
         self.widgets = OrderedDict()
         self.widgets['Text'] = Widgets.QLineEdit(self.artist.get_text())
-        self.widgets['Text Color'] = RGBAWidget(self.artist.get_color(),alpha=False,rgba=False)
+        self.widgets['Position'] = DoubleTupleWidget(self.artist.get_position(),'Position',['X:','Y:'])
+        self.widgets['Text Color'] = RGBAWidget(self.artist.get_color())
         self.widgets['Text Size'] = Widgets.QLineEdit(str(self.artist.get_fontsize()))
         self.widgets['Text Size'].setValidator(Gui.QDoubleValidator())
         self.widgets['Text Font'] = Widgets.QComboBox()
@@ -146,9 +175,10 @@ class TextOptions(Widgets.QDialog):
         if not self.widgets['Text'].text():
             self.widgets['Text'].setText(' ')
         self.artist.set_text(self.widgets['Text'].text())
-        self.artist.set_color(namedcolorsRGBlookup[self.widgets['Text Color'].ColorCombo.currentText()])
+        self.artist.set_color(mpld.NametoRGB[self.widgets['Text Color'].ColorCombo.currentText()])
         self.artist.set_fontsize(self.widgets['Text Size'].text())
         self.artist.set_fontname(self.widgets['Text Font'].currentText())
+        self.artist.set_position(tuple([float(x.text()) for x in self.widgets['Position'].args]))
         self.artist.figure.canvas.draw()
         self.close()
 
@@ -206,7 +236,8 @@ class CollectionsOptions(Widgets.QDialog):
             self.widgets['Marker Face Color'] = RGBAWidget(tuple(self.artist.get_facecolor()[0]))
             self.widgets['Marker Edge Color'] = RGBAWidget(tuple(self.artist.get_edgecolor()[0]))
         else:
-            self.buildCombo('Color Map',cmaps,self.artist.get_cmap().name)
+            self.buildCombo('Color Map',mpld.cmaps,self.artist.get_cmap().name)
+        self.buildCombo('Marker', ['']+list(mpld.marker_to_array.keys()), mplu.determineMarker(self.artist))
         self.widgets['Marker Size'] = Widgets.QLineEdit(str(self.artist.get_sizes()[0]))
         self.widgets['Marker Size'].setValidator(Gui.QDoubleValidator())
 
@@ -227,7 +258,7 @@ class CollectionsOptions(Widgets.QDialog):
             self.artist.set_cmap(matplotlib.cm.get_cmap(self.widgets['Color Map'].currentText()))
 
         self.artist.set_sizes(np.array([float(self.widgets['Marker Size'].text())]))
-
+        self.artist._paths = (matplotlib.path.Path(mpld.marker_to_array[self.widgets['Marker'].currentText()]),)
         self.artist.set_label(self.widgets['Line Label'].text())
 
         self.artist.figure.canvas.draw()
@@ -272,11 +303,11 @@ class Line2DOptions(Widgets.QDialog):
     def setupLineOptions(self):
         self.widgets = OrderedDict()
 
-        self.widgets['Line Color'] = RGBAWidget(self.artist.get_color(),alpha=False,rgba=False)
+        self.widgets['Line Color'] = RGBAWidget(self.artist.get_color(),alphaval=self.artist.get_alpha())
 
-        self.buildCombo('Marker',['','.','*'],self.artist.get_marker())
-        self.widgets['Marker Face Color'] = RGBAWidget(self.artist.get_markerfacecolor(),alpha=False,rgba=False)
-        self.widgets['Marker Edge Color'] = RGBAWidget(self.artist.get_markeredgecolor(),alpha=False,rgba=False)
+        self.buildCombo('Marker',['']+list(mpld.marker_to_array.keys()),self.artist.get_marker())
+        self.widgets['Marker Face Color'] = RGBAWidget(self.artist.get_markerfacecolor(),makeAlpha=False)
+        self.widgets['Marker Edge Color'] = RGBAWidget(self.artist.get_markeredgecolor(),makeAlpha=False)
         self.widgets['Marker Size'] = Widgets.QLineEdit(str(self.artist.get_markersize()))
         self.widgets['Marker Size'].setValidator(Gui.QDoubleValidator())
         self.widgets['Marker Edge Width'] = Widgets.QLineEdit(str(self.artist.get_markeredgewidth()))
@@ -293,19 +324,21 @@ class Line2DOptions(Widgets.QDialog):
             self.layout.addWidget(self.widgets[key])
 
     def Accept(self):
-        self.artist.set_color(namedcolorsHEXlookupfromNAME[self.widgets['Line Color'].ColorCombo.currentText()])
+        self.artist.set_color(mpld.NametoHex[self.widgets['Line Color'].ColorCombo.currentText()])
+        self.artist.set_alpha(float(self.widgets['Line Color'].AlphaLine.text()))
         if self.legline:
-            self.legline.set_color(namedcolorsHEXlookupfromNAME[self.widgets['Line Color'].ColorCombo.currentText()])
+            self.legline.set_color(mpld.NametoHex[self.widgets['Line Color'].ColorCombo.currentText()])
+            self.legline.set_alpha(float(self.widgets['Line Color'].AlphaLine.text()))
 
         self.artist.set_marker(self.widgets['Marker'].currentText())
-        self.artist.set_markerfacecolor(namedcolorsHEXlookupfromNAME[self.widgets['Marker Face Color'].ColorCombo.currentText()])
-        self.artist.set_markeredgecolor(namedcolorsHEXlookupfromNAME[self.widgets['Marker Edge Color'].ColorCombo.currentText()])
+        self.artist.set_markerfacecolor(mpld.NametoRGB[self.widgets['Marker Face Color'].ColorCombo.currentText()])
+        self.artist.set_markeredgecolor(mpld.NametoRGB[self.widgets['Marker Edge Color'].ColorCombo.currentText()])
         self.artist.set_markersize(self.widgets['Marker Size'].text())
         self.artist.set_markeredgewidth(self.widgets['Marker Edge Width'].text())
         if self.legline:
             self.legline.set_marker(self.widgets['Marker'].currentText())
-            self.legline.set_markerfacecolor(namedcolorsHEXlookupfromNAME[self.widgets['Marker Face Color'].ColorCombo.currentText()])
-            self.legline.set_markeredgecolor(namedcolorsHEXlookupfromNAME[self.widgets['Marker Edge Color'].ColorCombo.currentText()])
+            self.legline.set_markerfacecolor(mpld.NametoRGB[self.widgets['Marker Face Color'].ColorCombo.currentText()])
+            self.legline.set_markeredgecolor(mpld.NametoRGB[self.widgets['Marker Edge Color'].ColorCombo.currentText()])
             self.legline.set_markersize(self.widgets['Marker Size'].text())
             self.legline.set_markeredgewidth(self.widgets['Marker Edge Width'].text())
 
@@ -325,14 +358,14 @@ class Line2DOptions(Widgets.QDialog):
     def Reject(self):
         self.close()
 
-class PatchesOptions(Widgets.QDialog):
+class PolygonOptions(Widgets.QDialog):
     def __init__(self,artist,parent=None):
-        super(PatchesOptions,self).__init__(parent)
+        super(PolygonOptions,self).__init__(parent)
         self.parent = parent
         self.artist = artist
         self.layout = Widgets.QGridLayout()
         self.setLayout(self.layout)
-        self.setWindowTitle('Scatter Options')
+        self.setWindowTitle('Polygon Options')
 
         self.hascbar = self.determineColorbar()
 
@@ -369,7 +402,7 @@ class PatchesOptions(Widgets.QDialog):
             self.widgets['Marker Face Color'] = RGBAWidget(tuple(self.artist.get_facecolor()[0]))
             self.widgets['Marker Edge Color'] = RGBAWidget(tuple(self.artist.get_edgecolor()[0]))
         else:
-            self.buildCombo('Color Map',cmaps,self.artist.get_cmap().name)
+            self.buildCombo('Color Map',mpld.cmaps,self.artist.get_cmap().name)
 
         for key in self.widgets:
             self.layout.addWidget(Widgets.QLabel(key))
@@ -390,71 +423,140 @@ class PatchesOptions(Widgets.QDialog):
 
     def Reject(self):
         self.close()
+        
+class RectangleOptions(Widgets.QDialog):
+    def __init__(self,artist,parent=None):
+        super(RectangleOptions,self).__init__(parent)
+        self.artist = artist
+        self.parent = parent
 
 
 class Editing_Picker(object):
     def __init__(self,*args,**kwargs):
         self.ann_list = []
-        
+
     def on_pick(self,event):
         if event.mouseevent.button == 1:
             if isinstance(event.artist,matplotlib.text.Text):
                 text = event.artist
                 dialog = TextOptions(text)
                 dialog.exec_()
-    
+
             elif isinstance(event.artist,matplotlib.lines.Line2D):
                 line = event.artist
                 legend = event.artist.axes.legend()
                 dialog = Line2DOptions(line,legend)
                 dialog.exec_()
-    
+
             elif isinstance(event.artist,matplotlib.collections.PathCollection):
                 collection = event.artist
                 legend = event.artist.axes.legend()
                 dialog = CollectionsOptions(collection,legend)
                 dialog.exec_()
-    
+
             elif isinstance(event.artist,matplotlib.collections.PolyCollection):
                 patch = event.artist
-                dialog = PatchesOptions(patch)
+                dialog = PolygonOptions(patch)
                 dialog.exec_()
-    
+            
+            # elif isinstance(event.artist,matplotlib.patches.Rectangle):
+            #     patch = event.artist
+            #     dialog = RectangleOptions(patch,legend)
+            #     dialog.exec()
+
             else:
                 print(event.artist)
         elif event.mouseevent.button == 2:
+            print(event.offsetTop,event.offsetLeft,'this')
             try:
                 line = event.artist
                 xdata = line.get_xdata()
                 ydata = line.get_ydata()
+                print(xdata)
                 ind = event.ind
                 ax = line.axes
                 ann = ax.annotate(line.get_label(),(xdata[ind[0]],ydata[ind[0]]))
+                ann.set_bbox(dict(color='w'))
                 self.ann_list.append(ann)
                 line.figure.canvas.draw()
             except:
                 pass
-    
+
     def on_release(self,event):
         for ann in self.ann_list:
             ann.remove()
             self.ann_list.remove(ann)
         event.canvas.draw()
+
+
+ann_list = []
+def on_pick(self,event):
+    if event.mouseevent.button == 1:
+        if isinstance(event.artist,matplotlib.text.Text):
+            text = event.artist
+            dialog = TextOptions(text)
+            dialog.exec_()
+
+        elif isinstance(event.artist,matplotlib.lines.Line2D):
+            line = event.artist
+            legend = event.artist.axes.legend()
+            dialog = Line2DOptions(line,legend)
+            dialog.exec_()
+
+        elif isinstance(event.artist,matplotlib.collections.PathCollection):
+            collection = event.artist
+            legend = event.artist.axes.legend()
+            dialog = CollectionsOptions(collection,legend)
+            dialog.exec_()
+
+        elif isinstance(event.artist,matplotlib.collections.PolyCollection):
+            patch = event.artist
+            dialog = PolygonOptions(patch)
+            dialog.exec_()
+
+        else:
+            print(event.artist)
+    elif event.mouseevent.button == 2:
+        try:
+            line = event.artist
+            xdata = line.get_xdata()
+            ydata = line.get_ydata()
+            ind = event.ind
+            ax = line.axes
+            ann = ax.annotate(line.get_label(),(xdata[ind[0]],ydata[ind[0]]))
+            ann_list.append(ann)
+            line.figure.canvas.draw()
+        except:
+            pass
+
+def on_release(event):
+        for ann in ann_list:
+            ann.remove()
+            ann_list.remove(ann)
+        event.canvas.draw()
+
+if __name__ == '__main__':
+    fig,ax = plt.subplots(ncols=2)
+    ax[0].scatter([1,2,3,4],[4,5,6,7],picker=5,label='FUN',c='red',cmap=None)
+    sc = ax[0].scatter([5,6,7,8],[4,5,6,7],picker=5,label='Not Fun',c=[1,2,3,4],cmap=plt.cm.get_cmap('flag'))
+    fig.colorbar(sc).set_label('nol',picker=5)
+    ax[1].plot([5,6,10,11],[10,11,12,13],picker=5,label='Not Funy',c='#0000FF')
+    patch = matplotlib.patches.Rectangle((9,3), 1, 1, facecolor='yellow')
+    ax[1].add_patch(patch)
+    jj = ax[0].annotate('whhhhhat',(5,5),label='when')
+    jj.set_bbox(dict(facecolor='green'))
+    ax[0].text(3,3,'whoooo')
+    # ax.bar([1,2,3],[3,4,2])
+    ax[0].stackplot([1,2,3,4],[4,5,6,7],picker=5,color='blue',labels=['what'])
+    ax[0].legend()
+    fig.suptitle('what')
+    ax[0].set_ylabel('Yes')
+    ax[0].set_xlabel('No')
+    ax[0].set_title('This is a Plot')
+    ax[0].set_picker(5)
+    from PlotH5.mpltools import toolbarUtils
+    toolbarUtils.add_Tool(fig, ['Editor','SubplotOptions'])
     
-
-# ax.scatter([1,2,3,4],[4,5,6,7],picker=5,label='FUN',c='red',cmap=None)
-# sc = ax.scatter([5,6,7,8],[4,5,6,7],picker=5,label='Not Fun',c=[1,2,3,4],cmap=plt.cm.get_cmap('flag'))
-# fig.colorbar(sc).set_label('nol',picker=5)
-# ax.plot([5,6,10,11],[10,11,12,13],picker=5,label='Not Fun',c='blue')
-# ax.stackplot([1,2,3,4],[4,5,6,7],picker=5,color='blue')
-# ax.legend()
-# ax.set_ylabel('Yes',picker=5)
-# ax.set_xlabel('No',picker=5)
-# ax.set_title('This is a Plot',picker=5)
-
-# fig.canvas.mpl_connect('pick_event',on_pick)
-# fig.canvas.mpl_connect('button_release_event',on_release)
-
-# plt.show()
+    plt.show()
 
 

@@ -1,14 +1,55 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Oct 28 13:33:39 2019
+Created on Sun Mar 29 16:29:52 2020
 
-@author: klinetry
+@author: hollidayh
 """
+import sys
 import os
+from struct import unpack
 import h5py
 import json
+import pandas as pd
+import numpy as np
 
+RELATIVE_LIB_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+if __name__ == '__main__':
+    sys.path.append(RELATIVE_LIB_PATH)
+    sys.path.pop(0)
+
+from misc_functions.numpy_utils import downsizeInt
+
+h5pyStr = h5py.special_dtype(vlen=str)
+sizeDiv = {'S':1,'U':4}
+
+def checkOType(series, **kwargs):
+    if not isinstance(series,(pd.Series,pd.DataFrame,np.ndarray)):
+        return False
+    if series.dtype.kind in ('S','U'):
+        return np.array(series,dtype=f'{series.dtype.kind}{int(series.dtype.itemsize/sizeDiv[series.dtype.kind])}')
+    elif series.dtype.kind == 'O':
+        # so len field on float does not fail
+        series.fillna('',inplace=True)
+        series = series.astype(np.str)
+        return np.array(series.apply(bruteForceString),dtype=f'S{len(max(series.values,key=len))}')
+    elif series.dtype.kind in ('u','i'):
+        return np.array(series,dtype=downsizeInt(series))
+    else:
+        return series
+
+
+def writeDFtoListH5(grp,arr,**kwargs):
+    if arr.shape[0]:
+        for dset in arr:
+            grp.create_dataset(dset,data=checkOType(arr[dset]))
+
+def unpack_decode(msgFmt,buff):
+    return tuple([item.decode('utf-8') \
+                  if isinstance(item,bytes) else item for item in unpack(msgFmt,buff)])
+
+def bruteForceString(ia):
+    return ia.decode('utf-8','ignore')
 
 def traverseH5(srcgrp,dsDict,**kwargs):
     # Required for -truth.h5 files to make sure full set of columns will be used
@@ -117,9 +158,9 @@ def traverseH5(srcgrp,dsDict,**kwargs):
                     # List comprehension of all cols get dtype
     return True # Once you've gone thorugh all the items at this level return (unrecurse?)
 
-def genDSDict(h5er):
+def genDSDict(iH5file):
     dsDict = {}
-    with h5py.File(h5er,'r') as fid:
+    with h5py.File(iH5file,'r') as fid:
         traverseH5(fid,dsDict,forcecommon=False)
-    with open(h5er[:-3]+'.json','w') as fid:
+    with open(f'{os.path.splitext(iH5file)[0]}.json','w') as fid:
         json.dump(dsDict,fid)
