@@ -30,7 +30,7 @@ def downsizeInt(ia):
                idx = (ia <= n)
                if idx.all():
                   return t
-     elif ia.dytpe.kind == 'i':
+     elif ia.dtype.kind == 'i':
            for nl,nh,t in iSize:
                 idx = (ia>=nl) & (ia <=nh)
                 if idx.all():

@@ -32,7 +32,8 @@ def checkOType(series, **kwargs):
         # so len field on float does not fail
         series.fillna('',inplace=True)
         series = series.astype(np.str)
-        return np.array(series.apply(bruteForceString),dtype=f'S{len(max(series.values,key=len))}')
+        # return np.array(series.apply(bruteForceString),dtype=f'S{len(max(series.values,key=len))}')
+        return np.array(series,dtype=f'S{len(max(series.values,key=len))}')
     elif series.dtype.kind in ('u','i'):
         return np.array(series,dtype=downsizeInt(series))
     else:
@@ -49,7 +50,10 @@ def unpack_decode(msgFmt,buff):
                   if isinstance(item,bytes) else item for item in unpack(msgFmt,buff)])
 
 def bruteForceString(ia):
-    return ia.decode('utf-8','ignore')
+    if isinstance(ia,bytes):
+        return ia.decode('utf-8','ignore')
+    else:
+        return ia
 
 def traverseH5(srcgrp, dsDict, **kwargs):
     # Required for -truth.h5 files to make sure full set of columns will be
