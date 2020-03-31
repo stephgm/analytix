@@ -17,18 +17,15 @@ import mpl_toolkits
 import numpy as np
 
 
-try:
-    import cartopy
-    import cartopy.crs as ccrs
-    from cartopy import config
-    from cartopy.io.shapereader import Reader
-    import cartopy.feature as cfeature
-    if os.name == 'posix':
-        cartopy.config['data_dir'] = f'{os.environ["TOOL_LOCAL"]}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/cartopy'
-    else:
-        cartopy.config['data_dir'] = os.path.join(os.path.dirname(sys.executable),'Lib','site-packages','cartopy')
-except:
-    ccrs = None
+import cartopy
+import cartopy.crs as ccrs
+from cartopy import config
+from cartopy.io.shapereader import Reader
+import cartopy.feature as cfeature
+if os.name == 'posix':
+    cartopy.config['data_dir'] = cartopy.config['data_dir'] = f'{os.path.dirname(os.path.dirname(sys.executable))}/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/cartopy'
+else:
+    cartopy.config['data_dir'] = os.path.join(os.path.dirname(sys.executable),'Lib','site-packages','cartopy')
 
 print(cartopy.config['data_dir'])
 
@@ -55,7 +52,7 @@ from PlotH5.mpltools.toolbarUtils import add_Tool
 
 def setFigAxes(obj,cmd,PlotteratorObj,attr):
     '''
-    This function feeds in the 'gets' and 'sets' of axes and figs and passes them to 
+    This function feeds in the 'gets' and 'sets' of axes and figs and passes them to
     the plotterator function to parse commands.  This checks to see if the
     attribute passed is callable.  Since Plotterator will never store class instances
     we need to make sure that it is not a class instance before we parse it.
@@ -93,7 +90,7 @@ def setFigAxes(obj,cmd,PlotteratorObj,attr):
 
 def setLines(axid,obj,cmd,PlotteratorObj,attr,**kwargs):
     '''
-    This function feeds in the 'gets' and 'sets' of Lines and passes them to 
+    This function feeds in the 'gets' and 'sets' of Lines and passes them to
     the plotterator function to parse line commands.  This checks to see if the
     attribute passed is callable.  Since Plotterator will never store class instances
     we need to make sure that it is not a class instance before we parse it.
@@ -123,10 +120,10 @@ def setLines(axid,obj,cmd,PlotteratorObj,attr,**kwargs):
     except:
         if debug:
             print(f'{cmd} failed')
-            
+
 def setPatch(axid,obj,cmd,PlotteratorObj,attr):
     '''
-    This function feeds in the 'gets' and 'sets' of patches and passes them to 
+    This function feeds in the 'gets' and 'sets' of patches and passes them to
     the plotterator function to parse patch commands.  This checks to see if the
     attribute passed is callable.  Since Plotterator will never store class instances
     we need to make sure that it is not a class instance before we parse it.
@@ -159,7 +156,7 @@ def setPatch(axid,obj,cmd,PlotteratorObj,attr):
 
 def handle_cartopy_features(axid,PlotteratorObj,ax,**kwargs):
     '''
-    
+
     '''
     for art in ax.artists:
         if isinstance(art,cartopy.mpl.feature_artist.FeatureArtist):
@@ -175,13 +172,13 @@ def handle_cartopy_features(axid,PlotteratorObj,ax,**kwargs):
             elif 'lakes' == name:
                 PlotteratorObj.add_cfeature('LAKES')
             elif 'rivers' in name:
-                PlotteratorObj.add_cfeature('RIVERS')     
-       
+                PlotteratorObj.add_cfeature('RIVERS')
+
 def handle_images(axid, PlotteratorObj, ax, **kwargs):
     '''
     This function will take images from an axes object and parse the command
     in plotterator through the imshow function.
-    
+
     Inputs:
         axid - The plotterator axis ID
         PlotteratorObj - The Plotter class instance of Plotterator
@@ -201,20 +198,20 @@ def handle_images(axid, PlotteratorObj, ax, **kwargs):
         origin = image.origin
         arr = image.get_array()
         PlotteratorObj.parseCommand(axid,'imshow',[[arr],dict(origin=origin,transform=transform,extent=extent)])
-    
+
 def PlotterateFig(fig):
     '''
     This function will take in a matplotlib figure object and Plotterate it.
     Some aspects of the plot may NOT carry over perfectly, however, this is a
     WIP.
-    
+
     Inputs:
         fig - matplotlib figure object
     Kwargs:
         N/A
     Returns:
         N/A but subject to change
-    
+
     Figure:
         Issues:
             1. Need to add support for legends
@@ -222,7 +219,7 @@ def PlotterateFig(fig):
         Issues:
             1. Need to provide better support for legends.  Currently only basic
             ones are made..... somtimes
-    
+
 
     '''
     xx = fig.properties()
@@ -236,12 +233,12 @@ def PlotterateFig(fig):
     loose = not xx['tight_layout']
     pltr = Plotterator.Plotter(figsize=figsize,facecolor=facecolor,loose=loose,title=title,
                                picker_type='interactive',picker=6)
-    
+
     '''
     I think i need to loop over axes first, to tell whether or not there is a twin call
     '''
     twindict = {}
-    
+
     for i,axes in enumerate(fig.properties()['axes']):
         # return axes
         mapplot = False
@@ -257,7 +254,7 @@ def PlotterateFig(fig):
             continue
         # return yy
         Id = mplu.getAxid(yy['geometry'])
-        
+
         rowspan,colspan = mplu.getSpan(yy['subplotspec'], yy['geometry'])
         axType = mplu.determineAxesType(axes)
         if axType == 'normal':
@@ -271,20 +268,20 @@ def PlotterateFig(fig):
             excludes.extend(['get_xticks','get_xticklabels','get_yticks','get_yticklabels',
                              'get_xlim','get_ylim','get_xbound','get_ybound','_get_view'])
             pax = pltr.add_subplot(Id,rowspan,colspan,mapplot=True,mapproj=projection)
-        
+
         if Id in twindict and mplu.has_twin(axes):
             pax = pltr.twin(Id)
         elif Id in twindict and not mplu.has_twin(axes):
             pass
         else:
             twindict[Id] = mplu.has_twin(axes)
-        
+
         for cmd in axesGetSets:
             if cmd in excludes:
                 continue
             attr = eval(f'axes.{cmd}')
             setFigAxes(pax, axesGetSets[cmd], pltr,attr)
-        
+
         '''
         This is for the grids... fml
         '''
@@ -313,21 +310,21 @@ def PlotterateFig(fig):
                 pltr.parseCommand(pax,'grid',[dict(b=True,which='minor',axis='x')])
         except:
             pass
-        
-        
+
+
         '''
         This will produce a simple legend... sometimes.. Need to make this more fancy
         '''
         lgnd = axes.get_legend()
         if lgnd:
             pltr.parseCommand(pax,'legend',[[]])
-        
+
         if mapplot:
             handle_images(pax,pltr,axes,mapplot=True)
             handle_cartopy_features(pax,pltr,axes)
         else:
             handle_images(pax,pltr,axes)
-        
+
         for child in yy['children']:
             if mapplot:
                 proj = mplu.parseCartopyTransform(child)
@@ -342,7 +339,7 @@ def PlotterateFig(fig):
                 the Spine object in the list of children for the axes.
                 '''
                 break
-            
+
             if isinstance(child,mpl_toolkits.mplot3d.art3d.Line3D):
                 patch = False
                 # return child
@@ -351,7 +348,7 @@ def PlotterateFig(fig):
                     line = pltr.plot3d(x, y, z, axid=pax, transform=proj)
                 else:
                     line = pltr.plot3d(x,y,z,axid=pax)
-            
+
             elif isinstance(child,mpl_toolkits.mplot3d.art3d.Path3DCollection):
                 # return child
                 patch = False
@@ -378,7 +375,7 @@ def PlotterateFig(fig):
                         line = pltr.scatter3d(x,y,z,axid=pax,marker=marker,transform=proj)
                     else:
                         line = pltr.scatter3d(x,y,z,axid=pax,marker=marker)
-                
+
             elif isinstance(child,matplotlib.lines.Line2D):
                 # return child
                 patch = False
@@ -414,7 +411,7 @@ def PlotterateFig(fig):
                         line = pltr.scatter([],[],axid=pax,marker=marker,transform=proj,picker=5)
                     else:
                         line = pltr.scatter([],[],axid=pax,marker=marker,picker=5)
-                    
+
             elif isinstance(child,matplotlib.text.Annotation):
                 patch = None
                 text = child._text
@@ -427,7 +424,7 @@ def PlotterateFig(fig):
                 else:
                     pltr.parseCommand(pax,'annotate',[[text,xy],dict(va=va,ha=ha,color=color,picker=5)])
                 continue
-            
+
             elif isinstance(child,matplotlib.text.Text):
                 patch = None
                 text = child._text
@@ -441,7 +438,7 @@ def PlotterateFig(fig):
                 else:
                     pltr.parseCommand(pax,'text',[[x,y,text],dict(ha=ha,va=va,color=color,picker=5)])
                 continue
-                
+
             elif isinstance(child,matplotlib.patches.Wedge):
                 patch = True
                 if mapplot:
@@ -523,18 +520,18 @@ def PlotterateFig(fig):
                     setPatch(pax,line, childGetSets[cmd], pltr,attr)
                 else:
                     setLines(pax, line, childGetSets[cmd], pltr, attr)
-        
+
         '''
         Set the x,y tick objs after all the plots have been set
         '''
         xticklabels = mplu.getTickLabels(axes,'x')
         yticklabels = mplu.getTickLabels(axes,'y')
-        if xticklabels:        
+        if xticklabels:
             pltr.parseCommand(pax,'set_xticklabels',[[xticklabels]])
         if yticklabels:
             pltr.parseCommand(pax,'set_yticklabels',[[yticklabels]])
     pltr.createPlot('',PERSIST=True)
-    
+
 if __name__ == '__main__':
     x = np.random.randint(0,20,200)
     y = np.random.randint(0,25,200)
@@ -546,14 +543,14 @@ if __name__ == '__main__':
             with each number distributed Uniform(vmin, vmax).
             '''
             return (vmax - vmin)*np.random.rand(n) + vmin
-        
+
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.set_xlabel('what')
         ax.set_ylabel('who')
         ax.set_zlabel('when')
         n = 100
-        
+
         # For each set of style and range settings, plot n random points in the box
         # defined by x in [23, 32], y in [0, 100], z in [zlow, zhigh].
         for m, zlow, zhigh in [('o', -50, -25)]:#, ('^', -30, -5)]:
@@ -566,12 +563,12 @@ if __name__ == '__main__':
                 cbar.set_label('hoo')
             if False:
                 ax.plot(xs,ys,zs,marker=m)
-    
+
     if True:
         # fig,ax = plt.subplots()
         x = np.random.randint(0,20,200)
         y = np.random.randint(0,25,200)
-        
+
         if False:
             #scatter plot
             sc = ax.scatter(x,y,marker='D',c=x,s=200,ec='k',cmap=plt.cm.get_cmap('bone'),label='stuff')
@@ -590,35 +587,35 @@ if __name__ == '__main__':
             cmap = plt.cm.jet
             plcolor = cmap(np.linspace(0.,1.,3))
             ax.pie([10,23,32],autopct='%.2f%%',colors=plcolor)
-            
+
         if True:
             #basemap plot ugh here we go
             fig = plt.figure()
             ax = plt.axes(projection=ccrs.PlateCarree())
             ny_lon, ny_lat = -75, 43
             delhi_lon, delhi_lat = 77.23, 28.61
-            
+
             plt.plot([ny_lon, delhi_lon], [ny_lat, delhi_lat],
                       color='blue', linewidth=2, marker='o',
                       transform=ccrs.Geodetic(),
                       )
-            
+
             plt.plot([ny_lon, delhi_lon], [ny_lat, delhi_lat],
                       color='gray', linestyle='--',
                       transform=ccrs.PlateCarree(),
                       )
-            
+
             ax.add_patch(matplotlib.patches.Polygon([[0,0],[20,0],[20,20],[0,20]],
                                                     fill = False,color='g',ls='--',
                                                     transform=ccrs.PlateCarree()))
-            
+
             ax.add_patch(matplotlib.patches.Circle([30,30],radius=10,color='g',ls='--',
                                                    transform=ccrs.PlateCarree()))
-            
+
             plt.text(ny_lon - 3, ny_lat - 12, 'New York',
                       horizontalalignment='right',
                       transform=ccrs.Geodetic())
-            
+
             plt.text(delhi_lon + 3, delhi_lat - 12, 'Delhi',
                       horizontalalignment='left',
                       transform=ccrs.Geodetic())
@@ -637,30 +634,30 @@ if __name__ == '__main__':
             ax.add_feature(cfeature.RIVERS)
             add_Tool(fig, ['CartopyOptions','SubplotOptions'])
             plt.show()
-            
+
         if False:
             #bar chart
             N = 5
             men_means = (20, 35, 30, 35, 27)
             men_std = (2, 3, 4, 1, 2)
-            
+
             ind = np.arange(N)  # the x locations for the groups
             width = 0.35
             rects1 = ax.bar(ind, men_means, width, color='r', yerr=men_std)
-    
+
             women_means = (25, 32, 34, 20, 25)
             women_std = (3, 5, 2, 3, 3)
             rects2 = ax.bar(ind + width, women_means, width, color='y', yerr=women_std)
-            
+
             # add some text for labels, title and axes ticks
             ax.set_ylabel('Scores')
             ax.set_title('Scores by group and gender')
             ax.set_xticks(ind + width / 2)
             ax.set_xticklabels(('G1', 'G2', 'G3', 'G4', 'G5'))
             ax.annotate('What',(1,10),color='b')
-            
+
             ax.legend((rects1[0], rects2[0]), ('Men', 'Women'))
-            
+
             def autolabel(rects):
                 """
                 Attach a text label above each bar displaying its height
@@ -670,45 +667,45 @@ if __name__ == '__main__':
                     ax.text(rect.get_x() + rect.get_width()/2., 1.05*height,
                             '%d' % int(height),
                             ha='center', va='bottom')
-            
+
             autolabel(rects1)
             autolabel(rects2)
-            
+
         if False:
             #stack plot
-            
+
             x = [1, 2, 3, 4, 5]
             y1 = [1, 1, 2, 3, 5]
             y2 = [0, 4, 2, 6, 8]
             y3 = [1, 3, 5, 7, 9]
-            
+
             y = np.vstack([y1, y2, y3])
             print(y)
-            
+
             labels = ["Fibonacci ", "Evens", "Odds"]
             ax.stackplot(x, y, labels=labels)
-            
+
         if False:
             #histogram
             import matplotlib.mlab as mlab
             import scipy.stats
-    
+
             mu, sigma = 100, 15
             x = mu + sigma*np.random.randn(10000)
-            
+
             # the histogram of the data
             n, bins, patches = plt.hist(x, 50, normed=1, facecolor='green', alpha=0.75)
-            
+
             # add a 'best fit' line
             y = scipy.stats.norm.pdf( bins, mu, sigma)
             l = plt.plot(bins, y, 'r--', linewidth=1)
-            
+
             plt.xlabel('Smarts')
             plt.ylabel('Probability')
             plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu=100,\ \sigma=15$')
             plt.axis([40, 160, 0, 0.03])
             plt.grid(True)
-        
-    
+
+
     if fig:
         z = PlotterateFig(fig)
