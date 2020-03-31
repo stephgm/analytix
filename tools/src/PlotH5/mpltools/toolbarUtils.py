@@ -123,6 +123,7 @@ class EnableEditing(ToolToggleBase):
 ### Add Tool to Toolbar Section
 
 def add_Tool(fig,tools=[],**kwargs):
+    get_toolbar = kwargs.get('get_toolbar',False)
     if not isinstance(tools,list):
         tools = [tools]
     if 'Heatmap Word Wrap' in tools:
@@ -137,3 +138,8 @@ def add_Tool(fig,tools=[],**kwargs):
     if 'CartopyOptions' in tools:
         fig.canvas.manager.toolmanager.add_tool('Cartopy Options',CartopyOptions)
         fig.canvas.manager.toolbar.add_tool('Cartopy Options','navigation',3)
+    
+    if get_toolbar:
+        return fig.canvas.manager.toolbar
+    else:
+        return
