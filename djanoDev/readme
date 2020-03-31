@@ -15,3 +15,31 @@ python manage.py createsuperuser
 # browser http://localhost:8000/polls
 # browser http://localhost:8000/admin
 
+
+to change database in django:
+for MariaDB/MYSQL-
+
+in the settings.py folder change datebase
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME' : 'testing',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '3306',}
+
+now migrate:
+
+in the terminal type:
+python manage.py migrate
+
+
+to retieve the tables from MYSQL into django:
+
+pythton manage.py inspectdb > models.py
+
+the tables are now transfering into a models.py folder
+
+ #my issue now is a missing I.D error when pulling tables into django

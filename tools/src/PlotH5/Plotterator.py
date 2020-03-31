@@ -1275,5 +1275,207 @@ if __name__ == '__main__':
 #        pltr.parseCommand(ax3, 'legend', [[]])
         pltr.createPlot('', PERSIST=True)
 
+#Justin adding from here
 
+if __name__ == '__main__':
+    if False:
+        pltr = Plotter(combinelegend=True, picke=False, tools=['Editor'])
+        pltr.add_subplot()
+        x = np.random.randint(0,100,20)
+        y = np.random.randint(0,100,20)
+        pltr.scatter(x,y, label='FML')
+        pltr.parseCommand((0,0), 'legend', [[]])
+        ax1 = pltr.add_subplot((1,0)) 
+        pltr.plot(y,x,axid=ax1, label='FYL')
+#        pltr.parseCommand(ax1, 'legend',[[]])
+#        pltr.parseCommand(ax1, 'legend',[dict(loc='best')])
+        l = ['FudgeMyLife']
+        h = [([0],[0],dict(markerfacecolor='red',marker='d', color='w'))]
+        pltr.add_customlegend(ax1,h,l,loc='best')
+        ax2 = pltr.add_subplot((2,0))
+        pltr.scatter(y,y,ax2,label='fudge dragon')
+        pltr.add_colorbar(colorbarname='bone',label='FML')
+        pltr.parseCommand(ax2,'legend',[[]])
+        pltr.parseCommand(ax2,'annotate',[['ASS',(0.5,0.5)],dict(picker=PICKERTOLERANCE)])
+        pltr.parseCommand(ax2,'legend',[dict(prop=dict(size=6.0),loc='best',ncol=4)])
+        pltr.share((0,0),ax1,'x')
+        pltr.share((0,0),ax2,'both')
+        pltr.createplot('test.png',PERSIST=True)
+    if False:
+        jobs = []
+        add = jobs.append 
+        ext = jobs.extend
+        maxThreads = False
+        nthreads = 1
+        dashOp = False
+        for i in range(1,len(sys.argv)):
+            if dashOp:
+                dashOp = False
+                continue
+            if sys.argv[i] == '--max-threads':
+                maxThreads = True
+                nthreads = cpu_count()
+            elif sys.argv[i] == '-nt':
+                dashOp = True
+                maxThreads = True
+                try:
+                    nthreads = int(sys.argv[i+1])
+                except:
+                    print(NOTES)
+                    sys.exit(1)
+            elif os.path.isfile(os.path.realpath(sys.argv[i])):
+                add(os.path.realpath(sys.argv[i]))
+            elif os.path.isdir(os.path.realpath(sys.argv[i])):
+                ext(glob.glob(os.path.join(os.path.realpath(sys.argv[i]),'*.pklplt')))
+        if jobs:
+            PNGerator(jobs, nthreads=nthreads)
+        else:
+            print(NOTES)
+    if False:
+        """
+        Demo of scatter plot with varying marker colors and sizes.
+        """
+        import numpy as np
+        import matplotlib.pyplot as plt
+        import matplotlib.cbook as cbook
+        
+        datafile = cbook.get_sample_data('/home/jacob/anaconda2/pkgs/matplotlib-1.5.1-np110py27_0/lib/python2.7/site-packages/matplotlib/mpl-data/sample_data/goog.npy')
+        try:
+            price_data = np.load(datafile, encoding='bytes').view(np.recarray)
+        except TypeError:
+            price_data = np.load(datafile).view(np.recarray)
+        price_data = price_data[-250:] #get the most recent 250 trading days
+        
+        detail = np.diff(price_data.adj_close)/price_data.adj_close[:-1]
+        
+        # Marker size in units of pints^2
+        volume = (15 * price_data.volume[:2] / price_data.volume[0])**2
+        close = 0.003 * price_data.close[:2] / 0.003 * price_data.open[:-2]
+        pltr = Plotter(ncols=2)
+        pltr.add_subplot((0,0))
+        pltr.scatter(detail[:-1],detail[1:],c=close,s=volume,alpha=0.5)
+        pltr.parseCommand((0,0),'set_xlabel',[[r'$\Delta_i$'],dict(fontsize=15)])
+        pltr.parseCommand((0,0),'set_ylabel',[[r'$\Delta_{i+1}$'],dict(fontsize=15)])
+        pltr.parseCommand((0,0), 'set_title', [['Volume and percent change']])
+        pltr.parseCommand((0,0), 'grid', [[True]])
+        pltr.parseCommand('fig', 'tight_layout', [])    
+        """
+        Basic Pie Chart
+        """
+        labels = 'Frogs','Hogs', 'Dogs', 'Logs'
+        sizes = [15, 30, 45, 10]
+        explode = (0, 0.1, 0, 0)
+        pltr.ass_subplot((0,1))
+        pltr.pie(sizes, (0,1), explode=explode,labels=labels,autopct='%1.1f%%',
+                shadow=True, startngle=90)
+        pltr.parseCommand((0,1), 'axis', [['equal']])
+        pltr.createPlot('',SAVEPNG=False,SAVEPKL=False,SHOW=True)
+    if False:
+        """
+        Grid Spec Example
+        """
+        import numpy as np
+        pltr = Plotter()
+        pltr.parseCommand('fig', 'tight_layout', [])
+        pltr.add_subplot((0,0),1,2)
+        pltr.plot(np.arrange(0,1e6,1000), np.arange(0, 1e6,1000),'',(0,0))
+        pltr.parseCommand((0,0), 'set_ylabel', [['YLabel0']])
+        pltr.parseCommand((0,0), 'set_xlabel', [['XLabel0']])
+        for i in range(2):
+            pltr.add_subplot((1,i))
+            pltr.parseCommand((1,i), 'set_ylabel', [[f'YLabel1 {i:d}']])
+            pltr.parseCommand((1,i), 'set_xlabel', [[f'XLabel1 {i:d}']])
+        pltr.createPlot('', SAVEPNG=False,SAVEPKL=False,SHOW=True)
+    if False:
+        pltr = Plotter()
+        pltr.add_subplot((0,0),1,3)
+        pltr.add_subplot((1,0),1,2)
+        pltr.add_subplot((1,2),2,1)
+        pltr.add_subplot((2,0))
+        pltr.add_subplot((2,1))
+        pltr.parseCommand((0,0), 'set_xlabel', [['GridSpec']])
+        pltr.parseCommand('fig', 'tight_layout', [])
+        pltr.createPlot('', SAVEPNG=False,SAVEPKL=False,SHOW=True)   
+    if False:
+        ny_lon, ny_lat = -75., 43.
+        delhi_lon, delhi_lat = 77.23, 28.61
+        mapimg = 'bluemarblesd'
+        pltr = Plotter()
+        ax = pltr.ass_subplot(mapplot=True)
+        pltr.add_map(mapimg)
+        try:
+            pltr.add_cfeature('BORDERS', ax)
+            pltr.add_cfeature('LAND', ax)
+            pltr.add_cfeature('OCEAN', ax)
+            pltr.add_cfeature('COASTLINE', ax)
+        except:
+            print("The cartopy stuff did not work", True)
+        pltr.add_patch(ax, 'Ellipse', [dict(xy=[-70,40],height = 10., width = 10., color= 'red', alpha = 0.3, transform = 'PlateCarree()')])
+        pltr.plot([ny_lon,delhi_lon],[ny_lat, delhi_lat],axid=ax, color='blue',lw=2,marker='o',transform='Geodetic()')
+        pltr.plot([ny_lon,delhi_lon],[ny_lat, delhi_lat],axid=ax, color='gray',ls='--',transform='PlateCarree()')
+        pltr.parseCommand(ax, 'text', [[ny_lon-3,ny_lat-12,'New York'],dict(ha='right',transform='Geodetic()')])
+        pltr.parseCommand(ax, 'text', [[delhi_lon+3,delhi_lat-12,'New York'],dict(ha='left',transform='Geodetic()')])
+        pltr.createPlot('test.png', PERSIST=True)
+    if False:
+        """
+        ==========
+        Table Demo
+        ==========
 
+        Demo of table function to display a table within a plot.
+        """
+        OPTION = 3
+        # 1 - original
+        # 2 - stack overflow fix
+        # 3 - hammy's cell stuff that is more kitti
+        import numpy as np
+        import matplaylib.pyplot as plt
+        
+        data = [[ 66386, 174296,  75131, 577908,  32015],
+                [ 58230, 381139,  78045,  99308, 160454],
+                [ 89135,  80552, 152558, 497981, 603535],
+                [ 78415,  81858, 150656, 193263,  69638],
+                [139361, 331509, 343164, 781380,  52269]]
+        columns = ('Freeze', 'Wind', 'Flood', 'Quake', 'Hail')
+        rows = [f'{x:d} year' for x in (100, 50, 20, 10, 5)]
+        
+        values = np.arange(0, 2500, 500)
+        value_increment = 1000
+        
+        # Get some pastel shapes for the colors
+        colors = plt.cm.BuPu(np.linspace(0, 0.5, len(rows)))
+        n_rows = len(data)
+        index = np.arange(len(columns)) + 0.3
+        bar_width = 0.4
+        # Initialize the vertical-offset for the stacked bar chart
+        y_offset = np.zeros(len(columns))
+        pltr = Plotter()
+        ax = pltr.add_subplot()
+        # Plot bars and create text labels for the table
+        cell_text = []
+        for row in range(n_rows):
+            pltr.bar(index, data[row], ax, bar_width, bottom=y_offset, color=colors[row])
+#            plt. bar(index, data[row], bar_width, bottom=y_offset, color=colors[row])
+            y_offset = y_offset + data[row]
+            cell_text.append(['%1.1f' % (x / 1000.0) for x in y_offset])
+        #Reverse colors and text labels to displat the lst value at the top.
+        colors + colors[::-1]
+        cell_text.reverse()
+        #Add a table at the bottom of the axes
+        # if OPTION == 1 or OPTION == 3
+        #print cell_text
+        pltr.add_table(ax, cellText=cell_text,
+                               rowLabels=rows,
+                               rowColours=colors,
+                               colLabels=columns,
+                               loc='bottom',
+                               colLoc='center',
+                               rowLoc='center',
+                               cellFontSize=10,
+                               cellHeight=1.4)
+        pltr.parseCommand('fig', 'subplots_adjust',[dict(left=0.2, bottom=0.35, right=0.95)])
+        pltr.parseCommand(ax, 'set_ylabel', [[f"Loss in ${value_increment}s"],dict(picker=PICKERTOLERANCE)])
+        pltr.parseCommand(ax, 'set_yticks', [[values * value_increment, [f'{val:d}' for val in values]]])
+        pltr.parseCommand(ax, 'set_xticks', [[[]]])        
+        pltr.parseCommand(ax, 'set_title', [['Loss by Disaster'], dict(picker=PICKERTOLERANCE)])
+        pltr.createPlot('',SAVEPNG=False, SAVEPKL=False,SHOW=True)
