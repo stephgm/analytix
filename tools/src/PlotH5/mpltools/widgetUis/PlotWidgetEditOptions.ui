@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Plot Options</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
@@ -72,7 +72,12 @@
           </item>
           <item>
            <property name="text">
-            <string>Horizontal Bar</string>
+            <string>Timeline</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Histogram</string>
            </property>
           </item>
           <item>
@@ -87,17 +92,17 @@
           </item>
           <item>
            <property name="text">
+            <string>Horizontal Bar</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
             <string>Horizontal Stacked Bar</string>
            </property>
           </item>
           <item>
            <property name="text">
             <string>Stacked</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Timeline</string>
            </property>
           </item>
           <item>
@@ -151,7 +156,7 @@
         <item row="6" column="0" colspan="2">
          <widget class="QStackedWidget" name="stackedWidget">
           <property name="currentIndex">
-           <number>0</number>
+           <number>5</number>
           </property>
           <widget class="QWidget" name="page">
            <layout class="QGridLayout" name="gridLayout_4">
@@ -247,6 +252,12 @@
               </item>
               <item row="3" column="1">
                <widget class="QListWidget" name="ScatterYAxisHeaders">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>50</height>
+                 </size>
+                </property>
                 <property name="selectionMode">
                  <enum>QAbstractItemView::ExtendedSelection</enum>
                 </property>
@@ -281,6 +292,12 @@
               </item>
               <item row="4" column="1">
                <widget class="QTableWidget" name="ScatterCodeByTable">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>50</height>
+                 </size>
+                </property>
                 <column>
                  <property name="text">
                   <string>Y Axis Header</string>
@@ -312,6 +329,255 @@
                <widget class="QLabel" name="label_3">
                 <property name="text">
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#0055ff;&quot;&gt;Scatter Plot Options&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_3">
+           <layout class="QGridLayout" name="gridLayout_8">
+            <item row="0" column="0">
+             <layout class="QGridLayout" name="gridLayout_7">
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_12">
+                <property name="text">
+                 <string>Pie Chart Field</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_13">
+                <property name="text">
+                 <string>Number of Bins</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="PieXAxisHeader"/>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="PieBins">
+                <property name="focusPolicy">
+                 <enum>Qt::NoFocus</enum>
+                </property>
+                <property name="wrapping">
+                 <bool>true</bool>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>1000</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0" colspan="2">
+               <widget class="QLabel" name="label_11">
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#0055ff;&quot;&gt;Pie Chart Options&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="1" column="0">
+             <spacer name="verticalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_4">
+           <layout class="QGridLayout" name="gridLayout_10">
+            <item row="0" column="0">
+             <layout class="QGridLayout" name="gridLayout_9">
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_16">
+                <property name="text">
+                 <string>Search</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_17">
+                <property name="text">
+                 <string>Y Axis Data</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_18">
+                <property name="text">
+                 <string>Code By Uniques</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_15">
+                <property name="text">
+                 <string>X Axis Data</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="TimelineXAxisHeader"/>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="TimelineSearchBar"/>
+              </item>
+              <item row="3" column="1">
+               <widget class="QListWidget" name="TimelineYAxisHeaders">
+                <property name="selectionMode">
+                 <enum>QAbstractItemView::ExtendedSelection</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QTableWidget" name="TimelineCodeByTable">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>50</height>
+                 </size>
+                </property>
+                <column>
+                 <property name="text">
+                  <string>Y Axis Header</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Source Header</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Modification Type</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Colormap</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Colorbar Label</string>
+                 </property>
+                </column>
+               </widget>
+              </item>
+              <item row="0" column="0" colspan="2">
+               <widget class="QLabel" name="label_14">
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#0055ff;&quot;&gt;Timeline Plot Options&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_5">
+           <layout class="QGridLayout" name="gridLayout_12">
+            <item row="0" column="0">
+             <layout class="QGridLayout" name="gridLayout_11">
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_21">
+                <property name="text">
+                 <string>Bins</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_20">
+                <property name="text">
+                 <string>Bin by</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="HistogramXAxisHeader"/>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="HistogramBins">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>1000</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="2">
+               <widget class="QCheckBox" name="HistogramNormChk">
+                <property name="text">
+                 <string>Normalize (Percentages)</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0" colspan="2">
+               <widget class="QLabel" name="label_19">
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#0055ff;&quot;&gt;Histogram Options&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="1" column="0">
+             <spacer name="verticalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_6">
+           <layout class="QGridLayout" name="gridLayout_14">
+            <item row="0" column="0">
+             <layout class="QGridLayout" name="gridLayout_13">
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_24">
+                <property name="text">
+                 <string>Bar Value Data (Y Axis Counts)</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_23">
+                <property name="text">
+                 <string>Group Data (X Axis Labels)</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="BarChartXAxisHeader"/>
+              </item>
+              <item row="2" column="1">
+               <widget class="QListWidget" name="BarChartYAxisHeaders"/>
+              </item>
+              <item row="0" column="0" colspan="2">
+               <widget class="QLabel" name="label_22">
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; color:#0055ff;&quot;&gt;Bar Chart Options&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>

@@ -122,10 +122,40 @@ class EditOptionsDialog(Widgets.QDialog):
         self.ScatterYAxisHeaders.itemSelectionChanged.connect(lambda:self.populate_code_table(self.ScatterYAxisHeaders,self.ScatterCodeByTable))
         self.ScatterXAxisHeader.currentIndexChanged.connect(self.Plot)
         self.ScatterSearchBar.textChanged.connect(lambda txt:self.Search(txt,self.ScatterYAxisHeaders))
+        #Pie Options
+        self.PieXAxisHeader.currentIndexChanged.connect(lambda trash:self.set_max_bins(self.PieXAxisHeader,self.PieBins))
+        self.PieXAxisHeader.currentIndexChanged.connect(self.Plot)
+        self.PieBins.valueChanged.connect(lambda trash:self.Plot())
+        #Timeline Options
+        self.TimelineYAxisHeaders.itemSelectionChanged.connect(self.Plot)
+        self.TimelineYAxisHeaders.itemSelectionChanged.connect(lambda:self.populate_code_table(self.TimelineYAxisHeaders,self.TimelineCodeByTable))
+        self.TimelineXAxisHeader.currentIndexChanged.connect(self.Plot)
+        self.TimelineSearchBar.textChanged.connect(lambda txt:self.Search(txt,self.TimelineYAxisHeaders))
+        #Histogram Options
+        self.HistogramXAxisHeader.currentIndexChanged.connect(lambda trash:self.set_max_bins(self.HistogramXAxisHeader,self.HistogramBins))
+        self.HistogramXAxisHeader.currentIndexChanged.connect(self.Plot)
+        self.HistogramBins.valueChanged.connect(lambda trash:self.Plot())
+        self.HistogramNormChk.toggled.connect(lambda trash:self.Plot())
+        #Bar Chart Options
+        self.BarChartYAxisHeaders.itemSelectionChanged.connect(self.Plot)
+        self.BarChartXAxisHeader.currentIndexChanged.connect(self.Plot)
         
     def Search(self,txt,widget):
         for i in range(widget.count()):
             widget.item(i).setHidden(txt.lower() not in widget.item(i).text().lower())
+            
+    def set_max_bins(self,combo,binwidget):
+        txt = combo.currentText()
+        curval = binwidget.value()
+        if txt:
+            num_bins = len(pd.unique(self.data[txt]))
+        else:
+            num_bins = 1000
+        if curval > num_bins:
+            cuval = num_bins
+        binwidget.setMaximum(num_bins)
+        binwidget.setValue(curval)
+            
     
     def populate_code_table(self,listwidget,tablewidget):
         #Table columns:
@@ -151,13 +181,12 @@ class EditOptionsDialog(Widgets.QDialog):
                 source_combo.wheelEvent = lambda trash:None
                 
                 type_combo = Widgets.QComboBox()
-                print(listwidget.objectName())
                 if listwidget.objectName().startswith('Line'):
                     type_combo.addItems(['Color Code'])
                 else:
                     type_combo.addItems(['Colorbar','Color Code'])
                 type_combo.setCurrentIndex(0)
-                type_combo.currentIndexChanged.connect(lambda lw=listwidget,tw=tablewidget:self.handle_colorbar_code_widgets(lw,tw))
+                type_combo.currentIndexChanged.connect(lambda trash,lw=listwidget,tw=tablewidget:self.handle_colorbar_code_widgets(lw,tw))
                 type_combo.currentIndexChanged.connect(self.Plot)
                 type_combo.wheelEvent = lambda trash:None
                 
@@ -210,7 +239,6 @@ class EditOptionsDialog(Widgets.QDialog):
             self.ZLabelLine.hide()
             
     def handle_colorbar_code_widgets(self,listwidget,tablewidget):
-        pass
         for i in range(tablewidget.rowCount()):
             for header in self.codebydict[listwidget]:
                 if self.codebydict[listwidget][header]['mtype'].currentText() == 'Colorbar':
@@ -231,16 +259,37 @@ class EditOptionsDialog(Widgets.QDialog):
                 pltr.plot(xdata,ydata,axid=pax,marker='o')
             elif ptype == 'Scatter':
                 pltr.scatter(xdata,ydata,axid=pax,marker='o')
+            elif ptype == 'Timeline':
+                pltr.scatter(xdata,sorted(ydata.astype(str)),axid=pax,marker='o')
                 
     def colorbar_plot(self,source,xaxis,yaxis,pltr,pax,ptype,cbarlabel,cmap):
         xdata = self.data[xaxis]
         ydata = self.data[yaxis]
         colors = self.data[source]
         if ptype == 'Scatter':
-            pltr.scatter(xdata,ydata,c=colors,cmap=cmap)
+            pltr.scatter(xdata,ydata,c=colors,cmap=cmap,axid=pax)
+        elif ptype == 'Timeline':
+            pltr.scatter(xdata,sorted(ydata.astype(str)),c=colors,cmap=cmap,axid=pax)
         
         pltr.add_colorbar(pax,cmap,cbarlabel,np.array([max(colors),min(colors)]))
         
+    def make_pie_chart(self,xaxis,pltr,pax,bins):
+        xdata = self.data[xaxis]
+        xdata = pd.cut(xdata,bins)
+        cmap = plt.cm.jet
+        colors = cmap(np.linspace(0,1,bins))
+        pievals = xdata.value_counts().sort_index()
+        legend = map(str,pievals.index.tolist())
+        pltr.pie(pievals,autopct='%.2f%%',colors=colors,axid=pax)
+        pltr.parseCommand(pax,'set_aspect',[['equal']])
+    
+    def make_histogram(self,xaxis,pltr,pax,bins):
+        xdata = self.data[xaxis]
+        pltr.hist(xdata,bins,axid=pax,normed=self.HistogramNormChk.isChecked())
+        if self.HistogramNormChk.isChecked():
+            pass
+            #Dunno how to set percent formatter for y axis in plotterator..
+            # pltr.parseCommand(pax,'yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(100))',[[]])
     
     def Plot(self):
         AllItems = [self.PlotTypeCombo.itemText(i) for i in range(self.PlotTypeCombo.count())]
@@ -295,6 +344,38 @@ class EditOptionsDialog(Widgets.QDialog):
                                 self.colorbar_plot(source,xaxis,y,pltr,pax,ptctext,cdict[y]['cbarlabel'],cdict[y]['cmap'])
                         else:
                             pltr.scatter(self.data[xaxis],self.data[y],axid=pax,marker='o')
+            elif ptctext == 'Pie':
+                xaxis = self.PieXAxisHeader.currentText()
+                if xaxis:
+                    self.data.sort_values(xaxis,inplace=True)
+                    bins = self.PieBins.value()
+                    self.make_pie_chart(xaxis,pltr,pax,bins)
+            elif ptctext == 'Timeline':
+                xaxis = self.TimelineXAxisHeader.currentText()
+                ys = [se.text() for se in self.TimelineYAxisHeaders.selectedItems()]
+                cdict = self.get_code_dict(self.TimelineYAxisHeaders,self.TimelineCodeByTable)
+                if xaxis and ys:
+                    #Sort by Y?
+                    self.data.sort_values(xaxis,inplace=True)
+                    for y in ys:
+                        # self.data.sort_values(y,inplace=True)
+                        if cdict and y in cdict:
+                            source = cdict[y]['source']
+                            mtype = cdict[y]['mtype']
+                            if mtype == 'Color Code':
+                                self.color_code(source,xaxis,y,pltr,pax,ptctext)
+                            elif mtype == 'Colorbar':
+                                self.colorbar_plot(source,xaxis,y,pltr,pax,ptctext,cdict[y]['cbarlabel'],cdict[y]['cmap'])
+                        else:
+                            pltr.scatter(self.data[xaxis],sorted(self.data[y].astype(str)),axid=pax,marker='o')
+            elif ptctext == 'Histogram':
+                xaxis = self.HistogramXAxisHeader.currentText()
+                if xaxis:
+                    self.data.sort_values(xaxis,inplace=True)
+                    bins = self.HistogramBins.value()
+                    self.make_histogram(xaxis,pltr,pax,bins)
+            elif ptctext == 'Bar':
+                pass
         self.parent.Plot_All(pltr)
     
     def populate_edit_options(self):
@@ -315,6 +396,26 @@ class EditOptionsDialog(Widgets.QDialog):
                         self.ScatterYAxisHeaders.addItem(header)
                         self.ScatterXAxisHeader.addItem(header)
                 self.ScatterXAxisHeader.setCurrentIndex(-1)
+            elif ptctext == 'Pie':
+                self.PieXAxisHeader.addItem('')
+                self.PieXAxisHeader.addItems(headers)
+                self.PieXAxisHeader.setCurrentIndex(-1)
+            elif ptctext == 'Timeline':
+                self.TimelineXAxisHeader.addItem('')
+                self.TimelineXAxisHeader.addItems(headers)
+                self.TimelineYAxisHeaders.addItems(headers)
+                self.TimelineXAxisHeader.setCurrentIndex(-1)
+            elif ptctext == 'Histogram':
+                self.HistogramXAxisHeader.addItem('')
+                self.HistogramXAxisHeader.addItems(headers)
+                self.HistogramXAxisHeader.setCurrentIndex(-1)
+            elif ptctext == 'Bar':
+                self.BarChartXAxisHeader.addItem('')
+                for header in headers:
+                    if self.data[header].dtype.kind not in ['S','O','U']:
+                        self.BarChartXAxisHeader.addItem(header)
+                        self.BarChartYAxisHeaders.addItem(header)
+                self.BarChartXAxisHeader.setCurrentIndex(-1)
         
             
     def closeEvent(self,event):
